@@ -103,7 +103,7 @@ DIRECTIONS = [
     'bottom']
 
 
-def get_topleft_rect(rect):
+def get_topleft_rect(rect, zoom=1.0):
     """
     this function return a manipulator rect for the transform
     handler.
@@ -116,12 +116,12 @@ def get_topleft_rect(rect):
         return None
     point = rect.topLeft()
     return QtCore.QRectF(
-        point.x() - (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        point.y() - (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        POINT_RADIUS, POINT_RADIUS)
+        point.x() - (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        point.y() - (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        POINT_RADIUS / zoom, POINT_RADIUS / zoom)
 
 
-def get_bottomleft_rect(rect):
+def get_bottomleft_rect(rect, zoom=1.0):
     """
     this function return a manipulator rect for the transform
     handler.
@@ -135,12 +135,12 @@ def get_bottomleft_rect(rect):
         return None
     point = rect.bottomLeft()
     return QtCore.QRectF(
-        point.x() - (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        point.y() + (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        POINT_RADIUS, POINT_RADIUS)
+        point.x() - (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        point.y() + (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        POINT_RADIUS / zoom, POINT_RADIUS / zoom)
 
 
-def get_topright_rect(rect):
+def get_topright_rect(rect, zoom=1.0):
     """
     this function return a manipulator rect for the transform
     handler.
@@ -153,12 +153,12 @@ def get_topright_rect(rect):
         return None
     point = rect.topRight()
     return QtCore.QRectF(
-        point.x() + (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        point.y() - (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        POINT_RADIUS, POINT_RADIUS)
+        point.x() + (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        point.y() - (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        POINT_RADIUS / zoom, POINT_RADIUS / zoom)
 
 
-def get_bottomright_rect(rect):
+def get_bottomright_rect(rect, zoom=1.0):
     """
     this function return a manipulator rect for the transform
     handler.
@@ -172,12 +172,12 @@ def get_bottomright_rect(rect):
         return None
     point = rect.bottomRight()
     return QtCore.QRectF(
-        point.x() + (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        point.y() + (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        POINT_RADIUS, POINT_RADIUS)
+        point.x() + (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        point.y() + (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        POINT_RADIUS / zoom, POINT_RADIUS / zoom)
 
 
-def get_left_side_rect(rect):
+def get_left_side_rect(rect, zoom=1.0):
     """
     this function return a manipulator rect for the transform
     handler.
@@ -190,12 +190,12 @@ def get_left_side_rect(rect):
         return None
     top = rect.top() + (rect.height() / 2.0)
     return QtCore.QRectF(
-        rect.left() - (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        top - (POINT_RADIUS / 2.0),
-        POINT_RADIUS, POINT_RADIUS)
+        rect.left() - (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        top - (POINT_RADIUS / 2.0 / zoom),
+        POINT_RADIUS / zoom, POINT_RADIUS / zoom)
 
 
-def get_right_side_rect(rect):
+def get_right_side_rect(rect, zoom=1.0):
     """
     this function return a manipulator rect for the transform
     handler.
@@ -208,12 +208,12 @@ def get_right_side_rect(rect):
         return None
     top = rect.top() + (rect.height() / 2.0)
     return QtCore.QRectF(
-        rect.right() + (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        top - (POINT_RADIUS / 2.0) ,
-        POINT_RADIUS, POINT_RADIUS)
+        rect.right() + (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        top - (POINT_RADIUS / 2.0 / zoom) ,
+        POINT_RADIUS / zoom, POINT_RADIUS / zoom)
 
 
-def get_top_side_rect(rect):
+def get_top_side_rect(rect, zoom=1.0):
     """
     this function return a manipulator rect for the transform
     handler.        
@@ -225,12 +225,12 @@ def get_top_side_rect(rect):
     if not rect:
         return None
     return QtCore.QRectF(
-        rect.left() + (rect.width() / 2.0) - (POINT_RADIUS / 2.0),
-        rect.top() - (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        POINT_RADIUS, POINT_RADIUS)
+        rect.left() + (rect.width() / 2.0) - (POINT_RADIUS / 2.0 / zoom),
+        rect.top() - (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        POINT_RADIUS / zoom, POINT_RADIUS / zoom)
 
 
-def get_bottom_side_rect(rect):
+def get_bottom_side_rect(rect, zoom=1.0):
     """
     this function return a manipulator rect for the transform
     handler.
@@ -243,9 +243,9 @@ def get_bottom_side_rect(rect):
     if not rect:
         return None
     return QtCore.QRectF(
-        rect.left() + (rect.width() / 2.0) - (POINT_RADIUS / 2.0),
-        rect.bottom() + (POINT_RADIUS / 2.0) - POINT_OFFSET,
-        POINT_RADIUS, POINT_RADIUS)
+        rect.left() + (rect.width() / 2.0) - (POINT_RADIUS / 2.0 / zoom),
+        rect.bottom() + (POINT_RADIUS / 2.0 / zoom) - POINT_OFFSET / zoom,
+        POINT_RADIUS / zoom, POINT_RADIUS / zoom)
 
 
 def grow_rect(rect, value):

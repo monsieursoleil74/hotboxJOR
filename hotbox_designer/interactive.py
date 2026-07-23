@@ -26,16 +26,19 @@ class SelectionSquare():
         self.handeling = False
         self.rect = None
 
-    def draw(self, painter):
+    def draw(self, painter, zoom=1.0):
         if self.rect is None:
             return
-        draw_selection_square(painter, self.rect)
+        draw_selection_square(painter, self.rect, zoom)
 
 
 class Manipulator():
     def __init__(self):
         self.rect = None
         self._is_hovered = False
+        # zoom courant du viewport : les poignées gardent une taille
+        # constante à l'écran (leurs rects unités sont divisés par lui)
+        self.zoom_factor = 1.0
 
         self._tl_corner_rect = None
         self._bl_corner_rect = None
@@ -75,20 +78,20 @@ class Manipulator():
         self.update_geometries()
 
     def update_geometries(self):
-        rect = self.rect
-        self._tl_corner_rect = get_topleft_rect(rect) if rect else None
-        self._bl_corner_rect = get_bottomleft_rect(rect) if rect else None
-        self._tr_corner_rect = get_topright_rect(rect) if rect else None
-        self._br_corner_rect = get_bottomright_rect(rect) if rect else None
-        self._l_side_rect = get_left_side_rect(rect) if rect else None
-        self._r_side_rect = get_right_side_rect(rect) if rect else None
-        self._t_side_rect = get_top_side_rect(rect) if rect else None
-        self._b_side_rect = get_bottom_side_rect(rect) if rect else None
-        self.hovered_path = get_hovered_path(rect) if rect else None
+        rect, zoom = self.rect, self.zoom_factor
+        self._tl_corner_rect = get_topleft_rect(rect, zoom) if rect else None
+        self._bl_corner_rect = get_bottomleft_rect(rect, zoom) if rect else None
+        self._tr_corner_rect = get_topright_rect(rect, zoom) if rect else None
+        self._br_corner_rect = get_bottomright_rect(rect, zoom) if rect else None
+        self._l_side_rect = get_left_side_rect(rect, zoom) if rect else None
+        self._r_side_rect = get_right_side_rect(rect, zoom) if rect else None
+        self._t_side_rect = get_top_side_rect(rect, zoom) if rect else None
+        self._b_side_rect = get_bottom_side_rect(rect, zoom) if rect else None
+        self.hovered_path = get_hovered_path(rect, zoom) if rect else None
 
     def draw(self, painter, cursor):
         if self.rect is not None and all(self.handler_rects()):
-            draw_manipulator(painter, self, cursor)
+            draw_manipulator(painter, self, cursor, self.zoom_factor)
 
 
 def get_shape_rect_from_options(options):

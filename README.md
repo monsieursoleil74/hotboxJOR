@@ -36,6 +36,10 @@ vieillissant par une expérience façon dwpicker :
 - **Alignement / distribution** (boutons en fin de barre d'outils) :
   aligner gauche/droite/haut/bas/centres, distribuer horizontalement ou
   verticalement (à partir de 3 shapes) — annulable par Ctrl+Z.
+- **Poignées à taille d'écran constante** : le manipulateur et le
+  rectangle de sélection restent lisibles et saisissables à tout zoom.
+- **Alt + glisser** une sélection = la dupliquer et déplacer les copies
+  (façon Photoshop/Figma), annulable par Ctrl+Z.
 
 ## Point de départ
 

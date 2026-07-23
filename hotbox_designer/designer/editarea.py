@@ -57,13 +57,21 @@ class ShapeEditArea(QtWidgets.QWidget):
         rect = self.manipulator.rect if self.selection.shapes else None
         self.viewport_mapper.viewsize = self.size()
         self.viewport_mapper.focus(rect or self.hotbox_rect())
+        self.sync_zoom()
         self.repaint()
+
+    def sync_zoom(self):
+        """Garde poignées et traits à taille constante à l'écran."""
+        self.manipulator.zoom_factor = self.viewport_mapper.zoom
+        if self.manipulator.rect is not None:
+            self.manipulator.update_geometries()
 
     def resizeEvent(self, event):
         self.viewport_mapper.viewsize = self.size()
         if not self.focused_once and self.width() > 0:
             self.focused_once = True
             self.viewport_mapper.focus(self.hotbox_rect())
+        self.sync_zoom()
         self.repaint()
 
     def wheelEvent(self, event):
@@ -73,6 +81,7 @@ class ShapeEditArea(QtWidgets.QWidget):
             return
         factor = 1.15 if delta > 0 else 1 / 1.15
         self.viewport_mapper.zoom_towards(get_cursor(self), factor)
+        self.sync_zoom()
         self.repaint()
 
     def mouseMoveEvent(self, event):
@@ -136,6 +145,12 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.manipulator_moved = False
         rect = self.manipulator.rect
+        # Alt + glisser la sélection = la dupliquer et déplacer la copie
+        alt = bool(event.modifiers() & QtCore.Qt.AltModifier)
+        if (alt and not direction and self.selection.shapes
+                and rect is not None and rect.contains(cursor)):
+            self.duplicate_selection()
+            rect = self.manipulator.rect
         if rect is not None:
             self.transform.set_rect(rect)
             self.transform.reference_rect = QtCore.QRectF(rect)
@@ -232,6 +247,15 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.manipulator.set_rect(get_combined_rects(rects))
         self.selectedShapesChanged.emit()
 
+    def duplicate_selection(self):
+        from copy import deepcopy
+        from hotbox_designer.interactive import Shape
+        duplicates = [Shape(deepcopy(s.options)) for s in self.selection]
+        self.shapes.extend(duplicates)
+        self.selection.replace(duplicates)
+        self.update_selection()
+        self.increase_undo_on_release = True
+
     def paintEvent(self, _):
         painter = QtGui.QPainter()
         painter.begin(self)
@@ -249,7 +273,7 @@ class ShapeEditArea(QtWidgets.QWidget):
         for shape in self.shapes:
             shape.draw(painter)
         self.manipulator.draw(painter, self.units_cursor())
-        self.selection_square.draw(painter)
+        self.selection_square.draw(painter, self.viewport_mapper.zoom)
         if self.edit_center_mode is True:
             point = self.options['centerx'], self.options['centery']
             draw_editor_center(painter, self.hotbox_rect(), point)

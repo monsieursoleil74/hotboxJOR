@@ -109,16 +109,18 @@ def draw_shape(painter, shape):
     painter.drawText(QtCore.QRectF(content_rect), flags, text)
 
 
-def draw_selection_square(painter, rect):
+def draw_selection_square(painter, rect, zoom=1.0):
     bordercolor = QtGui.QColor(SELECTION_COLOR)
     backgroundcolor = QtGui.QColor(SELECTION_COLOR)
     backgroundcolor.setAlpha(85)
-    painter.setPen(QtGui.QPen(bordercolor))
+    pen = QtGui.QPen(bordercolor)
+    pen.setWidthF(1.0 / zoom)
+    painter.setPen(pen)
     painter.setBrush(QtGui.QBrush(backgroundcolor))
     painter.drawRect(rect)
 
 
-def draw_manipulator(painter, manipulator, cursor):
+def draw_manipulator(painter, manipulator, cursor, zoom=1.0):
     hovered = manipulator.hovered_rects(cursor)
 
     if manipulator.rect in hovered:
@@ -133,11 +135,11 @@ def draw_manipulator(painter, manipulator, cursor):
     brush = QtGui.QBrush(QtGui.QColor('white'))
     painter.setBrush(brush)
     for rect in manipulator.handler_rects():
-        pen.setWidth(3 if rect in hovered else 1)
+        pen.setWidthF((3 if rect in hovered else 1) / zoom)
         painter.setPen(pen)
         painter.drawEllipse(rect)
 
-    pen.setWidth(1)
+    pen.setWidthF(1.0 / zoom)
     pen.setStyle(QtCore.Qt.DashLine)  # if not moving else QtCore.Qt.SolidLine)
     painter.setPen(pen)
     painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 0, 0, 0)))
@@ -160,8 +162,8 @@ def draw_aiming(painter, center, target):
     painter.drawLine(center, target)
 
 
-def get_hovered_path(rect):
+def get_hovered_path(rect, zoom=1.0):
     path = QtGui.QPainterPath()
     path.addRect(rect)
-    path.addRect(grow_rect(rect, MANIPULATOR_BORDER))
+    path.addRect(grow_rect(rect, MANIPULATOR_BORDER / zoom))
     return path
