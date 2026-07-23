@@ -54,13 +54,66 @@ Le premier commit de ce dépôt est une copie verbatim du dépôt amont
 `documentation/`). Tout ce qui suit dans l'historique git est propre à ce
 fork.
 
-## Lancement (comme l'amont, pour l'instant)
+## Installation dans Maya
 
-Dans Maya (Script Editor, onglet Python) :
+1. Récupérer le code : bouton « Code → Download ZIP » sur GitHub, ou
+   `git clone https://github.com/monsieursoleil74/hotboxJOR.git`
+   (un `git pull` suffira ensuite pour les mises à jour).
+2. Copier le dossier **`hotbox_designer`** (le dossier intérieur, celui
+   qui contient `manager.py`) dans le dossier de scripts Maya :
+   `C:\Users\<toi>\Documents\maya\scripts\hotbox_designer`.
+   S'il y avait déjà le hotbox_designer d'origine, le remplacer — les
+   hotboxes ne sont pas dedans (voir plus bas), rien n'est perdu.
+3. Lancer, dans le Script Editor (onglet Python) :
+
+   ```python
+   import hotbox_designer
+   hotbox_designer.launch_manager('maya')
+   ```
+
+   Glisser ces deux lignes sur la shelf avec le clic molette pour en
+   faire un bouton permanent.
+
+Variante sans copier (le dépôt reste où il est) :
 
 ```python
 import sys
-sys.path.insert(0, r"<chemin>/hotboxJOR")
+sys.path.insert(0, r"D:\chemin\vers\hotboxJOR")
 import hotbox_designer
 hotbox_designer.launch_manager('maya')
 ```
+
+### Données & hotkeys
+
+- Les hotboxes vivent dans `hotboxes.json` dans les **préférences
+  Maya** (`Documents\maya\<version>\prefs\`), comme l'original : les
+  hotboxes créées avec l'ancien outil apparaissent telles quelles.
+- Bouton « Set hotkey » du manager : Maya refuse de modifier le set de
+  raccourcis verrouillé `Maya_Default` — créer d'abord un set perso
+  dans le Hotkey Editor.
+
+### Chargement auto au démarrage (optionnel)
+
+Pour que les hotkeys fonctionnent sans lancer le manager, dans
+`Documents\maya\scripts\userSetup.py` :
+
+```python
+from maya import utils
+
+def _load_hotboxes():
+    import hotbox_designer
+    from hotbox_designer.applications import Maya
+    hotbox_designer.initialize(Maya())
+
+utils.executeDeferred(_load_hotboxes)
+```
+
+## Lancement hors Maya (standalone)
+
+`pip install PySide6` puis, depuis le dossier du dépôt :
+`python -m hotbox_designer` — les données standalone vivent dans
+`~/.hotboxjor`, séparées de celles de Maya.
+
+## Tests
+
+`QT_QPA_PLATFORM=offscreen python tests/test_editor.py` (headless).
