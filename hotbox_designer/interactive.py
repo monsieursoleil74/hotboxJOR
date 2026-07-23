@@ -162,8 +162,8 @@ class Shape():
             self.image_rect = None
             return
         self.image_rect = QtCore.QRect(
-            self.rect.left(),
-            self.rect.top(),
-            self.options['image.width'],
-            self.options['image.height'])
+            int(self.rect.left()),
+            int(self.rect.top()),
+            int(self.options['image.width']),
+            int(self.options['image.height']))
         self.image_rect.moveCenter(self.rect.center().toPoint())

@@ -2,7 +2,8 @@
 from hotbox_designer.vendor.Qt import QtCore, QtGui, QtWidgets
 
 from hotbox_designer.interactive import Manipulator, SelectionSquare
-from hotbox_designer.geometry import Transform, snap, get_combined_rects
+from hotbox_designer.geometry import (
+    Transform, ViewportMapper, snap, get_combined_rects)
 from hotbox_designer.painting import draw_editor, draw_editor_center
 from hotbox_designer.qtutils import get_cursor
 
@@ -14,9 +15,17 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def __init__(self, options, parent=None):
         super(ShapeEditArea, self).__init__(parent)
-        self.setFixedSize(750, 550)
+        self.setMinimumSize(400, 300)
+        self.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setMouseTracking(True)
+        self.setFocusPolicy(QtCore.Qt.StrongFocus)
         self.options = options
+
+        self.viewport_mapper = ViewportMapper()
+        self.focused_once = False
+        self.panning = False
+        self.pan_reference = None
 
         self.selection = Selection()
         self.selection_square = SelectionSquare()
@@ -34,8 +43,47 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.ctrl_pressed = False
         self.shit_pressed = False
 
-    def mouseMoveEvent(self, _):
-        cursor = get_cursor(self)
+    def hotbox_rect(self):
+        """Le « plan de travail » : la zone de la hotbox en unités."""
+        return QtCore.QRectF(
+            0, 0, self.options['width'], self.options['height'])
+
+    def units_cursor(self):
+        """Position du curseur convertie en unités de la hotbox."""
+        return self.viewport_mapper.to_units_coords(get_cursor(self))
+
+    def focus_view(self):
+        """F : cadre la sélection si elle existe, sinon la hotbox."""
+        rect = self.manipulator.rect if self.selection.shapes else None
+        self.viewport_mapper.viewsize = self.size()
+        self.viewport_mapper.focus(rect or self.hotbox_rect())
+        self.repaint()
+
+    def resizeEvent(self, event):
+        self.viewport_mapper.viewsize = self.size()
+        if not self.focused_once and self.width() > 0:
+            self.focused_once = True
+            self.viewport_mapper.focus(self.hotbox_rect())
+        self.repaint()
+
+    def wheelEvent(self, event):
+        # zoom vers le curseur, façon dwpicker
+        delta = event.angleDelta().y()
+        if not delta:
+            return
+        factor = 1.15 if delta > 0 else 1 / 1.15
+        self.viewport_mapper.zoom_towards(get_cursor(self), factor)
+        self.repaint()
+
+    def mouseMoveEvent(self, event):
+        if self.panning:
+            position = get_cursor(self)
+            offset = position - self.pan_reference
+            self.pan_reference = position
+            self.viewport_mapper.origin -= offset
+            self.repaint()
+            return
+        cursor = self.units_cursor()
         if self.edit_center_mode is True:
             if self.clicked is False:
                 return
@@ -43,7 +91,7 @@ class ShapeEditArea(QtWidgets.QWidget):
                 x, y = snap(cursor.x(), cursor.y(), self.transform.snap)
             else:
                 x, y = cursor.x(), cursor.y()
-            self.centerMoved.emit(x, y)
+            self.centerMoved.emit(int(round(x)), int(round(y)))
             self.increase_undo_on_release = True
             self.repaint()
             return
@@ -72,9 +120,16 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.selectedShapesChanged.emit()
         self.repaint()
 
-    def mousePressEvent(self, _):
+    def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)
-        cursor = get_cursor(self)
+        if event.button() == QtCore.Qt.MiddleButton:
+            self.panning = True
+            self.pan_reference = get_cursor(self)
+            self.setCursor(QtCore.Qt.ClosedHandCursor)
+            return
+        if event.button() != QtCore.Qt.LeftButton:
+            return
+        cursor = self.units_cursor()
         direction = self.manipulator.get_direction(cursor)
         self.clicked = True
         self.transform.direction = direction
@@ -101,7 +156,14 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.repaint()
 
-    def mouseReleaseEvent(self, _):
+    def mouseReleaseEvent(self, event):
+        if self.panning and event.button() == QtCore.Qt.MiddleButton:
+            self.panning = False
+            self.pan_reference = None
+            self.unsetCursor()
+            return
+        if event.button() != QtCore.Qt.LeftButton:
+            return
         if self.edit_center_mode is True:
             self.clicked = False
             return
@@ -135,6 +197,9 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.repaint()
 
     def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_F:
+            return self.focus_view()
+
         if event.key() == QtCore.Qt.Key_Shift:
             self.transform.square = True
             self.shit_pressed = True
@@ -175,14 +240,20 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def paint(self, painter):
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        draw_editor(painter, self.rect(), snap=self.transform.snap)
+        # fond hors plan de travail
+        painter.fillRect(self.rect(), QtGui.QColor('#333333'))
+        # tout le reste est dessiné dans l'espace de la hotbox
+        painter.save()
+        painter.setTransform(self.viewport_mapper.to_viewport_transform())
+        draw_editor(painter, self.hotbox_rect(), snap=self.transform.snap)
         for shape in self.shapes:
             shape.draw(painter)
-        self.manipulator.draw(painter, get_cursor(self))
+        self.manipulator.draw(painter, self.units_cursor())
         self.selection_square.draw(painter)
         if self.edit_center_mode is True:
             point = self.options['centerx'], self.options['centery']
-            draw_editor_center(painter, self.rect(), point)
+            draw_editor_center(painter, self.hotbox_rect(), point)
+        painter.restore()
 
 
 class Selection():

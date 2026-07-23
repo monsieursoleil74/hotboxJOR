@@ -80,9 +80,7 @@ class HotboxEditor(QtWidgets.QWidget):
 
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setContentsMargins(0, 0, 0, 0)
-        self.hlayout.addStretch(1)
-        self.hlayout.addWidget(self.shape_editor)
-        self.hlayout.addStretch(1)
+        self.hlayout.addWidget(self.shape_editor, stretch=1)
         self.hlayout.addWidget(self.attribute_editor)
 
         self.vlayout = QtWidgets.QVBoxLayout(self)
@@ -165,9 +163,9 @@ class HotboxEditor(QtWidgets.QWidget):
 
     def editor_size_changed(self):
         size = self.menu.get_size()
-        self.shape_editor.setFixedSize(size)
         self.options['width'] = size.width()
         self.options['height'] = size.height()
+        self.shape_editor.repaint()
         self.set_data_modified()
 
     def move_center(self, x, y):
@@ -210,7 +208,7 @@ class HotboxEditor(QtWidgets.QWidget):
     def create_shape(self, template, before=False):
         options = template.copy()
         shape = Shape(options)
-        shape.rect.moveCenter(self.shape_editor.rect().center())
+        shape.rect.moveCenter(self.shape_editor.hotbox_rect().center())
         shape.synchronize_rect()
         if before is True:
             self.shape_editor.shapes.insert(0, shape)

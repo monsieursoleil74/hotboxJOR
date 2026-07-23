@@ -25,6 +25,15 @@ vieillissant par une expérience façon dwpicker :
 - L'éditeur reste lançable **hors Maya** (mode standalone) pour le
   développement et les tests.
 
+## Nouveautés du fork (éditeur)
+
+- **Viewport zoom / pan** dans l'éditeur de hotbox, façon dwpicker :
+  - molette = zoom vers le curseur ;
+  - clic molette maintenu = déplacement de la vue ;
+  - **F** = recadrer (sur la sélection s'il y en a une, sinon sur la hotbox) ;
+  - la zone de la hotbox est un « plan de travail » posé sur un fond
+    sombre infini, l'éditeur s'étire avec la fenêtre.
+
 ## Point de départ
 
 Le premier commit de ce dépôt est une copie verbatim du dépôt amont

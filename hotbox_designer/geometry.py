@@ -1,8 +1,81 @@
 import math
-from hotbox_designer.vendor.Qt import QtCore
+from hotbox_designer.vendor.Qt import QtCore, QtGui
 
 POINT_RADIUS = 8
 POINT_OFFSET = 4
+
+ZOOM_MIN = 0.1
+ZOOM_MAX = 8.0
+
+
+class ViewportMapper():
+    """Conversion entre les coordonnées de la hotbox (unités) et celles
+    du widget (pixels) : zoom + origine. Adapté du ViewportMapper de
+    dwpicker (DreamWall Animation, même lignée que ce projet)."""
+
+    def __init__(self):
+        self.zoom = 1.0
+        self.origin = QtCore.QPointF(0, 0)
+        self.viewsize = QtCore.QSize(300, 300)
+
+    def to_viewport(self, value):
+        return value * self.zoom
+
+    def to_units(self, pixels):
+        return pixels / self.zoom
+
+    def to_viewport_coords(self, units_point):
+        return QtCore.QPointF(
+            self.to_viewport(units_point.x()) - self.origin.x(),
+            self.to_viewport(units_point.y()) - self.origin.y())
+
+    def to_units_coords(self, pixels_point):
+        return QtCore.QPointF(
+            self.to_units(pixels_point.x() + self.origin.x()),
+            self.to_units(pixels_point.y() + self.origin.y()))
+
+    def to_viewport_rect(self, units_rect):
+        return QtCore.QRectF(
+            (units_rect.left() * self.zoom) - self.origin.x(),
+            (units_rect.top() * self.zoom) - self.origin.y(),
+            units_rect.width() * self.zoom,
+            units_rect.height() * self.zoom)
+
+    def to_units_rect(self, pixels_rect):
+        top_left = self.to_units_coords(pixels_rect.topLeft())
+        width = self.to_units(pixels_rect.width())
+        height = self.to_units(pixels_rect.height())
+        return QtCore.QRectF(top_left.x(), top_left.y(), width, height)
+
+    def zoom_towards(self, pixels_point, factor):
+        """Zoome en gardant le point (pixels) fixe sous le curseur."""
+        units_point = self.to_units_coords(pixels_point)
+        self.zoom = max(ZOOM_MIN, min(ZOOM_MAX, self.zoom * factor))
+        self.origin = QtCore.QPointF(
+            units_point.x() * self.zoom - pixels_point.x(),
+            units_point.y() * self.zoom - pixels_point.y())
+
+    def center_on_point(self, units_center):
+        self.origin = QtCore.QPointF(
+            units_center.x() * self.zoom - self.viewsize.width() / 2,
+            units_center.y() * self.zoom - self.viewsize.height() / 2)
+
+    def focus(self, units_rect):
+        if not units_rect or not units_rect.width() or not units_rect.height():
+            return
+        self.zoom = min([
+            float(self.viewsize.width()) / units_rect.width(),
+            float(self.viewsize.height()) / units_rect.height()])
+        if self.zoom > 1:
+            self.zoom *= 0.7  # de l'air autour du sujet
+        self.zoom = max(ZOOM_MIN, min(ZOOM_MAX, self.zoom))
+        self.center_on_point(units_rect.center())
+
+    def to_viewport_transform(self):
+        transform = QtGui.QTransform()
+        transform.translate(-self.origin.x(), -self.origin.y())
+        transform.scale(self.zoom, self.zoom)
+        return transform
 DIRECTIONS = [
     'top_left',
     'bottom_left',

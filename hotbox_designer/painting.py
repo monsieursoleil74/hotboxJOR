@@ -38,7 +38,7 @@ def draw_editor_center(painter, rect, point):
     painter.setBrush(QtGui.QBrush(color))
     painter.drawRect(rect)
 
-    path = get_center_path(QtCore.QPoint(*point))
+    path = get_center_path(QtCore.QPointF(point[0], point[1]))
     pen = QtGui.QPen(QtGui.QColor(50, 125, 255))
     pen.setWidth(2)
     painter.setPen(pen)
@@ -49,14 +49,14 @@ def get_center_path(point):
     ext = 12
     int_ = 5
     path = QtGui.QPainterPath(point)
-    path.moveTo(QtCore.QPoint(point.x() - ext, point.y()))
-    path.lineTo(QtCore.QPoint(point.x() - int_, point.y()))
-    path.moveTo(QtCore.QPoint(point.x() + int_, point.y()))
-    path.lineTo(QtCore.QPoint(point.x() + ext, point.y()))
-    path.moveTo(QtCore.QPoint(point.x(), point.y() - ext))
-    path.lineTo(QtCore.QPoint(point.x(), point.y() - int_))
-    path.moveTo(QtCore.QPoint(point.x(), point.y() + int_))
-    path.lineTo(QtCore.QPoint(point.x(), point.y() + ext))
+    path.moveTo(QtCore.QPointF(point.x() - ext, point.y()))
+    path.lineTo(QtCore.QPointF(point.x() - int_, point.y()))
+    path.moveTo(QtCore.QPointF(point.x() + int_, point.y()))
+    path.lineTo(QtCore.QPointF(point.x() + ext, point.y()))
+    path.moveTo(QtCore.QPointF(point.x(), point.y() - ext))
+    path.lineTo(QtCore.QPointF(point.x(), point.y() - int_))
+    path.moveTo(QtCore.QPointF(point.x(), point.y() + int_))
+    path.lineTo(QtCore.QPointF(point.x(), point.y() + ext))
     path.addEllipse(point, 1, 1)
     return path
 
