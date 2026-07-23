@@ -76,6 +76,22 @@ class ViewportMapper():
         transform.translate(-self.origin.x(), -self.origin.y())
         transform.scale(self.zoom, self.zoom)
         return transform
+
+
+def split_line(point1, point2, step_number):
+    """Répartit step_number points régulièrement entre point1 et point2
+    (repris de dwpicker, licence MIT)."""
+    if step_number <= 1:
+        return [point2]
+    x_values = split_range(point1.x(), point2.x(), step_number)
+    y_values = split_range(point1.y(), point2.y(), step_number)
+    return [QtCore.QPointF(x, y) for x, y in zip(x_values, y_values)]
+
+
+def split_range(input_, output, step_number):
+    difference = output - input_
+    step = difference / float(step_number - 1)
+    return [input_ + (step * i) for i in range(step_number)]
 DIRECTIONS = [
     'top_left',
     'bottom_left',

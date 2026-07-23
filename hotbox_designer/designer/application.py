@@ -2,6 +2,7 @@
 from functools import partial
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore
 
+from hotbox_designer.align import align_shapes, arrange_shapes
 from hotbox_designer.templates import SQUARE_BUTTON, TEXT, BACKGROUND
 from hotbox_designer.interactive import Shape
 from hotbox_designer.geometry import get_combined_rects
@@ -63,6 +64,8 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.onTopRequested.connect(method)
         method = self.set_selection_on_bottom
         self.menu.onBottomRequested.connect(method)
+        self.menu.alignRequested.connect(self.align_selection)
+        self.menu.arrangeRequested.connect(self.arrange_selection)
 
         set_shortcut("Ctrl+Z", self.shape_editor, self.undo)
         set_shortcut("Ctrl+Y", self.shape_editor, self.redo)
@@ -248,6 +251,20 @@ class HotboxEditor(QtWidgets.QWidget):
         elements = self.shape_editor.selection
         shapes = move_elements_to_array_begin(array, elements)
         self.shape_editor.shapes = shapes
+        self.shape_editor.repaint()
+        self.set_data_modified()
+
+    def align_selection(self, direction):
+        if not align_shapes(self.shape_editor.selection, direction):
+            return
+        self.shape_editor.update_selection()
+        self.shape_editor.repaint()
+        self.set_data_modified()
+
+    def arrange_selection(self, direction):
+        if not arrange_shapes(self.shape_editor.selection, direction):
+            return
+        self.shape_editor.update_selection()
         self.shape_editor.repaint()
         self.set_data_modified()
 

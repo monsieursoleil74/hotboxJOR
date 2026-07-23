@@ -1,3 +1,5 @@
+from functools import partial
+
 from hotbox_designer.vendor.Qt import QtGui, QtWidgets, QtCore
 from hotbox_designer.qtutils import icon
 
@@ -20,6 +22,8 @@ class MenuWidget(QtWidgets.QWidget):
     moveDownRequested = QtCore.Signal()
     moveUpRequested = QtCore.Signal()
     onTopRequested = QtCore.Signal()
+    alignRequested = QtCore.Signal(str)
+    arrangeRequested = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(MenuWidget, self).__init__(parent=parent)
@@ -109,6 +113,30 @@ class MenuWidget(QtWidgets.QWidget):
         self.ontop.setToolTip('Set selected shapes on top')
         self.ontop.triggered.connect(self.onTopRequested.emit)
 
+        # alignement / distribution (façon dwpicker)
+        self.align_actions = []
+        aligns = [
+            ('align_left.png', 'Align left', 'left'),
+            ('align_h_center.png', 'Align horizontal centers', 'h_center'),
+            ('align_right.png', 'Align right', 'right'),
+            ('align_top.png', 'Align top', 'top'),
+            ('align_v_center.png', 'Align vertical centers', 'v_center'),
+            ('align_bottom.png', 'Align bottom', 'bottom')]
+        for filename, tooltip, direction in aligns:
+            action = QtWidgets.QAction(icon(filename), '', self)
+            action.setToolTip(tooltip)
+            action.triggered.connect(
+                partial(self.alignRequested.emit, direction))
+            self.align_actions.append(action)
+        self.arrange_h = QtWidgets.QAction(icon('arrange_h.png'), '', self)
+        self.arrange_h.setToolTip('Distribute horizontally')
+        self.arrange_h.triggered.connect(
+            partial(self.arrangeRequested.emit, 'horizontal'))
+        self.arrange_v = QtWidgets.QAction(icon('arrange_v.png'), '', self)
+        self.arrange_v.setToolTip('Distribute vertically')
+        self.arrange_v.triggered.connect(
+            partial(self.arrangeRequested.emit, 'vertical'))
+
         self.toolbar = QtWidgets.QToolBar()
         self.toolbar.addAction(self.delete)
         self.toolbar.addAction(self.copy)
@@ -137,6 +165,12 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.movedown)
         self.toolbar.addAction(self.moveup)
         self.toolbar.addAction(self.ontop)
+        self.toolbar.addSeparator()
+        for action in self.align_actions:
+            self.toolbar.addAction(action)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.arrange_h)
+        self.toolbar.addAction(self.arrange_v)
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 10, 0)

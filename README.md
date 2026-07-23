@@ -33,6 +33,9 @@ vieillissant par une expérience façon dwpicker :
   - **F** = recadrer (sur la sélection s'il y en a une, sinon sur la hotbox) ;
   - la zone de la hotbox est un « plan de travail » posé sur un fond
     sombre infini, l'éditeur s'étire avec la fenêtre.
+- **Alignement / distribution** (boutons en fin de barre d'outils) :
+  aligner gauche/droite/haut/bas/centres, distribuer horizontalement ou
+  verticalement (à partir de 3 shapes) — annulable par Ctrl+Z.
 
 ## Point de départ
 
