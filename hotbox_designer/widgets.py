@@ -5,7 +5,7 @@ from hotbox_designer.colorwheel import ColorDialog
 
 # don't use style sheet like that, find better design
 TOGGLER_STYLESHEET = (
-    'background: rgb(0, 0, 0, 75); text-align: left; font: bold')
+    'background: rgba(0, 0, 0, 75); text-align: left; font: bold')
 
 
 class BoolCombo(QtWidgets.QComboBox):
@@ -166,7 +166,7 @@ class Title(QtWidgets.QLabel):
     def __init__(self, title, parent=None):
         super(Title, self).__init__(parent)
         self.setFixedHeight(20)
-        self.setStyleSheet('background: rgb(0, 0, 0, 25)')
+        self.setStyleSheet('background: rgba(0, 0, 0, 25)')
         self.setText('<b>&nbsp;&nbsp;&nbsp;' + title)
 
 

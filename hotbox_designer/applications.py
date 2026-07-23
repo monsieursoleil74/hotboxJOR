@@ -58,6 +58,38 @@ class AbstractApplication(object):
         raise NotImplementedError
 
 
+class Standalone(AbstractApplication):
+    """Backend hors DCC : développement, tests et édition de hotboxes
+    sans Maya/Nuke/Houdini. Les données vivent dans ~/.hotboxjor et les
+    hotkeys globaux ne sont pas disponibles (ils appartiennent au DCC)."""
+
+    @staticmethod
+    def get_data_folder():
+        folder = os.path.expanduser('~/.hotboxjor')
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        return folder
+
+    @staticmethod
+    def get_main_window():
+        return None
+
+    @staticmethod
+    def get_reader_parent():
+        return None
+
+    @staticmethod
+    def get_available_languages():
+        return [PYTHON]
+
+    @staticmethod
+    def get_available_set_hotkey_modes():
+        return []
+
+    def set_hotkey(self, *args, **kwargs):
+        pass
+
+
 class Maya(AbstractApplication):
 
     @staticmethod

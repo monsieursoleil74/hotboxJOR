@@ -73,8 +73,11 @@ class Highlighter(QtGui.QSyntaxHighlighter):
                 color=properties['color'],
                 bold=properties['bold'],
                 italic=properties['italic'])
+            # Qt6 n'a plus QRegExp : QRegularExpression prend le relais
+            regex_class = getattr(
+                QtCore, 'QRegularExpression', None) or QtCore.QRegExp
             self.rules.append(
-                (QtCore.QRegExp(self.PATTERNS[name]), text_format))
+                (regex_class(self.PATTERNS[name]), text_format))
 
     def highlightBlock(self, text):
         for pattern, format_ in self.rules:
