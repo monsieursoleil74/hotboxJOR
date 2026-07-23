@@ -87,7 +87,9 @@ class HotboxManager(QtWidgets.QWidget):
         super(HotboxManager, self).__init__(parent, QtCore.Qt.Tool)
         self.setWindowTitle('Hotbox Designer')
         self.application = application
-        self.hotbox_designer = None
+        # une fenêtre d'édition par hotbox, toutes ouvrables en même
+        # temps (le copier-coller passe par le presse-papier système)
+        self.editors = []
 
         hotboxes_data = load_hotboxes_datas(self.application.local_file)
         self.personnal_model = HotboxPersonalTableModel(hotboxes_data)
@@ -200,9 +202,15 @@ class HotboxManager(QtWidgets.QWidget):
         self.toolbar.link.setEnabled(index == 1)
         self.toolbar.unlink.setEnabled(index == 1)
 
-    def hotbox_data_modified(self, hotbox_data):
-        row = self.personnal_view.get_selected_row()
+    def hotbox_data_modified(self, link, hotbox_data):
+        # la hotbox est retrouvée par identité, pas par ligne
+        # sélectionnée : plusieurs éditeurs peuvent écrire en parallèle
+        try:
+            row = self.personnal_model.hotboxes.index(link.data)
+        except ValueError:
+            return  # hotbox supprimée entre-temps
         self.personnal_model.set_hotbox(row, hotbox_data)
+        link.data = self.personnal_model.hotboxes[row]
         clear_loaded_hotboxes()
         self.save_hotboxes()
 
@@ -263,16 +271,23 @@ class HotboxManager(QtWidgets.QWidget):
         if hotbox_data is None:
             return warning('Hotbox designer', 'No hotbox selected')
 
-        if self.hotbox_designer is not None:
-            self.hotbox_designer.close()
+        # déjà ouverte ? on ramène sa fenêtre au premier plan
+        for link in self.editors:
+            if link.data is hotbox_data:
+                link.editor.show()
+                link.editor.raise_()
+                link.editor.activateWindow()
+                return
 
-        self.hotbox_designer = HotboxEditor(
+        editor = HotboxEditor(
             hotbox_data,
             self.application,
             parent=self.application.main_window)
-        method = self.hotbox_data_modified
-        self.hotbox_designer.hotboxDataModified.connect(method)
-        self.hotbox_designer.show()
+        link = _EditorLink(editor, hotbox_data)
+        editor.hotboxDataModified.connect(
+            partial(self.hotbox_data_modified, link))
+        self.editors.append(link)
+        editor.show()
 
     def _call_create(self):
         hotboxes_ = self.personnal_model.hotboxes + self.shared_model.hotboxes
@@ -389,6 +404,15 @@ class HotboxManager(QtWidgets.QWidget):
         self.personnal_model.layoutChanged.emit()
         self.save_hotboxes()
         clear_loaded_hotboxes()
+
+
+class _EditorLink():
+    """Attache une fenêtre d'édition à sa hotbox dans le modèle (l'objet
+    est remplacé à chaque modification, on suit le remplacement)."""
+
+    def __init__(self, editor, data):
+        self.editor = editor
+        self.data = data
 
 
 class HotboxManagerToolbar(QtWidgets.QToolBar):

@@ -1,4 +1,5 @@
 
+import json
 from functools import partial
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore
 
@@ -17,15 +18,21 @@ from .menu import MenuWidget
 from .attributes import AttributeEditor
 
 
+# marqueur du presse-papier système : permet le copier-coller de shapes
+# entre deux éditeurs (même entre deux sessions de l'application)
+SHAPES_CLIPBOARD_KEY = 'hotbox_designer_shapes'
+
+
 class HotboxEditor(QtWidgets.QWidget):
     hotboxDataModified = QtCore.Signal(object)
 
     def __init__(self, hotbox_data, application, parent=None):
         super(HotboxEditor, self).__init__(parent, QtCore.Qt.Window)
-        self.setWindowTitle("Hotbox editor")
+        title = hotbox_data['general'].get('name') or ''
+        self.setWindowTitle(
+            'Hotbox editor' + (' - ' + title if title else ''))
         self.options = hotbox_data['general']
         self.application = application
-        self.clipboard = []
         self.undo_manager = UndoManager(hotbox_data)
 
         self.shape_editor = ShapeEditArea(self.options)
@@ -93,12 +100,27 @@ class HotboxEditor(QtWidgets.QWidget):
         self.vlayout.addLayout(self.hlayout)
 
     def copy(self):
-        self.clipboard = [
-            s.options.copy() for s in self.shape_editor.selection]
+        shapes = [dict(s.options) for s in self.shape_editor.selection]
+        if not shapes:
+            return
+        text = json.dumps({SHAPES_CLIPBOARD_KEY: shapes})
+        QtWidgets.QApplication.clipboard().setText(text)
+
+    @staticmethod
+    def clipboard_shapes():
+        """Shapes portées par le presse-papier système, sinon []."""
+        text = QtWidgets.QApplication.clipboard().text()
+        try:
+            shapes = json.loads(text)[SHAPES_CLIPBOARD_KEY]
+            return [dict(shape) for shape in shapes]
+        except (ValueError, TypeError, KeyError):
+            return []
 
     def paste(self):
-        clipboad_copy = [s.copy() for s in self.clipboard]
-        shape_datas = self.hotbox_data()['shapes'][:] + clipboad_copy
+        pasted = self.clipboard_shapes()
+        if not pasted:
+            return
+        shape_datas = self.hotbox_data()['shapes'][:] + pasted
         hotbox_data = {
             'general': self.options,
             'shapes': shape_datas}
@@ -106,7 +128,7 @@ class HotboxEditor(QtWidgets.QWidget):
         self.undo_manager.set_data_modified(hotbox_data)
         self.hotboxDataModified.emit(hotbox_data)
         # select new shapes
-        shapes = self.shape_editor.shapes [-len(self.clipboard):]
+        shapes = self.shape_editor.shapes[-len(pasted):]
         self.shape_editor.selection.replace(shapes)
         self.shape_editor.update_selection()
         self.shape_editor.repaint()

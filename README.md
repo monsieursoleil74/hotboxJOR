@@ -40,6 +40,12 @@ vieillissant par une expérience façon dwpicker :
   rectangle de sélection restent lisibles et saisissables à tout zoom.
 - **Alt + glisser** une sélection = la dupliquer et déplacer les copies
   (façon Photoshop/Figma), annulable par Ctrl+Z.
+- **Plusieurs hotboxes éditables en même temps** : le manager ouvre une
+  fenêtre d'édition par hotbox (avant, ouvrir la deuxième fermait la
+  première), chaque fenêtre porte le nom de sa hotbox.
+- **Copier-coller entre hotboxes** : Ctrl+C/Ctrl+V passe par le
+  presse-papier système (JSON) — on copie des boutons dans une hotbox et
+  on les colle dans une autre, y compris entre deux sessions.
 
 ## Point de départ
 
