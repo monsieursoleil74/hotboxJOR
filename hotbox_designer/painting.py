@@ -4,7 +4,7 @@ from hotbox_designer.geometry import grow_rect
 
 
 MANIPULATOR_BORDER = 5
-SELECTION_COLOR = '#5A86A8'  # accent désaturé (cohérent avec le thème)
+SELECTION_COLOR = '#6D8C5E'  # accent vert-gris (cohérent avec le thème)
 
 
 def draw_editor(painter, rect, snap=None):

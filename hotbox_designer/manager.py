@@ -517,7 +517,7 @@ class HotboxTableView(QtWidgets.QTableView):
             'QTableView {border: none; background: #313131;'
             'alternate-background-color: #353535;}'
             'QTableView::item {padding: 6px 10px; border: none;}'
-            'QTableView::item:selected {background: #5a86a8;'
+            'QTableView::item:selected {background: #6d8c5e;'
             'color: #ffffff;}')
 
     def selection_changed(self, *_):

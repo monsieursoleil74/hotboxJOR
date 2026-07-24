@@ -22,9 +22,10 @@ BORDER_SOFT = '#484848'  # bordures internes
 TEXT = '#c8c8c8'
 TEXT_DIM = '#8c8c8c'
 
-# accent unique, désaturé (bleu-acier) — réservé aux états actifs
-ACCENT = '#5a86a8'
-ACCENT_DIM = '#3f5d73'
+# accent unique, désaturé (vert-gris façon Maya) — réservé aux états
+# actifs (sélection, onglet courant, focus)
+ACCENT = '#6d8c5e'
+ACCENT_DIM = '#4a5f3d'
 
 
 DARK_STYLESHEET = """
