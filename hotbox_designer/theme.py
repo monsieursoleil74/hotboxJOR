@@ -107,6 +107,22 @@ QScrollBar::handle:horizontal {
     background: #555555; border-radius: 4px; min-width: 24px;
 }
 QScrollBar::add-line, QScrollBar::sub-line { height: 0; width: 0; }
+QSlider::groove:horizontal {
+    height: 4px;
+    background: #2b2b2b;
+    border-radius: 2px;
+}
+QSlider::handle:horizontal {
+    width: 12px;
+    margin: -5px 0;
+    background: #d8d8d8;
+    border-radius: 6px;
+}
+QSlider::handle:horizontal:hover { background: #3388ff; }
+QSlider::sub-page:horizontal {
+    background: #2b6bbf;
+    border-radius: 2px;
+}
 QToolTip {
     background-color: #2b2b2b;
     color: #d8d8d8;

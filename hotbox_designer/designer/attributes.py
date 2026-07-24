@@ -4,7 +4,8 @@ from hotbox_designer.vendor.Qt import QtCore, QtWidgets, QtGui
 from hotbox_designer.colorwheel import ColorDialog
 from hotbox_designer.qtutils import icon, VALIGNS, HALIGNS
 from hotbox_designer.widgets import (
-    Title, BoolCombo, WidgetToggler, FloatEdit, BrowseEdit, ColorEdit)
+    Title, BoolCombo, WidgetToggler, FloatEdit, BrowseEdit, ColorEdit,
+    ColorButton, OpacitySlider, BoolCheckBox)
 from hotbox_designer.designer.highlighter import get_highlighter
 
 
@@ -88,34 +89,18 @@ class ShapeSettings(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(ShapeSettings, self).__init__(parent)
+        # les dimensions/positions se manipulent au viewport : la
+        # section « Dimensions » (dont le champ top écrivait dans
+        # shape.right !) a été retirée
         self.shape = QtWidgets.QComboBox()
         self.shape.addItems(SHAPE_TYPES)
         self.shape.currentIndexChanged.connect(self.shape_changed)
-
-        self.left = FloatEdit(minimum=0.0)
-        method = partial(self.rectModified.emit, 'shape.left')
-        self.left.valueSet.connect(method)
-        self.top = FloatEdit(minimum=0.0)
-        method = partial(self.rectModified.emit, 'shape.right')
-        self.top.valueSet.connect(method)
-        self.width = FloatEdit(minimum=0.0)
-        method = partial(self.rectModified.emit, 'shape.width')
-        self.width.valueSet.connect(method)
-        self.height = FloatEdit(minimum=0.0)
-        method = partial(self.rectModified.emit, 'shape.height')
-        self.height.valueSet.connect(method)
 
         self.layout = QtWidgets.QFormLayout(self)
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Shape', self.shape)
-        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
-        self.layout.addRow(Title('Dimensions'))
-        self.layout.addRow('left', self.left)
-        self.layout.addRow('top', self.top)
-        self.layout.addRow('width', self.width)
-        self.layout.addRow('height', self.height)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
@@ -127,22 +112,6 @@ class ShapeSettings(QtWidgets.QWidget):
         values = list({option['shape'] for option in options})
         value = values[0] if len(values) == 1 else '...'
         self.shape.setCurrentText(value)
-
-        values = list({option['shape.left'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.left.setText(value)
-
-        values = list({option['shape.top'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.top.setText(value)
-
-        values = list({option['shape.width'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.width.setText(value)
-
-        values = list({option['shape.height'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.height.setText(value)
 
 
 class ImageSettings(QtWidgets.QWidget):
@@ -197,130 +166,93 @@ class ImageSettings(QtWidgets.QWidget):
 class AppearenceSettings(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
 
+    COLOR_KEYS = (
+        'bgcolor.normal', 'bgcolor.hovered', 'bgcolor.clicked',
+        'bordercolor.normal', 'bordercolor.hovered', 'bordercolor.clicked')
+    WIDTH_KEYS = (
+        'borderwidth.normal', 'borderwidth.hovered', 'borderwidth.clicked')
+
     def __init__(self, parent=None):
         super(AppearenceSettings, self).__init__(parent)
+        # pastilles de couleur façon Photoshop : un clic = le sélecteur
+        # natif ; l'opacité est un curseur 0-100 % (stockée en
+        # transparence 0-255 inversée, conversion dans OpacitySlider)
+        self.color_buttons = {}
+        for key in self.COLOR_KEYS:
+            button = ColorButton()
+            button.valueSet.connect(partial(self.optionSet.emit, key))
+            self.color_buttons[key] = button
 
-        self.border = BoolCombo(True)
+        self.bg_opacity = OpacitySlider()
+        method = partial(self.optionSet.emit, 'bgcolor.transparency')
+        self.bg_opacity.valueSet.connect(method)
+
+        self.border = BoolCheckBox(True)
         method = partial(self.optionSet.emit, 'border')
         self.border.valueSet.connect(method)
 
-        self.borderwidth_normal = FloatEdit(minimum=0.0)
-        method = partial(self.optionSet.emit, 'borderwidth.normal')
-        self.borderwidth_normal.valueSet.connect(method)
-
-        self.borderwidth_hovered = FloatEdit(minimum=0.0)
-        method = partial(self.optionSet.emit, 'borderwidth.hovered')
-        self.borderwidth_hovered.valueSet.connect(method)
-
-        self.borderwidth_clicked = FloatEdit(minimum=0.0)
-        method = partial(self.optionSet.emit, 'borderwidth.clicked')
-        self.borderwidth_clicked.valueSet.connect(method)
-
-        self.bordercolor_normal = ColorEdit()
-        method = partial(self.optionSet.emit, 'bordercolor.normal')
-        self.bordercolor_normal.valueSet.connect(method)
-
-        self.bordercolor_hovered = ColorEdit()
-        method = partial(self.optionSet.emit, 'bordercolor.hovered')
-        self.bordercolor_hovered.valueSet.connect(method)
-
-        self.bordercolor_clicked = ColorEdit()
-        method = partial(self.optionSet.emit, 'bordercolor.clicked')
-        self.bordercolor_clicked.valueSet.connect(method)
-
-        self.bordercolor_transparency = FloatEdit(minimum=0, maximum=255)
+        self.border_opacity = OpacitySlider()
         method = partial(self.optionSet.emit, 'bordercolor.transparency')
-        self.bordercolor_transparency.valueSet.connect(method)
+        self.border_opacity.valueSet.connect(method)
 
-        self.backgroundcolor_normal = ColorEdit()
-        method = partial(self.optionSet.emit, 'bgcolor.normal')
-        self.backgroundcolor_normal.valueSet.connect(method)
-
-        self.backgroundcolor_hovered = ColorEdit()
-        method = partial(self.optionSet.emit, 'bgcolor.hovered')
-        self.backgroundcolor_hovered.valueSet.connect(method)
-
-        self.backgroundcolor_clicked = ColorEdit()
-        method = partial(self.optionSet.emit, 'bgcolor.clicked')
-        self.backgroundcolor_clicked.valueSet.connect(method)
-
-        self.backgroundcolor_transparency = FloatEdit(minimum=0, maximum=255)
-        method = partial(self.optionSet.emit, 'bgcolor.transparency')
-        self.backgroundcolor_transparency.valueSet.connect(method)
+        self.width_edits = {}
+        widths = QtWidgets.QHBoxLayout()
+        widths.setContentsMargins(0, 0, 0, 0)
+        widths.setSpacing(4)
+        for key, label in zip(self.WIDTH_KEYS, ('N', 'H', 'C')):
+            edit = FloatEdit(minimum=0.0)
+            edit.valueSet.connect(partial(self.optionSet.emit, key))
+            edit.setToolTip(
+                {'N': 'Normal', 'H': 'Hovered', 'C': 'Clicked'}[label])
+            self.width_edits[key] = edit
+            widths.addWidget(QtWidgets.QLabel(label))
+            widths.addWidget(edit)
 
         self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(2)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
-        self.layout.addRow('border visible', self.border)
-        self.layout.addRow(Title('Border width (pxf)'))
-        self.layout.addRow('normal', self.borderwidth_normal)
-        self.layout.addRow('hovered', self.borderwidth_hovered)
-        self.layout.addRow('clicked', self.borderwidth_clicked)
+        self.layout.addRow(Title('Background'))
+        self.layout.addRow('normal', self.color_buttons['bgcolor.normal'])
+        self.layout.addRow('hovered', self.color_buttons['bgcolor.hovered'])
+        self.layout.addRow('clicked', self.color_buttons['bgcolor.clicked'])
+        self.layout.addRow('opacity', self.bg_opacity)
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
-        self.layout.addRow(Title('Border color'))
-        self.layout.addRow('normal', self.bordercolor_normal)
-        self.layout.addRow('hovered', self.bordercolor_hovered)
-        self.layout.addRow('clicked', self.bordercolor_clicked)
-        self.layout.addRow('transparency', self.bordercolor_transparency)
-        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
-        self.layout.addRow(Title('Background color'))
-        self.layout.addRow('normal', self.backgroundcolor_normal)
-        self.layout.addRow('hovered', self.backgroundcolor_hovered)
-        self.layout.addRow('clicked', self.backgroundcolor_clicked)
-        self.layout.addRow('transparency', self.backgroundcolor_transparency)
+        self.layout.addRow(Title('Border'))
+        self.layout.addRow('visible', self.border)
+        self.layout.addRow(
+            'normal', self.color_buttons['bordercolor.normal'])
+        self.layout.addRow(
+            'hovered', self.color_buttons['bordercolor.hovered'])
+        self.layout.addRow(
+            'clicked', self.color_buttons['bordercolor.clicked'])
+        self.layout.addRow('opacity', self.border_opacity)
+        self.layout.addRow('width', widths)
         for label in self.findChildren(QtWidgets.QLabel):
-            if not isinstance(label, Title):
+            if not isinstance(label, Title) and label.text() not in 'NHC':
                 label.setFixedWidth(LEFT_CELL_WIDTH)
 
     def set_options(self, options):
+        for key, button in self.color_buttons.items():
+            values = list({option[key] for option in options})
+            button.set_color(values[0] if len(values) == 1 else None)
+
+        for key, edit in self.width_edits.items():
+            values = list({option[key] for option in options})
+            edit.setText(str(values[0]) if len(values) == 1 else None)
+
         values = list({option['border'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.border.setCurrentText(value)
 
-        values = list({option['borderwidth.normal'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.borderwidth_normal.setText(value)
-
-        values = list({option['borderwidth.hovered'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.borderwidth_hovered.setText(value)
-
-        values = list({option['borderwidth.clicked'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.borderwidth_clicked.setText(value)
-
-        values = list({option['bordercolor.normal'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.bordercolor_normal.set_color(value)
-
-        values = list({option['bordercolor.hovered'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.bordercolor_hovered.set_color(value)
-
-        values = list({option['bordercolor.clicked'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.bordercolor_clicked.set_color(value)
-
-        values = list({option['bordercolor.transparency'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.bordercolor_transparency.setText(value)
-
-        values = list({option['bgcolor.normal'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.backgroundcolor_normal.set_color(value)
-
-        values = list({option['bgcolor.hovered'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.backgroundcolor_hovered.set_color(value)
-
-        values = list({option['bgcolor.clicked'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.backgroundcolor_clicked.set_color(value)
-
         values = list({option['bgcolor.transparency'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.backgroundcolor_transparency.setText(value)
+        self.bg_opacity.set_transparency(
+            values[0] if len(values) == 1 else None)
+
+        values = list(
+            {option['bordercolor.transparency'] for option in options})
+        self.border_opacity.set_transparency(
+            values[0] if len(values) == 1 else None)
 
 
 class ActionSettings(QtWidgets.QWidget):
@@ -471,14 +403,14 @@ class TextSettings(QtWidgets.QWidget):
         self.size = FloatEdit(minimum=0.0)
         self.size.valueSet.connect(partial(self.optionSet.emit, 'text.size'))
 
-        self.bold = BoolCombo()
+        self.bold = BoolCheckBox()
         self.bold.valueSet.connect(partial(self.optionSet.emit, 'text.bold'))
 
-        self.italic = BoolCombo()
+        self.italic = BoolCheckBox()
         method = partial(self.optionSet.emit, 'text.italic')
         self.italic.valueSet.connect(method)
 
-        self.color = ColorEdit()
+        self.color = ColorButton()
         self.color.valueSet.connect(partial(self.optionSet.emit, 'text.color'))
 
         self.halignement = QtWidgets.QComboBox()

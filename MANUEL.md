@@ -161,6 +161,25 @@ dans :
 
 Le JSON n'est jamais réécrit — seule la résolution d'affichage change.
 
+## Panneau d'attributs (à droite)
+
+Refondu façon Photoshop :
+
+- **Couleurs = pastilles cliquables** : le bouton affiche la couleur
+  réelle (code hexa en surimpression, noir ou blanc selon la
+  luminosité) ; un clic ouvre le **sélecteur de couleurs natif**. Si la
+  sélection a des couleurs différentes, la pastille affiche « … ».
+- **Opacité = curseur 0-100 %** (une pour le fond, une pour la
+  bordure) — la valeur est convertie vers la « transparence 0-255 »
+  historique du JSON, rien ne change dans le format.
+- **Cases à cocher** pour bordure visible / gras / italique (état
+  intermédiaire si la sélection est mixte).
+- **Épaisseurs de bordure** compactées en une ligne N / H / C
+  (normal / survol / clic).
+- La section **Dimensions a été retirée** (tout se manipule au
+  viewport) — son champ « top » écrivait d'ailleurs dans `shape.right`
+  (bug de l'original).
+
 ## Menu clic droit (récapitulatif)
 
 Copy / Paste / Copy style / Paste style… • Delete • On top / Move up /

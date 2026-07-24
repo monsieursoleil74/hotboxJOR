@@ -191,3 +191,126 @@ class CommandButton(QtWidgets.QWidget):
         self.layout.setSpacing(2)
         self.layout.addWidget(self.mainbutton)
         self.layout.addWidget(self.playbutton)
+
+class ColorButton(QtWidgets.QPushButton):
+    """Pastille de couleur façon Photoshop : le bouton EST la couleur
+    (code hexa affiché en contraste), un clic ouvre le sélecteur de
+    couleurs natif. set_color(None) = valeurs multiples ('...')."""
+    valueSet = QtCore.Signal(str)
+
+    def __init__(self, parent=None):
+        super(ColorButton, self).__init__(parent)
+        self._color = '#888888'
+        self.setFixedHeight(22)
+        self.setCursor(QtCore.Qt.PointingHandCursor)
+        self.released.connect(self.pick_color)
+        self._update_face()
+
+    def color(self):
+        return self._color
+
+    def set_color(self, color):
+        self._color = color
+        self._update_face()
+
+    def _update_face(self):
+        if self._color is None:
+            self.setText('...')
+            self.setStyleSheet(
+                'QPushButton {background: #4a4a4a; color: #bbbbbb;'
+                'border: 1px solid #5a5a5a; border-radius: 3px;}')
+            return
+        qcolor = QtGui.QColor(self._color)
+        # texte noir ou blanc selon la luminosité de la couleur
+        luminance = (
+            0.299 * qcolor.red() + 0.587 * qcolor.green() +
+            0.114 * qcolor.blue())
+        text_color = '#000000' if luminance > 130 else '#ffffff'
+        self.setText(self._color.upper())
+        self.setStyleSheet(
+            'QPushButton {background: %s; color: %s;'
+            'border: 1px solid #222222; border-radius: 3px;}'
+            'QPushButton:hover {border-color: #3388ff;}'
+            % (self._color, text_color))
+
+    def pick_color(self):
+        initial = QtGui.QColor(self._color or '#888888')
+        color = QtWidgets.QColorDialog.getColor(
+            initial, self, 'Choose color')
+        if not color.isValid():
+            return
+        self.set_color(color.name())
+        self.valueSet.emit(color.name())
+
+
+class OpacitySlider(QtWidgets.QWidget):
+    """Curseur d'opacité 0-100 % (stocké en transparence 0-255
+    inversée dans les options — la conversion est faite ici)."""
+    valueSet = QtCore.Signal(object)  # transparence 0-255
+
+    def __init__(self, parent=None):
+        super(OpacitySlider, self).__init__(parent)
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.slider.setRange(0, 100)
+        self.slider.setValue(100)
+        self.label = QtWidgets.QLabel('100%')
+        self.label.setFixedWidth(38)
+        self.label.setAlignment(QtCore.Qt.AlignRight)
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        layout.addWidget(self.slider)
+        layout.addWidget(self.label)
+        self.slider.valueChanged.connect(self._update_label)
+        # émet au relâchement (pas à chaque tick : sinon l'undo déborde)
+        self.slider.sliderReleased.connect(self._emit)
+        self.slider.actionTriggered.connect(self._action_triggered)
+
+    def _update_label(self, value):
+        self.label.setText('%d%%' % value)
+
+    def _action_triggered(self, action):
+        # clic dans la gouttière / flèches clavier : pas de release
+        if action != QtWidgets.QAbstractSlider.SliderMove:
+            QtCore.QTimer.singleShot(0, self._emit)
+
+    def _emit(self):
+        self.valueSet.emit(self.transparency())
+
+    def transparency(self):
+        return int(round(255 - self.slider.value() * 255.0 / 100))
+
+    def set_transparency(self, transparency):
+        self.slider.blockSignals(True)
+        if transparency is None:
+            self.slider.setValue(100)
+            self.label.setText('...')
+        else:
+            value = int(round((255 - float(transparency)) * 100.0 / 255))
+            self.slider.setValue(value)
+            self.label.setText('%d%%' % value)
+        self.slider.blockSignals(False)
+
+
+class BoolCheckBox(QtWidgets.QCheckBox):
+    """Case à cocher compatible avec l'API des BoolCombo (setCurrentText
+    'True'/'False'/None pour les valeurs multiples)."""
+    valueSet = QtCore.Signal(bool)
+
+    def __init__(self, state=True, parent=None):
+        super(BoolCheckBox, self).__init__(parent)
+        self.setChecked(state)
+        self.clicked.connect(self.valueSet.emit)
+
+    def state(self):
+        return self.isChecked()
+
+    def setCurrentText(self, text):
+        self.blockSignals(True)
+        if text is None or text == '...':
+            self.setTristate(True)
+            self.setCheckState(QtCore.Qt.PartiallyChecked)
+        else:
+            self.setTristate(False)
+            self.setChecked(text == 'True')
+        self.blockSignals(False)

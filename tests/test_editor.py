@@ -538,6 +538,61 @@ def test_button_library():
     print('librairie de boutons (stockage, catégories, drop, undo) OK')
 
 
+def test_attribute_panel():
+    """Nouveau panneau : pastilles couleur, opacité 0-100 %, cases à
+    cocher — le tout branché sur les mêmes clés d'options."""
+    from hotbox_designer.widgets import (
+        ColorButton, OpacitySlider, BoolCheckBox)
+
+    # conversion opacité <-> transparence (0-255 inversée)
+    slider = OpacitySlider()
+    slider.set_transparency(0)
+    assert slider.slider.value() == 100 and slider.transparency() == 0
+    slider.set_transparency(255)
+    assert slider.slider.value() == 0 and slider.transparency() == 255
+    slider.set_transparency(127.5)
+    assert slider.slider.value() == 50
+    slider.set_transparency(None)
+    assert slider.label.text() == '...'
+
+    # pastille : couleur unique, valeurs multiples
+    button = ColorButton()
+    button.set_color('#FF0000')
+    assert button.text() == '#FF0000'
+    button.set_color(None)
+    assert button.text() == '...'
+
+    # case à cocher tri-état compatible BoolCombo
+    checkbox = BoolCheckBox()
+    checkbox.setCurrentText('False')
+    assert checkbox.isChecked() is False
+    checkbox.setCurrentText(None)
+    assert checkbox.checkState() == QtCore.Qt.PartiallyChecked
+
+    # le panneau réagit à une sélection et pousse bien une option
+    editor = make_editor([(100, 100, 'a'), (300, 200, 'b')])
+    area = editor.shape_editor
+    area.selection.replace(list(area.shapes))
+    area.update_selection()
+    editor.selection_changed()
+    appearence = editor.attribute_editor.appearence
+    # les deux shapes ont le même fond -> pastille unique
+    assert appearence.color_buttons['bgcolor.normal'].text() == '#888888'
+    # simule un choix de couleur : l'option est appliquée à la sélection
+    appearence.color_buttons['bgcolor.normal'].set_color('#12AB34')
+    appearence.color_buttons['bgcolor.normal'].valueSet.emit('#12ab34')
+    assert all(
+        s.options['bgcolor.normal'] == '#12ab34' for s in area.shapes)
+    # l'opacité 50 % écrit une transparence ~127
+    appearence.bg_opacity.slider.setValue(50)
+    appearence.bg_opacity._emit()
+    assert all(
+        126 <= s.options['bgcolor.transparency'] <= 129
+        for s in area.shapes)
+    editor.close()
+    print('panneau d attributs (pastilles, opacité, cases) OK')
+
+
 def test_press_selects_and_moves():
     """Les deux bugs remontés au 2e test studio : glisser un icône non
     sélectionné doit le déplacer directement (pas un rectangle de
@@ -638,4 +693,5 @@ if __name__ == '__main__':
     test_button_library()
     test_image_path_resolution()
     test_press_selects_and_moves()
+    test_attribute_panel()
     print('TOUT EST VERT')

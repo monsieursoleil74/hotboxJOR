@@ -4,6 +4,18 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Panneau d'attributs façon Photoshop
+
+- **Couleurs en pastilles** : le bouton affiche la couleur (hexa en
+  surimpression), un clic ouvre le sélecteur natif — fini les champs
+  hexa et la pipette capricieuse.
+- **Opacité en curseur 0-100 %** (fond et bordure) au lieu de la
+  transparence 0-255 inversée ; épaisseurs de bordure sur une ligne
+  N/H/C ; cases à cocher (bordure visible, gras, italique).
+- **Section Dimensions retirée** (le viewport fait tout) — son champ
+  « top » écrivait dans `shape.right` (bug de l'original).
+- Format JSON inchangé.
+
 ## 2026-07 — Retours du deuxième test studio
 
 - **Magnet désactivé par défaut** : plus aucun snap tant qu'on n'active
