@@ -6,6 +6,11 @@ moderniser l'éditeur en s'inspirant de
 [dwpicker](https://github.com/DreamWall-Animation/dwpicker) (DreamWall
 Animation), lui-même dérivé du même projet d'origine.
 
+**📖 Documentation** : [`MANUEL.md`](MANUEL.md) — mode d'emploi complet
+(souris, raccourcis, chaque outil et sa logique) ;
+[`CHANGELOG.md`](CHANGELOG.md) — historique de ce qui est implémenté,
+étape par étape. Les deux sont tenus à jour à chaque fonctionnalité.
+
 ## Objectif
 
 Garder le cœur « hotbox » de l'original (menu volatile sous le curseur,

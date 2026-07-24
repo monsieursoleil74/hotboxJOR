@@ -1,0 +1,80 @@
+# Changelog hotboxJOR
+
+Historique des évolutions du fork, de la plus récente à la plus
+ancienne. Chaque entrée correspond à un ou plusieurs commits sur
+`main`. Détails d'usage : `MANUEL.md`.
+
+## 2026-07 — Images portables
+
+- **Résolution des chemins d'images** : un chemin absolu mort est
+  résolu par nom de fichier via `HOTBOX_DESIGNER_ICONS`, le dossier de
+  préférences (+ `icons/`) et les dossiers des hotboxes partagées. Fini
+  les logos à re-pointer après avoir déplacé son dossier d'icônes.
+
+## 2026-07 — Grosse vague éditeur (5 fonctionnalités)
+
+- **Thème sombre** de toute l'interface (éditeur, manager, librairie).
+- **Snap magnétique** au déplacement : bords/centres aimantés aux
+  autres shapes et à la zone, guides cyan, toggle au clic droit.
+- **Lock** : shapes verrouillables (backgrounds), transparentes à la
+  sélection ; Unlock all.
+- **Recherche/remplacement** (Ctrl+H) dans les commandes et labels,
+  portée sélection ou hotbox.
+- **Librairie de boutons** : sauvegarde de boutons configurés par
+  catégories (`button_library.json`), fenêtre à vignettes réelles,
+  drag & drop vers n'importe quel éditeur, partageable.
+
+## 2026-07 — Retours du premier test studio
+
+- **Copier-coller de style** (Ctrl+Maj+C/V) : coller sur la sélection
+  en choisissant quoi (forme, taille, couleurs, texte, image,
+  commandes).
+- **Sélection assainie** : le clic ne prend plus le background sous le
+  bouton (le micro-rectangle de sélection au relâchement embarquait
+  tout) ; un rectangle n'attrape pas une shape qui l'englobe ;
+  rectangle fonctionnel dans les 4 directions.
+- **Menu clic droit** dans l'éditeur.
+- **Glisser fluide** : le drag suit la souris jusqu'au relâchement (un
+  geste rapide « décrochait » dans l'original).
+- **Fit zone** : la zone de travail se recadre sur les boutons (centre
+  recalé), au lieu de piloter les champs size à la main.
+- **Flèches** : déplacer la sélection d'1 unité (Maj = 10).
+- **Fix undo** : l'état initial était stocké par référence et corrompu
+  par la première modification (bug latent de l'original).
+
+## 2026-07 — Multi-éditeurs & copier-coller inter-hotboxes
+
+- **Plusieurs hotboxes éditables en même temps** (une fenêtre par
+  hotbox, titrée) — l'original fermait le premier éditeur en ouvrant le
+  second.
+- **Ctrl+C/V par le presse-papier système** : copier des boutons d'une
+  hotbox et les coller dans une autre, même entre deux sessions.
+- Fix : la sauvegarde écrivait dans la hotbox de la ligne sélectionnée
+  du manager, pas celle de l'éditeur émetteur.
+
+## 2026-07 — Éditeur nouvelle génération (base dwpicker)
+
+- **Viewport** : zoom molette vers le curseur, pan clic-molette,
+  F = recadrer, plan de travail sur fond sombre, éditeur redimensionnable
+  (fini le canvas figé 750×550).
+- **Poignées à taille d'écran constante** à tout zoom.
+- **Alt + glisser = dupliquer** la sélection.
+- **Alignement / distribution** (8 boutons, logique dwpicker adaptée).
+- Suite de tests headless (`tests/test_editor.py`), enrichie depuis à
+  chaque fonctionnalité.
+
+## 2026-07 — Modernisation
+
+- **Python 3 / PySide6** (Maya 2022 → 2026) via mise à jour du shim
+  `vendor/Qt.py` (2.0.5) ; corrections Qt6 (QRegExp, QRect/QPoint
+  flottants, stylesheets rgba).
+- **Mode standalone** : `python -m hotbox_designer` sans DCC (données
+  dans `~/.hotboxjor`).
+
+## 2026-07 — Naissance du fork
+
+- Import verbatim de
+  [hotbox_designer](https://github.com/luckylyk/hotbox_designer) de
+  Lionel Brouyère (Clear BSD). Les améliorations d'éditeur s'inspirent
+  de [dwpicker](https://github.com/DreamWall-Animation/dwpicker)
+  (DreamWall Animation, MIT) — code adapté et crédité, icônes reprises.
