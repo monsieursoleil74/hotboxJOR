@@ -150,6 +150,26 @@ Stockage : `button_library.json` dans le dossier de données
 (préférences Maya ; `~/.hotboxjor` en standalone). **Partage** : copier
 ce fichier à un collègue lui donne la librairie.
 
+## Import de pickers dwpicker
+
+Le bouton **Import** du manager accepte aussi les fichiers `.json` de
+**dwpicker** — la détection est automatique, rien à choisir :
+
+- les **targets de sélection** (le cœur d'un picker) deviennent une
+  commande `cmds.select([...])` sur le clic gauche ;
+- les **commandes** (nouveau format ≥ 0.11 comme l'ancien) sont
+  réparties sur les clics gauche/droite, langage conservé ;
+- les shapes `rounded_rect`/`custom` deviennent des rectangles (pas de
+  chemins vectoriels côté hotbox) ;
+- les **fonds** de picker arrivent **verrouillés** (Unlock all pour les
+  libérer) ;
+- la **zone** est calculée automatiquement autour des shapes (comme le
+  bouton fit zone), le centre au milieu.
+
+Limites : panneaux multiples fusionnés, layers de visibilité et menus
+contextuels ignorés, une seule commande par clic (les surnuméraires
+sont ignorées).
+
 ## Images des boutons (chemins portables)
 
 Les chemins d'images sont stockés en absolu dans le JSON ; déplacer son

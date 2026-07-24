@@ -4,6 +4,13 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Import dwpicker
+
+- Le bouton Import du manager reconnaît et convertit les fichiers
+  `.json` de dwpicker : targets de sélection → `cmds.select(...)` au
+  clic gauche, commandes (ancien et nouveau format) réparties sur les
+  clics, fonds verrouillés, zone auto-calculée autour des shapes.
+
 ## 2026-07 — Librairie en shelf intégrée
 
 - La librairie n'est plus une fenêtre flottante : c'est une **shelf en

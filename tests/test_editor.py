@@ -691,6 +691,94 @@ def test_image_path_resolution():
     print('résolution des chemins d images (dossier déplacé) OK')
 
 
+def test_dwpicker_import():
+    from hotbox_designer.dwpickerimport import (
+        is_dwpicker_data, convert_dwpicker_to_hotbox)
+    from hotbox_designer.data import ensure_old_data_compatible
+
+    picker = {
+        'general': {
+            'name': 'face_picker',
+            'version': [0, 12, 0],
+            'panels.names': ['Panel 1'],
+            'panels': [[1.0, [1.0]]]},
+        'shapes': [
+            {   # fond de picker
+                'background': True,
+                'shape': 'rounded_rect',
+                'shape.left': -50.0, 'shape.top': -30.0,
+                'shape.width': 400.0, 'shape.height': 300.0,
+                'bgcolor.normal': '#223344',
+                'action.targets': [], 'action.commands': []},
+            {   # bouton de sélection (le cœur d'un picker)
+                'shape': 'round',
+                'shape.left': 0.0, 'shape.top': 0.0,
+                'shape.width': 40.0, 'shape.height': 40.0,
+                'bgcolor.normal': '#B05030',
+                'text.content': 'L_brow',
+                'action.targets': ['L_brow_ctrl', 'L_brow_02_ctrl'],
+                'action.commands': []},
+            {   # commande nouveau format (>= 0.11)
+                'shape': 'custom',
+                'shape.left': 100.0, 'shape.top': 50.0,
+                'shape.width': 80.0, 'shape.height': 30.0,
+                'text.content': 'reset',
+                'action.targets': [],
+                'action.commands': [{
+                    'enabled': True, 'button': 'right',
+                    'language': 'mel', 'command': 'ResetTransformations;'}]},
+            {   # ancien format dwpicker (mêmes clés que la hotbox)
+                'shape': 'square',
+                'shape.left': 200.0, 'shape.top': 100.0,
+                'shape.width': 80.0, 'shape.height': 30.0,
+                'action.left': True, 'action.left.language': 'python',
+                'action.left.command': 'print("old style")'}]}
+
+    # détection : dwpicker oui, hotbox non
+    assert is_dwpicker_data(picker)
+    hotbox_file = json.load(open(HUMAN))
+    assert not is_dwpicker_data(hotbox_file)
+
+    data = convert_dwpicker_to_hotbox(picker)
+    assert data['general']['name'] == 'face_picker'
+    background, select, newcmd, oldcmd = data['shapes']
+
+    # zone recadrée : la bbox commençait à (-50, -30), marge 10
+    assert background['shape.left'] == 10.0
+    assert background['shape.top'] == 10.0
+    assert data['general']['width'] == 420
+    assert data['general']['height'] == 320
+    # le fond arrive verrouillé, couleur conservée
+    assert background.get('lock') is True
+    assert background['bgcolor.normal'] == '#223344'
+    assert background['shape'] == 'square'  # rounded_rect converti
+
+    # targets -> commande de sélection Maya au clic gauche
+    assert select['action.left'] is True
+    assert "cmds.select(['L_brow_ctrl', 'L_brow_02_ctrl']" in (
+        select['action.left.command'])
+    assert select['shape'] == 'round'
+    assert select['text.content'] == 'L_brow'
+
+    # commande nouveau format sur le bon bouton, langage conservé
+    assert newcmd['action.right'] is True
+    assert newcmd['action.right.language'] == 'mel'
+    assert newcmd['action.right.command'] == 'ResetTransformations;'
+    assert newcmd['action.left'] is False
+
+    # ancien format repris tel quel
+    assert oldcmd['action.left.command'] == 'print("old style")'
+
+    # la hotbox convertie se charge dans l'éditeur et l'ancien pipeline
+    data = ensure_old_data_compatible(data)
+    editor = HotboxEditor(data, Standalone(), parent=None)
+    editor.show()
+    APP.processEvents()
+    assert len(editor.shape_editor.shapes) == 4
+    editor.close()
+    print('import dwpicker (targets, commandes, zone, fond) OK')
+
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -708,4 +796,5 @@ if __name__ == '__main__':
     test_image_path_resolution()
     test_press_selects_and_moves()
     test_attribute_panel()
+    test_dwpicker_import()
     print('TOUT EST VERT')

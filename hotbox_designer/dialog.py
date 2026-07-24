@@ -18,12 +18,18 @@ def warning(title, message, parent=None):
 
 def import_hotbox():
     filenames = QtWidgets.QFileDialog.getOpenFileName(
-        None, 'Import hotbox', os.path.expanduser("~"),
+        None, 'Import hotbox (or dwpicker file)', os.path.expanduser("~"),
         filter='*.json')
     if not filenames[0]:
         return
     with open(filenames[0], 'r') as f:
-        return ensure_old_data_compatible(json.load(f))
+        data = json.load(f)
+    # un picker dwpicker est reconnu et converti à la volée
+    from hotbox_designer.dwpickerimport import (
+        is_dwpicker_data, convert_dwpicker_to_hotbox)
+    if is_dwpicker_data(data):
+        return convert_dwpicker_to_hotbox(data)
+    return ensure_old_data_compatible(data)
 
 
 def import_hotbox_link():
