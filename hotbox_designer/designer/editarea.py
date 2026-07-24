@@ -41,8 +41,9 @@ class ShapeEditArea(QtWidgets.QWidget):
         # 'move' ou 'resize' pendant un drag : le geste suit la souris
         # jusqu'au relâchement, même si le curseur sort du manipulateur
         self.drag_mode = None
-        # snap magnétique aux autres shapes pendant le déplacement
-        self.magnet_enabled = True
+        # snap magnétique aux autres shapes : DÉSACTIVÉ par défaut
+        # (activable via clic droit -> Magnet snapping)
+        self.magnet_enabled = False
         self.magnet_guides = []
         self.manipulator_moved = False
         self.edit_center_mode = False
@@ -174,6 +175,19 @@ class ShapeEditArea(QtWidgets.QWidget):
                 self.clicked_shape = shape
                 break
 
+        # presser une shape non sélectionnée la sélectionne tout de
+        # suite : le drag qui suit la déplace directement (avant, ça
+        # démarrait un rectangle de sélection — très déroutant)
+        if (not direction and self.clicked_shape is not None
+                and self.selection.mode == 'replace'
+                and self.clicked_shape not in self.selection):
+            self.selection.set([self.clicked_shape])
+            self.update_selection()
+            rect = self.manipulator.rect
+            if rect is not None:
+                self.transform.set_rect(rect)
+                self.transform.reference_rect = QtCore.QRectF(rect)
+
         if rect and rect.contains(cursor):
             self.transform.set_reference_point(cursor)
         handeling = bool(direction or rect.contains(cursor) if rect else False)
@@ -202,10 +216,11 @@ class ShapeEditArea(QtWidgets.QWidget):
             return
 
         shape = self.clicked_shape
+        # un clic sans déplacement (et hors poignée) sélectionne la
+        # shape cliquée seule — y compris au sein d'une multi-sélection
         selection_update_conditions = (
-            self.handeling is False
-            or shape not in self.selection
-            and self.manipulator_moved is False)
+            self.manipulator_moved is False
+            and self.transform.direction is None)
         if selection_update_conditions:
             self.selection.set([shape] if shape else None)
             self.update_selection()

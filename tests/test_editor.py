@@ -338,16 +338,16 @@ def test_selection_ignores_background():
     assert area.selection.shapes == [button], [
         s.options['text.content'] for s in area.selection.shapes]
 
-    # rectangle autour des deux boutons : les boutons, pas le fond
-    area.selection.clear()
-    area.update_selection()
-    driver.drag((50, 60), (450, 280))
-    assert background not in area.selection.shapes
-    assert len(area.selection.shapes) == 2
-
     # clic sur le fond nu : le fond est sélectionnable normalement
     driver.click((520, 380))
     assert area.selection.shapes == [background]
+
+    # background verrouillé : le rectangle de sélection ne prend que
+    # les boutons (et presser le fond ne le déplace pas)
+    editor.lock_selection()
+    driver.drag((50, 60), (450, 280))
+    assert background not in area.selection.shapes
+    assert len(area.selection.shapes) == 2
     editor.close()
     print('sélection : background ignoré au clic et au rectangle OK')
 
@@ -423,6 +423,8 @@ def test_magnet():
     area = editor.shape_editor
     driver = Driver(area)
     static, moving = area.shapes
+    assert area.magnet_enabled is False  # désactivé par défaut
+    area.magnet_enabled = True
     area.selection.replace([moving])
     area.update_selection()
     # glisser 'moving' pour amener son bord gauche PRÈS de celui de
@@ -536,6 +538,38 @@ def test_button_library():
     print('librairie de boutons (stockage, catégories, drop, undo) OK')
 
 
+def test_press_selects_and_moves():
+    """Les deux bugs remontés au 2e test studio : glisser un icône non
+    sélectionné doit le déplacer directement (pas un rectangle de
+    zone), et un clic sur un bouton d'une multi-sélection doit le
+    sélectionner seul."""
+    editor = make_editor([(100, 100, 'a'), (300, 200, 'b'), (100, 300, 'c')])
+    area = editor.shape_editor
+    driver = Driver(area)
+    a, b, c = area.shapes
+
+    # glisser 'b' SANS l'avoir sélectionné avant : il se déplace
+    assert area.selection.shapes == []
+    driver.drag((360, 212), (410, 262))
+    assert area.selection.shapes == [b]
+    assert near(b.options['shape.left'], 350) and near(
+        b.options['shape.top'], 250)
+    assert area.selection_square.handeling is False
+
+    # tout sélectionner puis cliquer 'a' : 'a' seul reste sélectionné
+    area.selection.replace(list(area.shapes))
+    area.update_selection()
+    driver.click((160, 112))
+    assert area.selection.shapes == [a]
+
+    # et le drag suivant repart normalement (pas de mode cassé)
+    driver.drag((160, 112), (180, 132))
+    assert near(a.options['shape.left'], 120) and near(
+        a.options['shape.top'], 120)
+    editor.close()
+    print('press = sélection + déplacement direct, clic isole OK')
+
+
 def test_image_path_resolution():
     """Un dossier d'icônes déplacé ne casse plus les logos : l'image
     est retrouvée par son nom de fichier dans les dossiers connus."""
@@ -603,4 +637,5 @@ if __name__ == '__main__':
     test_search_replace()
     test_button_library()
     test_image_path_resolution()
+    test_press_selects_and_moves()
     print('TOUT EST VERT')

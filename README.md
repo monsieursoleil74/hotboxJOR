@@ -72,7 +72,8 @@ vieillissant par une expérience façon dwpicker :
   recadrage.
 - **Thème sombre** de toute l'interface (éditeur, manager, librairie) —
   le reader garde l'apparence de la hotbox, évidemment.
-- **Snap magnétique** pendant le déplacement : bords et centres
+- **Snap magnétique** (désactivé par défaut, clic droit → Magnet
+  snapping) : bords et centres
   s'aimantent à ceux des autres shapes et de la zone, guides cyan
   affichés (désactivable via clic droit → Magnet snapping ; la grille,
   quand elle est active, garde la priorité).

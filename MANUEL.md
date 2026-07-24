@@ -41,8 +41,9 @@ l'écran** quel que soit le zoom.
 
 | Geste | Action |
 |---|---|
-| **Clic** sur un bouton | Sélectionne ce bouton seul (celui du dessus s'ils se chevauchent) |
-| **Glisser sur le fond** | Rectangle de sélection multiple |
+| **Presser** un bouton | Le sélectionne immédiatement — le drag qui suit le **déplace** directement (façon dwpicker/Figma) |
+| **Clic** sur un bouton d'une multi-sélection | Le sélectionne **seul** |
+| **Glisser sur le fond** (zone vide ou shape verrouillée) | Rectangle de sélection multiple |
 | **Maj + clic/rectangle** | Ajoute à la sélection |
 | **Ctrl + clic/rectangle** | Retire de la sélection |
 | **Ctrl+Maj + clic/rectangle** | Inverse |
@@ -56,6 +57,9 @@ Logique particulière :
   entièrement** — un background n'est pris que si on le balaie vraiment.
   Pour sélectionner le fond, clique une zone nue.
 - Une shape **verrouillée** (voir Lock) est transparente à la sélection.
+- **Conseil** : verrouille ton background — comme presser une shape la
+  déplace, un fond verrouillé laisse le rectangle de sélection
+  fonctionner partout.
 
 ## L'éditeur — manipulation
 
@@ -68,15 +72,16 @@ Logique particulière :
 | **Suppr** | Supprimer la sélection |
 | **Ctrl+Z / Ctrl+Y** | Undo / redo (tout est annulable) |
 
-### Snap magnétique 🧲
+### Snap magnétique 🧲 (désactivé par défaut)
 
-Pendant un déplacement, les bords et centres de la sélection
-**s'aimantent** à ceux des autres shapes et de la zone (seuil ~6 px
-écran). Des guides cyan en pointillés montrent l'alignement trouvé.
+**Aucun snap n'est actif par défaut.** Deux systèmes, au choix :
 
-- Désactivable : clic droit → « Magnet snapping ».
-- Si la **grille** (bouton aimant rouge + champs x/y) est active, elle a
-  la priorité et le magnet se met en veille.
+- La **grille** : bouton aimant rouge de la barre d'outils + pas x/y —
+  comme dans l'original.
+- Le **magnet aux shapes** (opt-in) : clic droit → « Magnet snapping » —
+  bords et centres s'aimantent à ceux des autres shapes et de la zone
+  (~6 px écran), guides cyan en pointillés. Si la grille est active,
+  elle garde la priorité.
 
 ### Alignement / distribution
 

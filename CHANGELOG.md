@@ -4,6 +4,19 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Retours du deuxième test studio
+
+- **Magnet désactivé par défaut** : plus aucun snap tant qu'on n'active
+  rien — la grille via l'icône aimant, le magnet aux shapes via clic
+  droit (opt-in).
+- **Presser une shape la sélectionne et le drag la déplace
+  directement** (façon dwpicker/Figma). Avant, glisser un icône non
+  sélectionné démarrait un rectangle de sélection — d'où l'impression
+  de « mode rectangle cassé ».
+- **Clic sur un bouton d'une multi-sélection = il est sélectionné
+  seul** (la sélection un par un refonctionne ; dans l'original ce
+  comportement reposait par accident sur le micro-rectangle du clic).
+
 ## 2026-07 — Images portables
 
 - **Résolution des chemins d'images** : un chemin absolu mort est
