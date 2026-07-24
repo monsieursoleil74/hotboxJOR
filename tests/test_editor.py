@@ -16,7 +16,7 @@ import sys
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore
+from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 
 APP = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
@@ -536,6 +536,58 @@ def test_button_library():
     print('librairie de boutons (stockage, catégories, drop, undo) OK')
 
 
+def test_image_path_resolution():
+    """Un dossier d'icônes déplacé ne casse plus les logos : l'image
+    est retrouvée par son nom de fichier dans les dossiers connus."""
+    import tempfile
+    from hotbox_designer import images
+    from hotbox_designer.images import (
+        register_image_root, resolve_image_path, ICONS_ENV_VARIABLE)
+    from hotbox_designer.interactive import Shape
+    from hotbox_designer.templates import SQUARE_BUTTON
+
+    tmp = tempfile.mkdtemp()
+    pixmap = QtGui.QPixmap(8, 8)
+    pixmap.fill(QtGui.QColor('red'))
+    icon_path = os.path.join(tmp, 'star.png')
+    pixmap.save(icon_path)
+
+    dead_path = 'C:\\ancien\\dossier\\deplace\\star.png'
+    # sans dossier connu : le chemin mort reste mort
+    images._image_roots[:] = []
+    assert resolve_image_path(dead_path) == dead_path
+    # dossier enregistré : l'image est retrouvée par nom
+    register_image_root(tmp)
+    assert resolve_image_path(dead_path) == icon_path
+    # sous-dossier icons/ d'un dossier enregistré
+    sub = tempfile.mkdtemp()
+    os.makedirs(os.path.join(sub, 'icons'))
+    icon2 = os.path.join(sub, 'icons', 'moon.png')
+    pixmap.save(icon2)
+    images._image_roots[:] = [sub]
+    assert resolve_image_path('/vieux/chemin/moon.png') == icon2
+    # variable d'environnement prioritaire
+    images._image_roots[:] = []
+    os.environ[ICONS_ENV_VARIABLE] = tmp
+    try:
+        assert resolve_image_path(dead_path) == icon_path
+    finally:
+        del os.environ[ICONS_ENV_VARIABLE]
+
+    # de bout en bout : une Shape avec un chemin mort charge l'image
+    images._image_roots[:] = [tmp]
+    options = dict(SQUARE_BUTTON)
+    options['image.path'] = dead_path
+    shape = Shape(options)
+    assert not shape.pixmap.isNull()
+    # un chemin valide reste utilisé tel quel
+    options['image.path'] = icon_path
+    assert not Shape(options).pixmap.isNull()
+    # le JSON n'est pas réécrit : le chemin stocké reste celui d'origine
+    assert options['image.path'] == icon_path
+    print('résolution des chemins d images (dossier déplacé) OK')
+
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -550,4 +602,5 @@ if __name__ == '__main__':
     test_magnet()
     test_search_replace()
     test_button_library()
+    test_image_path_resolution()
     print('TOUT EST VERT')

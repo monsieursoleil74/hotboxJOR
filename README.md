@@ -119,6 +119,23 @@ import hotbox_designer
 hotbox_designer.launch_manager('maya')
 ```
 
+### Images des boutons (chemins portables)
+
+Les hotboxes stockent des chemins absolus : dans l'original, déplacer
+son dossier d'icônes cassait tous les logos. Désormais, si le chemin
+enregistré n'existe plus, l'image est **retrouvée par son nom de
+fichier** dans les dossiers connus :
+
+- le dossier pointé par la variable d'environnement
+  `HOTBOX_DESIGNER_ICONS` (recommandé : pointe-la sur ton dossier
+  d'icônes, déplace-le quand tu veux) ;
+- le dossier de données (préférences Maya) et son sous-dossier
+  `icons/` — y poser ses icônes marche donc aussi ;
+- les dossiers des hotboxes partagées (une hotbox liée transporte ses
+  icônes à côté d'elle).
+
+Le JSON n'est pas réécrit : seul l'affichage résout le chemin.
+
 ### Données & hotkeys
 
 - Les hotboxes vivent dans `hotboxes.json` dans les **préférences

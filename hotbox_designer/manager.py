@@ -44,10 +44,15 @@ def initialize(application):
 
 
 def load_hotboxes(application):
+    from hotbox_designer.images import register_image_root
     hotboxes_datas = load_hotboxes_datas(application.local_file)
     file_ = application.shared_file
+    links = load_json(file_)
+    for link in links:
+        # une hotbox partagée transporte souvent ses icônes à côté
+        register_image_root(os.path.dirname(link))
     hotboxes_datas += [
-        ensure_old_data_compatible(load_json(f)) for f in load_json(file_)]
+        ensure_old_data_compatible(load_json(f)) for f in links]
 
     for hotboxes_data in hotboxes_datas:
         name = hotboxes_data['general']['name']

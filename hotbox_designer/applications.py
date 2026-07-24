@@ -21,6 +21,10 @@ class AbstractApplication(object):
     def __init__(self):
         self.name = type(self).__name__
         folder = self.get_data_folder()
+        # les images manquantes seront recherchées par nom de fichier
+        # dans ce dossier (et son sous-dossier icons/)
+        from hotbox_designer.images import register_image_root
+        register_image_root(folder)
         self.local_file = os.path.join(folder, HOTBOXES_FILENAME)
         self.shared_file = os.path.join(folder, SHARED_HOTBOXES_FILENAME)
         self.main_window = self.get_main_window()

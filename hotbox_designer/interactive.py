@@ -159,8 +159,9 @@ class Shape():
         return False
 
     def synchronize_image(self):
+        from hotbox_designer.images import resolve_image_path
         self.pixmap = QtGui.QPixmap(
-            os.path.expanduser(self.options['image.path']))
+            resolve_image_path(self.options['image.path']))
         if self.options['image.fit'] is True:
             self.image_rect = None
             return
