@@ -188,6 +188,142 @@ class ButtonLibraryWindow(QtWidgets.QWidget):
         self.refresh()
 
 
+class ShelfList(QtWidgets.QListWidget):
+    """Rangée de boutons d'une catégorie, source du drag & drop."""
+
+    def __init__(self, parent=None):
+        super(ShelfList, self).__init__(parent)
+        self.setViewMode(QtWidgets.QListView.IconMode)
+        self.setFlow(QtWidgets.QListView.LeftToRight)
+        self.setWrapping(False)
+        self.setIconSize(QtCore.QSize(THUMB_SIZE * 2, THUMB_SIZE))
+        self.setDragEnabled(True)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+        self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.setSpacing(4)
+
+    def selected_entries(self):
+        return [
+            item.data(QtCore.Qt.UserRole)
+            for item in self.selectedItems()
+            if item.data(QtCore.Qt.UserRole)]
+
+    def startDrag(self, actions):
+        entries = self.selected_entries()
+        if not entries:
+            return
+        mime = QtCore.QMimeData()
+        payload = json.dumps(
+            [entry['options'] for entry in entries]).encode('utf-8')
+        mime.setData(BUTTONS_MIME, QtCore.QByteArray(payload))
+        drag = QtGui.QDrag(self)
+        drag.setMimeData(mime)
+        pixmap = self.selectedItems()[0].icon().pixmap(
+            THUMB_SIZE * 2, THUMB_SIZE)
+        if not pixmap.isNull():
+            drag.setPixmap(pixmap)
+        drag.exec_(QtCore.Qt.CopyAction)
+
+
+class LibraryShelf(QtWidgets.QWidget):
+    """Librairie intégrée en bas de l'éditeur, façon shelf Maya :
+    un onglet par catégorie, les boutons se glissent-déposent vers la
+    hotbox juste au-dessus. Clic droit sur un bouton : supprimer."""
+
+    def __init__(self, application, parent=None):
+        super(LibraryShelf, self).__init__(parent)
+        self.path = library_path(application)
+        self.tabs = QtWidgets.QTabWidget()
+        self.tabs.setDocumentMode(True)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(self.tabs)
+        self.setFixedHeight(THUMB_SIZE + 74)
+        register_shelf(self)
+        self.refresh()
+
+    def categories(self):
+        return sorted({
+            entry.get('category') or DEFAULT_CATEGORY
+            for entry in load_library(self.path)})
+
+    def refresh(self):
+        current = self.tabs.tabText(self.tabs.currentIndex())
+        self.tabs.clear()
+        by_category = {}
+        for entry in load_library(self.path):
+            category = entry.get('category') or DEFAULT_CATEGORY
+            by_category.setdefault(category, []).append(entry)
+        if not by_category:
+            empty = ShelfList()
+            empty.setToolTip(
+                'Save buttons here: select shapes then use the save '
+                'button of the toolbar')
+            self.tabs.addTab(empty, DEFAULT_CATEGORY)
+            return
+        for category in sorted(by_category):
+            shelf_list = ShelfList()
+            shelf_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+            shelf_list.customContextMenuRequested.connect(
+                lambda pos, lst=shelf_list: self._menu(lst, pos))
+            for entry in sorted(
+                    by_category[category], key=lambda e: e.get('name') or ''):
+                item = QtWidgets.QListWidgetItem(entry.get('name') or 'button')
+                item.setIcon(button_thumbnail(entry['options']))
+                item.setData(QtCore.Qt.UserRole, entry)
+                item.setToolTip(
+                    '%s — drag & drop into the hotbox' % (
+                        entry.get('name') or 'button'))
+                shelf_list.addItem(item)
+            index = self.tabs.addTab(shelf_list, category)
+            if category == current:
+                self.tabs.setCurrentIndex(index)
+
+    def current_category(self):
+        text = self.tabs.tabText(self.tabs.currentIndex())
+        return text or DEFAULT_CATEGORY
+
+    def _menu(self, shelf_list, position):
+        entries = shelf_list.selected_entries()
+        if not entries:
+            return
+        menu = QtWidgets.QMenu(self)
+        label = ('Delete "%s"' % entries[0]['name']
+                 if len(entries) == 1 else 'Delete %d buttons' % len(entries))
+        menu.addAction(label, lambda: self._delete(entries))
+        menu.exec_(shelf_list.mapToGlobal(position))
+
+    def _delete(self, entries):
+        remaining = [e for e in load_library(self.path) if e not in entries]
+        save_library(self.path, remaining)
+        refresh_shelves()
+
+    def add_entries(self, new_entries):
+        entries = load_library(self.path)
+        entries.extend(new_entries)
+        save_library(self.path, entries)
+        refresh_shelves()
+
+
+_shelves = []
+
+
+def register_shelf(shelf):
+    _shelves.append(shelf)
+    shelf.destroyed.connect(
+        lambda *_: _shelves.remove(shelf) if shelf in _shelves else None)
+
+
+def refresh_shelves():
+    """Toutes les shelves ouvertes (un éditeur chacune) se resynchronisent."""
+    for shelf in list(_shelves):
+        try:
+            shelf.refresh()
+        except RuntimeError:  # widget C++ détruit
+            _shelves.remove(shelf)
+
+
 _library_windows = {}
 
 

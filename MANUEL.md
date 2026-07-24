@@ -128,20 +128,23 @@ droit) — la zone se recadre sur la bounding box des boutons (marge 10),
 les shapes et le **centre** sont recalés (la hotbox apparaîtra au même
 endroit relatif sous le curseur), la vue est recadrée. Annulable.
 
-## Librairie de boutons 📚
+## Librairie de boutons 📚 (shelf intégrée, façon shelf Maya)
 
 L'idée : configurer un bouton une fois (commande, couleurs, texte…),
-le ranger, le réutiliser dans toutes ses hotboxes.
+le ranger, le réutiliser dans toutes ses hotboxes. La librairie est une
+**shelf en bas de l'éditeur** : un onglet par catégorie, chaque bouton
+affiché avec son vrai rendu en vignette.
 
 - **Sauvegarder** : sélectionne un ou plusieurs boutons → bouton 💾 de
   la barre d'outils (ou clic droit → « Save selection to library… ») →
-  nom + catégorie (libre : Rig, Anim, Selection…).
-- **Réutiliser** : bouton librairie de la barre d'outils (ou clic
-  droit → « Button library… ») → la fenêtre liste les boutons par
-  catégorie, chaque entrée montre **le vrai rendu du bouton** en
-  vignette → **glisse-dépose** dans n'importe quel éditeur : le bouton
-  atterrit sous le curseur, sélectionné. Multi-sélection possible.
-- **Supprimer** : sélectionner dans la librairie → « Delete selected ».
+  nom + catégorie (libre : Rig, Anim, Selection… — l'onglet courant est
+  proposé par défaut). Toutes les shelves ouvertes se rafraîchissent.
+- **Réutiliser** : **glisse-dépose** depuis la shelf vers le canvas
+  juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
+  Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.
+- **Supprimer** : clic droit sur un bouton de la shelf → Delete.
+- **Masquer/afficher** la shelf : le bouton librairie de la barre
+  d'outils.
 
 Stockage : `button_library.json` dans le dossier de données
 (préférences Maya ; `~/.hotboxjor` en standalone). **Partage** : copier

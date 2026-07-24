@@ -4,6 +4,15 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Librairie en shelf intégrée
+
+- La librairie n'est plus une fenêtre flottante : c'est une **shelf en
+  bas de l'éditeur, façon shelf Maya** — un onglet par catégorie,
+  vignettes réelles, drag & drop vers le canvas au-dessus (ou un autre
+  éditeur), clic droit = supprimer, bouton barre d'outils =
+  masquer/afficher. Sauvegarde : l'onglet courant est proposé comme
+  catégorie ; toutes les shelves ouvertes se resynchronisent.
+
 ## 2026-07 — Panneau d'attributs façon Photoshop
 
 - **Couleurs en pastilles** : le bouton affiche la couleur (hexa en

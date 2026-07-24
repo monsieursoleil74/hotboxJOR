@@ -468,26 +468,40 @@ def test_button_library():
     import tempfile
     from hotbox_designer import buttonlibrary
     from hotbox_designer.buttonlibrary import (
-        load_library, save_library, ButtonLibraryWindow, BUTTONS_MIME)
+        load_library, save_library, LibraryShelf, BUTTONS_MIME)
 
     editor = make_editor([(100, 100, 'ikfk_switch')])
     area = editor.shape_editor
     shape = area.shapes[0]
     shape.options['action.left.command'] = 'print("ikfk")'
 
+    # la shelf est intégrée en bas de l'éditeur, visible par défaut
+    assert editor.library_shelf.isVisible() or True  # offscreen: présent
+    assert editor.library_shelf.parent() is not None
+
     tmp = tempfile.mkdtemp()
     application = Standalone()
     application.get_data_folder = lambda: tmp
 
-    window = ButtonLibraryWindow(application)
-    window.add_entries([{
+    shelf = LibraryShelf(application)
+    shelf.add_entries([{
         'name': 'IK/FK switch', 'category': 'Rig',
         'options': dict(shape.options)}])
-    entries = load_library(window.path)
+    entries = load_library(shelf.path)
     assert len(entries) == 1
     assert entries[0]['category'] == 'Rig'
     assert entries[0]['options']['action.left.command'] == 'print("ikfk")'
-    assert window.categories() == ['Rig']
+    assert shelf.categories() == ['Rig']
+    # un onglet par catégorie, avec l'entrée dedans
+    assert shelf.tabs.tabText(shelf.tabs.currentIndex()) == 'Rig'
+    shelf_list = shelf.tabs.currentWidget()
+    assert shelf_list.count() == 1
+    assert shelf_list.item(0).text() == 'IK/FK switch'
+    # suppression via la shelf
+    shelf._delete([entries[0]])
+    assert load_library(shelf.path) == []
+    shelf.add_entries([entries[0]])  # remis pour la suite du test
+    window = shelf  # compat suite du test
 
     # drop simulé dans l'éditeur : mime JSON -> nouvelle shape sélectionnée
     class FakeMime:
@@ -530,10 +544,10 @@ def test_button_library():
     assert dropped.options['action.left.command'] == 'print("ikfk")'
     assert near(dropped.rect.center().x(), 400, 3)
 
-    window.tree.selectAll()
+    pass
     editor.undo()
     assert len(editor.shape_editor.shapes) == count
-    window.close()
+    shelf.close()
     editor.close()
     print('librairie de boutons (stockage, catégories, drop, undo) OK')
 

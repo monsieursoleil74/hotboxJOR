@@ -124,6 +124,10 @@ class HotboxEditor(QtWidgets.QWidget):
         self.attribute_editor.rectModified.connect(self.rect_modified)
         self.attribute_editor.imageModified.connect(self.image_modified)
 
+        # librairie intégrée en bas, façon shelf Maya
+        from hotbox_designer.buttonlibrary import LibraryShelf
+        self.library_shelf = LibraryShelf(self.application)
+
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setContentsMargins(0, 0, 0, 0)
         self.hlayout.addWidget(self.shape_editor, stretch=1)
@@ -133,7 +137,8 @@ class HotboxEditor(QtWidgets.QWidget):
         self.vlayout.setContentsMargins(0, 0, 0, 0)
         self.vlayout.setSpacing(0)
         self.vlayout.addWidget(self.menu)
-        self.vlayout.addLayout(self.hlayout)
+        self.vlayout.addLayout(self.hlayout, stretch=1)
+        self.vlayout.addWidget(self.library_shelf)
 
     def copy(self):
         shapes = [dict(s.options) for s in self.shape_editor.selection]
@@ -202,23 +207,22 @@ class HotboxEditor(QtWidgets.QWidget):
         menu.exec_(global_pos)
 
     def open_button_library(self):
-        from hotbox_designer.buttonlibrary import show_button_library
-        show_button_library(
-            self.application, parent=self.application.main_window)
+        """Bouton librairie de la barre d'outils : affiche/masque la
+        shelf du bas."""
+        self.library_shelf.setVisible(not self.library_shelf.isVisible())
 
     def save_selection_to_library(self):
-        """Range les boutons sélectionnés dans la librairie (nom +
+        """Range les boutons sélectionnés dans la shelf (nom +
         catégorie), pour les glisser-déposer dans d'autres hotboxes."""
-        from hotbox_designer.buttonlibrary import (
-            SaveToLibraryDialog, show_button_library)
+        from hotbox_designer.buttonlibrary import SaveToLibraryDialog
         from hotbox_designer.dialog import warning
         shapes = list(self.shape_editor.selection)
         if not shapes:
             return warning('Button library', 'No shape selected')
-        window = show_button_library(
-            self.application, parent=self.application.main_window)
         default = shapes[0].options.get('text.content') or 'button'
-        dialog = SaveToLibraryDialog(window.categories(), default, self)
+        dialog = SaveToLibraryDialog(
+            self.library_shelf.categories(), default, self)
+        dialog.category.setCurrentText(self.library_shelf.current_category())
         if dialog.exec_() == QtWidgets.QDialog.Rejected:
             return
         name = dialog.name.text() or 'button'
@@ -230,7 +234,8 @@ class HotboxEditor(QtWidgets.QWidget):
                 'name': entry_name,
                 'category': category,
                 'options': dict(shape.options)})
-        window.add_entries(entries)
+        self.library_shelf.add_entries(entries)
+        self.library_shelf.show()
 
     def open_search_replace(self):
         from hotbox_designer.dialog import SearchReplaceDialog
