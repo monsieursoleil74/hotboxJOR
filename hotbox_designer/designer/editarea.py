@@ -14,6 +14,7 @@ class ShapeEditArea(QtWidgets.QWidget):
     centerMoved = QtCore.Signal(int, int)
     contextMenuRequested = QtCore.Signal(object)
     editTextRequested = QtCore.Signal(object)  # shape à renommer
+    placeImageEscaped = QtCore.Signal()        # Échap en mode placement
 
     def __init__(self, options, parent=None):
         super(ShapeEditArea, self).__init__(parent)
@@ -48,6 +49,10 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.magnet_guides = []
         self.manipulator_moved = False
         self.edit_center_mode = False
+        # mode « placer l'image » : déplacer/redimensionner l'image DANS
+        # un bouton (drag = bouger, molette = redimensionner)
+        self.place_image_shape = None
+        self.place_image_ref = None
         self.increase_undo_on_release = False
 
         self.ctrl_pressed = False
@@ -85,10 +90,22 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.repaint()
 
     def wheelEvent(self, event):
-        # zoom vers le curseur, façon dwpicker
         delta = event.angleDelta().y()
         if not delta:
             return
+        # en mode placement : la molette redimensionne l'image du bouton
+        if self.place_image_shape is not None:
+            factor = 1.08 if delta > 0 else 1 / 1.08
+            shape = self.place_image_shape
+            shape.options['image.width'] = max(
+                4.0, shape.options['image.width'] * factor)
+            shape.options['image.height'] = max(
+                4.0, shape.options['image.height'] * factor)
+            shape.synchronize_image()
+            self.increaseUndoStackRequested.emit()
+            self.repaint()
+            return
+        # sinon zoom vers le curseur, façon dwpicker
         factor = 1.15 if delta > 0 else 1 / 1.15
         self.viewport_mapper.zoom_towards(get_cursor(self), factor)
         self.sync_zoom()
@@ -103,6 +120,18 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.repaint()
             return
         cursor = self.units_cursor()
+        if self.place_image_shape is not None:
+            if self.clicked is False or self.place_image_ref is None:
+                return
+            delta = cursor - self.place_image_ref
+            self.place_image_ref = cursor
+            shape = self.place_image_shape
+            shape.options['image.offsetx'] += delta.x()
+            shape.options['image.offsety'] += delta.y()
+            shape.synchronize_image()
+            self.increase_undo_on_release = True
+            self.repaint()
+            return
         if self.edit_center_mode is True:
             if self.clicked is False:
                 return
@@ -152,6 +181,11 @@ class ShapeEditArea(QtWidgets.QWidget):
         if event.button() != QtCore.Qt.LeftButton:
             return
         cursor = self.units_cursor()
+        if self.place_image_shape is not None:
+            # en mode placement : on amorce le déplacement de l'image
+            self.clicked = True
+            self.place_image_ref = cursor
+            return
         direction = self.manipulator.get_direction(cursor)
         self.clicked = True
         self.transform.direction = direction
@@ -211,6 +245,13 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.unsetCursor()
             return
         if event.button() != QtCore.Qt.LeftButton:
+            return
+        if self.place_image_shape is not None:
+            self.clicked = False
+            self.place_image_ref = None
+            if self.increase_undo_on_release:
+                self.increaseUndoStackRequested.emit()
+                self.increase_undo_on_release = False
             return
         if self.edit_center_mode is True:
             self.clicked = False
@@ -321,7 +362,32 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.repaint()
         event.acceptProposedAction()
 
+    def start_place_image(self, shape):
+        """Entre en mode placement d'image sur ce bouton."""
+        self.place_image_shape = shape
+        self.setCursor(QtCore.Qt.OpenHandCursor)
+        self.repaint()
+
+    def stop_place_image(self):
+        self.place_image_shape = None
+        self.place_image_ref = None
+        self.unsetCursor()
+        self.repaint()
+
+    def center_image(self, shape):
+        shape.options['image.offsetx'] = 0
+        shape.options['image.offsety'] = 0
+        shape.synchronize_image()
+        self.increaseUndoStackRequested.emit()
+        self.repaint()
+
     def keyPressEvent(self, event):
+        if (event.key() == QtCore.Qt.Key_Escape
+                and self.place_image_shape is not None):
+            # on décoche le bouton du panneau (source de vérité), ce qui
+            # ressort en stop_place_image
+            return self.placeImageEscaped.emit()
+
         if event.key() == QtCore.Qt.Key_F:
             return self.focus_view()
 
@@ -470,7 +536,21 @@ class ShapeEditArea(QtWidgets.QWidget):
         if self.edit_center_mode is True:
             point = self.options['centerx'], self.options['centery']
             draw_editor_center(painter, self.hotbox_rect(), point)
+        if self.place_image_shape is not None:
+            self._draw_place_image_hint(painter)
         painter.restore()
+
+    def _draw_place_image_hint(self, painter):
+        shape = self.place_image_shape
+        rect = shape.image_rect or shape.rect.toRect()
+        zoom = self.viewport_mapper.zoom
+        # cadre du bouton estompé + contour de l'image en pointillés
+        pen = QtGui.QPen(QtGui.QColor(109, 140, 94))  # accent vert-gris
+        pen.setWidthF(1.5 / zoom)
+        pen.setStyle(QtCore.Qt.DashLine)
+        painter.setPen(pen)
+        painter.setBrush(QtGui.QBrush(QtGui.QColor(0, 0, 0, 0)))
+        painter.drawRect(rect)
 
 
 class Selection():

@@ -82,6 +82,9 @@ def ensure_old_data_compatible(data):
     for shape in data.get('shapes', []):
         shape.setdefault('shape.cornersx', 8)
         shape.setdefault('shape.cornersy', 8)
+        # décalage manuel de l'image dans le bouton
+        shape.setdefault('image.offsetx', 0)
+        shape.setdefault('image.offsety', 0)
 
     return data
 

@@ -170,3 +170,7 @@ class Shape():
             int(self.options['image.width']),
             int(self.options['image.height']))
         self.image_rect.moveCenter(self.rect.center().toPoint())
+        # décalage manuel dans le bouton (mode « placer l'image »)
+        self.image_rect.translate(
+            int(self.options.get('image.offsetx', 0)),
+            int(self.options.get('image.offsety', 0)))

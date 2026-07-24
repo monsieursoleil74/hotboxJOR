@@ -36,7 +36,9 @@ SQUARE_BUTTON = {
     'image.path': '',
     'image.fit': True,
     'image.height': 32,
-    'image.width': 32}
+    'image.width': 32,
+    'image.offsetx': 0,
+    'image.offsety': 0}
 
 
 TEXT = {
@@ -77,7 +79,9 @@ TEXT = {
     'image.path': '',
     'image.fit': False,
     'image.height': 32,
-    'image.width': 32}
+    'image.width': 32,
+    'image.offsetx': 0,
+    'image.offsety': 0}
 
 
 BACKGROUND = {
@@ -118,7 +122,9 @@ BACKGROUND = {
     'image.path': '',
     'image.fit': False,
     'image.height': 32,
-    'image.width': 32}
+    'image.width': 32,
+    'image.offsetx': 0,
+    'image.offsety': 0}
 
 
 HOTBOX = {

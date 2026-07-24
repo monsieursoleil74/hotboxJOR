@@ -202,6 +202,20 @@ dans :
 
 Le JSON n'est jamais réécrit — seule la résolution d'affichage change.
 
+## Placer une image dans un bouton
+
+Quand un bouton a une image et que **« Fit to shape » est sur False**,
+la section Image affiche deux boutons :
+
+- **◈ Place in button** : active le mode placement. On **glisse
+  l'image** dans le bouton pour la positionner, la **molette** la
+  redimensionne. **Échap** (ou re-cliquer le bouton) termine. Un
+  contour vert en pointillés montre la position de l'image.
+- **Center** : recentre l'image dans le bouton.
+
+Tout est annulable (Ctrl+Z). Le placement n'est possible que sur un
+seul bouton à la fois.
+
 ## Formes des boutons
 
 Trois formes : **square** (rectangle), **rounded** (rectangle à coins

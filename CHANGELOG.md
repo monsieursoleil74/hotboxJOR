@@ -4,6 +4,15 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Placement libre de l'image dans un bouton
+
+- Nouvelles options `image.offsetx/offsety` (défaut 0) : l'image n'est
+  plus forcée au centre quand « Fit to shape » est off.
+- **Mode « placer l'image »** dans l'éditeur (bouton du panneau Image) :
+  glisser l'image dans le bouton pour la positionner, molette pour la
+  redimensionner, contour vert en pointillés, Échap pour finir ;
+  bouton **Center** pour recentrer. Annulable.
+
 ## 2026-07 — Épaisseur de bordure au curseur
 
 - L'épaisseur de bordure passe des trois champs N/H/C à **un seul

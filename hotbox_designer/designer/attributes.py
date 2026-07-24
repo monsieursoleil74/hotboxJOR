@@ -18,6 +18,8 @@ class AttributeEditor(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
     rectModified = QtCore.Signal(str, float)
     imageModified = QtCore.Signal()
+    placeImageToggled = QtCore.Signal(bool)
+    centerImageRequested = QtCore.Signal()
 
     def __init__(self, application, parent=None):
         super(AttributeEditor, self).__init__(parent)
@@ -31,6 +33,8 @@ class AttributeEditor(QtWidgets.QWidget):
 
         self.image = ImageSettings()
         self.image.optionSet.connect(self.image_modified)
+        self.image.placeImageToggled.connect(self.placeImageToggled.emit)
+        self.image.centerImageRequested.connect(self.centerImageRequested.emit)
         self.image_toggler = WidgetToggler('Image', self.image)
 
         self.appearence = AppearenceSettings()
@@ -152,14 +156,18 @@ class ShapeSettings(QtWidgets.QWidget):
 
 class ImageSettings(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
+    placeImageToggled = QtCore.Signal(bool)
+    centerImageRequested = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(ImageSettings, self).__init__(parent)
+        self._single = False
         self.path = BrowseEdit()
         self.path.valueSet.connect(partial(self.optionSet.emit, 'image.path'))
 
         self.fit = BoolCombo(True)
         self.fit.valueSet.connect(partial(self.optionSet.emit, 'image.fit'))
+        self.fit.valueSet.connect(self._update_placement_enabled)
 
         self.width = FloatEdit()
         method = partial(self.optionSet.emit, 'image.width')
@@ -169,19 +177,48 @@ class ImageSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'image.height')
         self.height.valueSet.connect(method)
 
+        # placement libre de l'image dans le bouton
+        self.place = QtWidgets.QPushButton('◈ Place in button')
+        self.place.setCheckable(True)
+        self.place.setToolTip(
+            'Drag the image inside the button to position it, '
+            'mouse wheel to resize (Esc to finish)')
+        self.place.toggled.connect(self.placeImageToggled.emit)
+        self.center = QtWidgets.QPushButton('Center')
+        self.center.setToolTip('Recenter the image in the button')
+        self.center.released.connect(self.centerImageRequested.emit)
+        placement = QtWidgets.QHBoxLayout()
+        placement.setContentsMargins(0, 0, 0, 0)
+        placement.setSpacing(4)
+        placement.addWidget(self.place, stretch=1)
+        placement.addWidget(self.center)
+        self.placement_row = QtWidgets.QWidget()
+        self.placement_row.setLayout(placement)
+
         self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(2)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Path', self.path)
         self.layout.addRow('Fit to shape', self.fit)
         self.layout.addRow('Width', self.width)
         self.layout.addRow('Height', self.height)
+        self.layout.addRow(self.placement_row)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
 
+    def _update_placement_enabled(self, *_):
+        # le placement libre n'a de sens qu'avec « fit to shape » = False
+        # et une seule shape sélectionnée
+        fit = self.fit.currentText() == 'True'
+        enabled = self._single and not fit
+        self.placement_row.setEnabled(enabled)
+        if not enabled and self.place.isChecked():
+            self.place.setChecked(False)
+
     def set_options(self, options):
+        self._single = len(options) == 1
         values = list({option['image.path'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.path.set_value(value)
@@ -197,6 +234,7 @@ class ImageSettings(QtWidgets.QWidget):
         values = list({option['image.height'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.height.setText(value)
+        self._update_placement_enabled()
 
 
 class AppearenceSettings(QtWidgets.QWidget):

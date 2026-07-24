@@ -68,6 +68,8 @@ class HotboxEditor(QtWidgets.QWidget):
         self.shape_editor.increaseUndoStackRequested.connect(method)
         self.shape_editor.contextMenuRequested.connect(self.show_context_menu)
         self.shape_editor.editTextRequested.connect(self.edit_shape_text)
+        self.shape_editor.placeImageEscaped.connect(
+            lambda: self.attribute_editor.image.place.setChecked(False))
         self._text_editor = None
 
         self.menu = MenuWidget()
@@ -129,6 +131,8 @@ class HotboxEditor(QtWidgets.QWidget):
         self.attribute_editor.optionSet.connect(self.option_set)
         self.attribute_editor.rectModified.connect(self.rect_modified)
         self.attribute_editor.imageModified.connect(self.image_modified)
+        self.attribute_editor.placeImageToggled.connect(self.place_image_mode)
+        self.attribute_editor.centerImageRequested.connect(self.center_image)
 
         # librairie intégrée en bas, façon shelf Maya
         from hotbox_designer.buttonlibrary import LibraryShelf
@@ -548,6 +552,22 @@ class HotboxEditor(QtWidgets.QWidget):
         for shape in self.shape_editor.selection:
             shape.synchronize_image()
         self.shape_editor.repaint()
+
+    def _selected_image_shape(self):
+        shapes = list(self.shape_editor.selection)
+        return shapes[0] if len(shapes) == 1 else None
+
+    def place_image_mode(self, active):
+        shape = self._selected_image_shape()
+        if active and shape is not None:
+            self.shape_editor.start_place_image(shape)
+        else:
+            self.shape_editor.stop_place_image()
+
+    def center_image(self):
+        shape = self._selected_image_shape()
+        if shape is not None:
+            self.shape_editor.center_image(shape)
 
     def set_selection_move_down(self):
         array = self.shape_editor.shapes

@@ -867,6 +867,64 @@ def test_thumbnail_cache_and_dedup():
     print('cache vignettes + anti-doublon librairie OK')
 
 
+def test_image_placement():
+    """Mode « placer l'image » : drag déplace l'image dans le bouton,
+    molette redimensionne, bouton Center remet à zéro."""
+    editor = make_editor([(100, 100, 'btn')])
+    area = editor.shape_editor
+    driver = Driver(area)
+    shape = area.shapes[0]
+    shape.options['image.fit'] = False
+    shape.options['image.offsetx'] = 0
+    shape.options['image.offsety'] = 0
+    shape.options['image.width'] = 40.0
+    shape.options['image.height'] = 40.0
+    area.selection.replace([shape])  # placement = 1 shape sélectionnée
+    area.update_selection()
+
+    # entrée en mode via l'éditeur
+    editor.shape_editor.start_place_image(shape)
+    assert area.place_image_shape is shape
+
+    # drag dans le bouton -> l'image se décale (offset suit le geste)
+    center = shape.rect.center()
+    driver.pos = driver.units((center.x(), center.y()))
+    driver.press()
+    driver.pos = driver.units((center.x() + 30, center.y() + 15))
+    driver.move()
+    driver.release()
+    assert near(shape.options['image.offsetx'], 30, 2)
+    assert near(shape.options['image.offsety'], 15, 2)
+
+    # molette agrandit l'image
+    w0 = shape.options['image.width']
+    driver.pos = driver.units((center.x(), center.y()))
+    area.wheelEvent(FakeWheelEvent(120))
+    assert shape.options['image.width'] > w0
+
+    # le zoom du viewport n'a PAS bougé (la molette servait à l'image)
+    zoom_before = area.viewport_mapper.zoom
+    area.wheelEvent(FakeWheelEvent(120))
+    assert area.viewport_mapper.zoom == zoom_before
+
+    # Center remet l'image au milieu
+    editor.center_image()
+    assert shape.options['image.offsetx'] == 0
+    assert shape.options['image.offsety'] == 0
+
+    # sortie du mode
+    editor.shape_editor.stop_place_image()
+    assert area.place_image_shape is None
+    # après sortie, la molette re-zoome
+    area.wheelEvent(FakeWheelEvent(120))
+    assert area.viewport_mapper.zoom > zoom_before
+
+    # undo annule le déplacement d'image
+    editor.undo()
+    editor.close()
+    print('mode placer l image (drag, molette, center, zoom) OK')
+
+
 def test_inline_text_and_autosave():
     from hotbox_designer.vendor.Qt import QtGui
 
@@ -1086,6 +1144,7 @@ if __name__ == '__main__':
     test_create_hotbox_dialog()
     test_radial_and_test_mode()
     test_inline_text_and_autosave()
+    test_image_placement()
     test_rounded_rect()
     test_thumbnail_cache_and_dedup()
     print('TOUT EST VERT')
