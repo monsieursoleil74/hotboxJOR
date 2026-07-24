@@ -307,7 +307,15 @@ class BoolCheckBox(QtWidgets.QCheckBox):
     def __init__(self, state=True, parent=None):
         super(BoolCheckBox, self).__init__(parent)
         self.setChecked(state)
-        self.clicked.connect(self.valueSet.emit)
+        # NE PAS connecter clicked directement à valueSet.emit : selon
+        # le binding, clicked est résolu sans argument et l'émission
+        # échouait silencieusement (cases muettes)
+        self.clicked.connect(self._clicked)
+
+    def _clicked(self, *_):
+        # un clic sort aussi de l'état tri-état (valeurs multiples)
+        self.setTristate(False)
+        self.valueSet.emit(self.isChecked())
 
     def state(self):
         return self.isChecked()

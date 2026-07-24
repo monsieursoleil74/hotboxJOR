@@ -55,15 +55,23 @@ def export_hotbox(hotbox):
 
 
 class CreateHotboxDialog(QtWidgets.QDialog):
+    """Création d'une hotbox : nom + source (vide par défaut, dupliquer
+    une existante, ou partir d'un template). Les menus ne sont actifs
+    que quand leur option est cochée."""
+
     def __init__(self, hotboxes, parent=None):
         super(CreateHotboxDialog, self).__init__(parent)
         self.setWindowTitle("Create new hotbox")
+        self.setMinimumWidth(340)
         self.hotboxes = hotboxes
 
-        self.new = QtWidgets.QRadioButton("empty hotbox")
-        self.duplicate = QtWidgets.QRadioButton("duplicate existing hotbox")
+        self.name_edit = QtWidgets.QLineEdit(get_valid_name(hotboxes))
+        self.name_edit.selectAll()
+
+        self.new = QtWidgets.QRadioButton("Empty hotbox")
+        self.duplicate = QtWidgets.QRadioButton("Duplicate existing hotbox")
         self.duplicate.setEnabled(bool(self.hotboxes))
-        self.template = QtWidgets.QRadioButton("from template")
+        self.template = QtWidgets.QRadioButton("From template")
         self.groupbutton = QtWidgets.QButtonGroup()
         self.groupbutton.addButton(self.new, 0)
         self.groupbutton.addButton(self.duplicate, 1)
@@ -73,21 +81,33 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.existing = QtWidgets.QComboBox()
         self.existing.addItems([hb['general']['name'] for hb in self.hotboxes])
         self.template_combo = QtWidgets.QComboBox()
-        items = [hb['general']['name'] for hb in load_templates()]
+        items = [
+            hb['general']['name'] or 'template'
+            for hb in load_templates()]
         self.template_combo.addItems(items)
+
+        # les combos ne s'activent qu'avec leur option
+        self.existing.setEnabled(False)
+        self.template_combo.setEnabled(False)
+        self.duplicate.toggled.connect(self.existing.setEnabled)
+        self.template.toggled.connect(self.template_combo.setEnabled)
+
+        form = QtWidgets.QFormLayout()
+        form.addRow('Name:', self.name_edit)
 
         self.up_layout = QtWidgets.QGridLayout()
         self.up_layout.setContentsMargins(0, 0, 0, 0)
-        self.up_layout.setSpacing(0)
+        self.up_layout.setSpacing(6)
         self.up_layout.addWidget(self.new, 0, 0)
         self.up_layout.addWidget(self.duplicate, 1, 0)
         self.up_layout.addWidget(self.existing, 1, 1)
         self.up_layout.addWidget(self.template, 2, 0)
         self.up_layout.addWidget(self.template_combo, 2, 1)
 
-        self.ok = QtWidgets.QPushButton('ok')
+        self.ok = QtWidgets.QPushButton('Create')
+        self.ok.setDefault(True)
         self.ok.released.connect(self.accept)
-        self.cancel = QtWidgets.QPushButton('cancel')
+        self.cancel = QtWidgets.QPushButton('Cancel')
         self.cancel.released.connect(self.reject)
 
         self.down_layout = QtWidgets.QHBoxLayout()
@@ -98,22 +118,31 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setSpacing(12)
+        self.layout.addLayout(form)
         self.layout.addLayout(self.up_layout)
         self.layout.addLayout(self.down_layout)
 
     def hotbox(self):
-        if self.groupbutton.checkedId() == 0:
-            return get_new_hotbox(self.hotboxes)
-        elif self.groupbutton.checkedId() == 1:
+        checked = self.groupbutton.checkedId()
+        hotbox = None
+        if checked == 1:
             name = self.existing.currentText()
-            hotboxes = self.hotboxes
-        elif self.groupbutton.checkedId() == 2:
-            name = self.template_combo.currentText()
-            hotboxes = load_templates()
-        hotbox = [hb for hb in hotboxes if hb['general']['name'] == name][0]
-        hotbox = copy_hotbox_data(hotbox)
-        name = get_valid_name(hotboxes, hotbox['general']['name'])
-        hotbox['general']['name'] = name
+            sources = [
+                hb for hb in self.hotboxes
+                if hb['general']['name'] == name]
+            if sources:
+                hotbox = copy_hotbox_data(sources[0])
+        elif checked == 2:
+            index = self.template_combo.currentIndex()
+            templates = load_templates()
+            if 0 <= index < len(templates):
+                hotbox = copy_hotbox_data(templates[index])
+        if hotbox is None:  # hotbox vide (ou source introuvable)
+            hotbox = get_new_hotbox(self.hotboxes)
+        # le nom saisi, validé contre les hotboxes EXISTANTES (l'ancien
+        # code validait contre les templates : noms en double garantis)
+        wanted = self.name_edit.text().strip() or hotbox['general']['name']
+        hotbox['general']['name'] = get_valid_name(self.hotboxes, wanted)
         return hotbox
 
 

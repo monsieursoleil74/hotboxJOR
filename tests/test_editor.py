@@ -710,6 +710,86 @@ def test_image_path_resolution():
     print('résolution des chemins d images (dossier déplacé) OK')
 
 
+def test_checkboxes_apply_options():
+    """Régression : clicked se résout sans argument selon le binding —
+    l'émission directe échouait en silence et TOUTES les cases du
+    panneau étaient muettes (border visible, gras, italique)."""
+    editor = make_editor([(100, 100, 'btn')])
+    area = editor.shape_editor
+    area.selection.replace(list(area.shapes))
+    area.update_selection()
+    editor.selection_changed()
+    shape = area.shapes[0]
+
+    border_box = editor.attribute_editor.appearence.border
+    assert shape.options['border'] is True
+    border_box.click()  # simulation complète d'un clic utilisateur
+    APP.processEvents()
+    assert shape.options['border'] is False, 'border visible muet !'
+    border_box.click()
+    APP.processEvents()
+    assert shape.options['border'] is True
+
+    bold_box = editor.attribute_editor.text.bold
+    assert shape.options['text.bold'] is False
+    bold_box.click()
+    APP.processEvents()
+    assert shape.options['text.bold'] is True
+
+    # un clic sort proprement du tri-état (valeurs multiples)
+    border_box.setCurrentText(None)
+    assert border_box.checkState() == QtCore.Qt.PartiallyChecked
+    border_box.click()
+    APP.processEvents()
+    assert border_box.checkState() != QtCore.Qt.PartiallyChecked
+    assert isinstance(shape.options['border'], bool)
+    editor.close()
+    print('cases à cocher -> options appliquées (régression) OK')
+
+
+def test_create_hotbox_dialog():
+    from hotbox_designer.dialog import CreateHotboxDialog
+    from hotbox_designer.data import load_templates
+
+    existing = [
+        {'general': {'name': 'ma_hotbox'}, 'shapes': []},
+        {'general': {'name': load_templates()[0]['general']['name']},
+         'shapes': []}]
+    dialog = CreateHotboxDialog(existing)
+
+    # par défaut : hotbox vide, menus grisés
+    assert dialog.new.isChecked()
+    assert not dialog.existing.isEnabled()
+    assert not dialog.template_combo.isEnabled()
+    hotbox = dialog.hotbox()
+    assert hotbox['shapes'] == []
+    names = [hb['general']['name'] for hb in existing]
+    assert hotbox['general']['name'] not in names
+
+    # les menus s'activent avec leur option
+    dialog.template.setChecked(True)
+    assert dialog.template_combo.isEnabled()
+    assert not dialog.existing.isEnabled()
+
+    # template : shapes copiées, nom UNIQUE même si une hotbox porte
+    # déjà le nom du template (l'ancien code validait contre les
+    # templates -> doublon garanti)
+    dialog.template_combo.setCurrentIndex(0)
+    dialog.name_edit.setText(load_templates()[0]['general']['name'])
+    hotbox = dialog.hotbox()
+    assert len(hotbox['shapes']) == len(load_templates()[0]['shapes'])
+    assert hotbox['general']['name'] not in names
+
+    # duplication : contenu copié, nom saisi respecté
+    dialog.duplicate.setChecked(True)
+    assert dialog.existing.isEnabled()
+    dialog.existing.setCurrentText('ma_hotbox')
+    dialog.name_edit.setText('copie_perso')
+    hotbox = dialog.hotbox()
+    assert hotbox['general']['name'] == 'copie_perso'
+    print('dialogue de création (nom, menus, unicité) OK')
+
+
 def test_dwpicker_import():
     from hotbox_designer.dwpickerimport import (
         is_dwpicker_data, convert_dwpicker_to_hotbox)
@@ -816,4 +896,6 @@ if __name__ == '__main__':
     test_press_selects_and_moves()
     test_attribute_panel()
     test_dwpicker_import()
+    test_checkboxes_apply_options()
+    test_create_hotbox_dialog()
     print('TOUT EST VERT')

@@ -4,6 +4,19 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Fix cases à cocher + dialogue de création
+
+- **Bug « border visible »** : le signal `clicked` se résout sans
+  argument selon le binding Qt — l'émission directe échouait en
+  silence et TOUTES les cases du panneau étaient muettes (border
+  visible, gras, italique). Corrigé, avec sortie propre du tri-état.
+- **Dialogue « Create new hotbox » refondu** : champ de nom pré-rempli,
+  menus grisés tant que leur option n'est pas cochée (on voit enfin ce
+  qu'on crée), et le nom est validé contre les hotboxes EXISTANTES —
+  l'ancien code validait la branche template contre la liste des
+  templates, garantissant des noms en double (source des comportements
+  étranges).
+
 ## 2026-07 — Retours du troisième test studio
 
 - **Shelf plus grande** : vignettes 72×36 (au lieu de 48×24).
