@@ -72,11 +72,10 @@ vieillissant par une expérience façon dwpicker :
   recadrage.
 - **Thème sombre** de toute l'interface (éditeur, manager, librairie) —
   le reader garde l'apparence de la hotbox, évidemment.
-- **Snap magnétique** (désactivé par défaut, clic droit → Magnet
-  snapping) : bords et centres
-  s'aimantent à ceux des autres shapes et de la zone, guides cyan
-  affichés (désactivable via clic droit → Magnet snapping ; la grille,
-  quand elle est active, garde la priorité).
+- **Snap magnétique** (désactivé par défaut — opt-in via clic droit →
+  « Magnet snapping ») : bords et centres s'aimantent à ceux des autres
+  shapes et de la zone, guides cyan affichés ; la grille, quand elle
+  est active, garde la priorité.
 - **Verrouillage** (clic droit → Lock selection) : une shape verrouillée
   — un background typiquement — devient transparente à la sélection ;
   « Unlock all » pour libérer.
