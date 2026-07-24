@@ -429,23 +429,18 @@ class _ManagerHeader(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(_ManagerHeader, self).__init__(parent)
-        self.setFixedHeight(46)
+        self.setFixedHeight(38)
         self.setStyleSheet(
-            '_ManagerHeader {background: #2b2b2b;'
-            'border-bottom: 1px solid #1e1e1e;}')
-        title = QtWidgets.QLabel('Hotbox Designer')
+            '_ManagerHeader {background: #2d2d2d;'
+            'border-bottom: 1px solid #242424;}')
+        title = QtWidgets.QLabel('HOTBOX DESIGNER')
         title.setStyleSheet(
-            'color: #f0f0f0; font-size: 15px; font-weight: bold;'
-            'background: transparent;')
-        subtitle = QtWidgets.QLabel('JOR')
-        subtitle.setStyleSheet(
-            'color: #3388ff; font-size: 15px; font-weight: bold;'
-            'background: transparent;')
+            'color: #b0b0b0; font-size: 11px; font-weight: bold;'
+            'letter-spacing: 3px; background: transparent;')
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(12, 0, 12, 0)
         layout.setSpacing(4)
         layout.addWidget(title)
-        layout.addWidget(subtitle)
         layout.addStretch(1)
 
 
@@ -519,10 +514,10 @@ class HotboxTableView(QtWidgets.QTableView):
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         vheader.setDefaultSectionSize(34)  # lignes plus hautes et aérées
         self.setStyleSheet(
-            'QTableView {border: none; background: #2f2f2f;'
-            'alternate-background-color: #333333;}'
+            'QTableView {border: none; background: #313131;'
+            'alternate-background-color: #353535;}'
             'QTableView::item {padding: 6px 10px; border: none;}'
-            'QTableView::item:selected {background: #2b6bbf;'
+            'QTableView::item:selected {background: #5a86a8;'
             'color: #ffffff;}')
 
     def selection_changed(self, *_):

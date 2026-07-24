@@ -118,9 +118,11 @@ class Title(QtWidgets.QLabel):
     def __init__(self, title, parent=None):
         super(Title, self).__init__(parent)
         self.setFixedHeight(22)
+        # petit intitulé neutre en capitales espacées (pas d'accent
+        # coloré : réservé aux états actifs)
         self.setStyleSheet(
-            'color: #8fb4e0; font-weight: bold; letter-spacing: 1px;'
-            'background: transparent; padding-left: 2px;')
+            'color: #909090; font-weight: bold; font-size: 10px;'
+            'letter-spacing: 2px; background: transparent; padding-left: 2px;')
         self.setText(title.upper())
 
 

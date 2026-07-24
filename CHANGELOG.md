@@ -4,6 +4,18 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Direction artistique « pro DCC »
+
+- Palette repensée en **gris neutres désaturés** (façon Maya/Nuke),
+  formes plates, contrastes adoucis.
+- **Icônes de barre d'outils en monochrome** (fini le bleu à
+  l'intérieur — c'était le principal « tell » générique).
+- **Accent unique désaturé** (bleu-acier `#5a86a8`) réservé aux états
+  actifs : sélection, onglet courant, focus, rectangle de sélection.
+  Une seule constante `ACCENT` dans `theme.py` pour le changer.
+- Header du manager sobre (capitales espacées, gris) ; titres de
+  section neutres.
+
 ## 2026-07 — Nettoyage + performances
 
 - **Sauvegarde auto retirée** : plus de dossier `backups/` — on ne
