@@ -7,7 +7,7 @@ from hotbox_designer.align import align_shapes, arrange_shapes
 from hotbox_designer.templates import SQUARE_BUTTON, TEXT, BACKGROUND
 from hotbox_designer.interactive import Shape
 from hotbox_designer.geometry import get_combined_rects
-from hotbox_designer.qtutils import set_shortcut
+from hotbox_designer.qtutils import icon, set_shortcut
 from hotbox_designer.data import copy_hotbox_data
 from hotbox_designer.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
@@ -21,6 +21,28 @@ from .attributes import AttributeEditor
 # marqueur du presse-papier système : permet le copier-coller de shapes
 # entre deux éditeurs (même entre deux sessions de l'application)
 SHAPES_CLIPBOARD_KEY = 'hotbox_designer_shapes'
+STYLE_CLIPBOARD_KEY = 'hotbox_designer_style'
+
+# groupes proposés au collage de style : (libellé, clés, coché par défaut)
+STYLE_GROUPS = [
+    ('Shape (square/round)', ['shape'], True),
+    ('Size', ['shape.width', 'shape.height'], False),
+    ('Colors & border', [
+        'border', 'borderwidth.normal', 'borderwidth.hovered',
+        'borderwidth.clicked', 'bordercolor.normal', 'bordercolor.hovered',
+        'bordercolor.clicked', 'bordercolor.transparency', 'bgcolor.normal',
+        'bgcolor.hovered', 'bgcolor.clicked', 'bgcolor.transparency'], True),
+    ('Text style', [
+        'text.size', 'text.bold', 'text.italic', 'text.color',
+        'text.valign', 'text.halign'], True),
+    ('Text content', ['text.content'], False),
+    ('Image', ['image.path', 'image.fit', 'image.width', 'image.height'],
+     False),
+    ('Commands (actions)', [
+        'action.left', 'action.left.close', 'action.left.language',
+        'action.left.command', 'action.right', 'action.right.close',
+        'action.right.language', 'action.right.command'], False),
+]
 
 
 class HotboxEditor(QtWidgets.QWidget):
@@ -41,10 +63,13 @@ class HotboxEditor(QtWidgets.QWidget):
         self.shape_editor.centerMoved.connect(self.move_center)
         method = self.set_data_modified
         self.shape_editor.increaseUndoStackRequested.connect(method)
+        self.shape_editor.contextMenuRequested.connect(self.show_context_menu)
 
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
         self.menu.pasteRequested.connect(self.paste)
+        self.menu.copyStyleRequested.connect(self.copy_style)
+        self.menu.pasteStyleRequested.connect(self.paste_style)
         self.menu.deleteRequested.connect(self.delete_selection)
         self.menu.sizeChanged.connect(self.editor_size_changed)
         self.menu.fitZoneRequested.connect(self.fit_zone_to_shapes)
@@ -81,6 +106,8 @@ class HotboxEditor(QtWidgets.QWidget):
         set_shortcut("Ctrl+Y", self.shape_editor, self.redo)
         set_shortcut("Ctrl+C", self.shape_editor, self.copy)
         set_shortcut("Ctrl+V", self.shape_editor, self.paste)
+        set_shortcut("Ctrl+Shift+C", self.shape_editor, self.copy_style)
+        set_shortcut("Ctrl+Shift+V", self.shape_editor, self.paste_style)
         set_shortcut("del", self.shape_editor, self.delete_selection)
         set_shortcut("Ctrl+D", self.shape_editor, self.deselect_all)
         set_shortcut("Ctrl+A", self.shape_editor, self.select_all)
@@ -118,6 +145,83 @@ class HotboxEditor(QtWidgets.QWidget):
             return [dict(shape) for shape in shapes]
         except (ValueError, TypeError, KeyError):
             return []
+
+    def show_context_menu(self, global_pos):
+        menu = QtWidgets.QMenu(self)
+        menu.addAction(icon('copy.png'), 'Copy\tCtrl+C', self.copy)
+        menu.addAction(icon('paste.png'), 'Paste\tCtrl+V', self.paste)
+        menu.addAction(
+            icon('copy_settings.png'), 'Copy style\tCtrl+Shift+C',
+            self.copy_style)
+        menu.addAction(
+            icon('paste_settings.png'), 'Paste style...\tCtrl+Shift+V',
+            self.paste_style)
+        menu.addSeparator()
+        menu.addAction(
+            icon('delete.png'), 'Delete\tDel', self.delete_selection)
+        menu.addSeparator()
+        menu.addAction(icon('ontop.png'), 'On top', self.set_selection_on_top)
+        menu.addAction(
+            icon('moveup.png'), 'Move up', self.set_selection_move_up)
+        menu.addAction(
+            icon('movedown.png'), 'Move down', self.set_selection_move_down)
+        menu.addAction(
+            icon('onbottom.png'), 'On bottom', self.set_selection_on_bottom)
+        menu.addSeparator()
+        menu.addAction(
+            icon('fit_zone.png'), 'Fit zone to shapes',
+            self.fit_zone_to_shapes)
+        menu.addAction('Frame view\tF', self.shape_editor.focus_view)
+        menu.exec_(global_pos)
+
+    def copy_style(self):
+        """Copie les options de la shape sélectionnée (une seule)."""
+        shapes = list(self.shape_editor.selection)
+        if len(shapes) != 1:
+            from hotbox_designer.dialog import warning
+            return warning(
+                'Copy style', 'Select exactly one shape to copy its style')
+        text = json.dumps({STYLE_CLIPBOARD_KEY: dict(shapes[0].options)})
+        QtWidgets.QApplication.clipboard().setText(text)
+
+    @staticmethod
+    def clipboard_style():
+        text = QtWidgets.QApplication.clipboard().text()
+        try:
+            return dict(json.loads(text)[STYLE_CLIPBOARD_KEY])
+        except (ValueError, TypeError, KeyError):
+            return None
+
+    def paste_style(self):
+        """Colle des groupes d'options choisis sur la sélection."""
+        from hotbox_designer.dialog import PasteStyleDialog, warning
+        style = self.clipboard_style()
+        if style is None:
+            return warning('Paste style', 'No style in clipboard')
+        if not self.shape_editor.selection.shapes:
+            return warning('Paste style', 'No shape selected')
+        dialog = PasteStyleDialog(STYLE_GROUPS, self)
+        if dialog.exec_() == QtWidgets.QDialog.Rejected:
+            return
+        self.apply_style(style, dialog.selected_keys())
+
+    def apply_style(self, style, keys):
+        keys = [k for k in keys if k in style]
+        if not keys:
+            return
+        for shape in self.shape_editor.selection:
+            for key in keys:
+                shape.options[key] = style[key]
+            if 'shape.width' in keys:
+                shape.rect.setWidth(style['shape.width'])
+            if 'shape.height' in keys:
+                shape.rect.setHeight(style['shape.height'])
+            shape.synchronize_rect()
+            shape.synchronize_image()
+        self.shape_editor.update_selection()
+        self.selection_changed()
+        self.shape_editor.repaint()
+        self.set_data_modified()
 
     def paste(self):
         pasted = self.clipboard_shapes()

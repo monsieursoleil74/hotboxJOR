@@ -8,6 +8,8 @@ class MenuWidget(QtWidgets.QWidget):
     deleteRequested = QtCore.Signal()
     copyRequested = QtCore.Signal()
     pasteRequested = QtCore.Signal()
+    copyStyleRequested = QtCore.Signal()
+    pasteStyleRequested = QtCore.Signal()
     undoRequested = QtCore.Signal()
     redoRequested = QtCore.Signal()
     sizeChanged = QtCore.Signal()
@@ -37,6 +39,15 @@ class MenuWidget(QtWidgets.QWidget):
         self.paste = QtWidgets.QAction(icon('paste.png'), '', self)
         self.paste.setToolTip('Paste')
         self.paste.triggered.connect(self.pasteRequested.emit)
+        self.copystyle = QtWidgets.QAction(icon('copy_settings.png'), '', self)
+        self.copystyle.setToolTip(
+            'Copy style of selected shape (Ctrl+Shift+C)')
+        self.copystyle.triggered.connect(self.copyStyleRequested.emit)
+        self.pastestyle = QtWidgets.QAction(
+            icon('paste_settings.png'), '', self)
+        self.pastestyle.setToolTip(
+            'Paste style on selection, choosing options (Ctrl+Shift+V)')
+        self.pastestyle.triggered.connect(self.pasteStyleRequested.emit)
 
         self.undo = QtWidgets.QAction(icon('undo.png'), '', self)
         self.undo.setToolTip('Undo')
@@ -147,6 +158,8 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.delete)
         self.toolbar.addAction(self.copy)
         self.toolbar.addAction(self.paste)
+        self.toolbar.addAction(self.copystyle)
+        self.toolbar.addAction(self.pastestyle)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.undo)
         self.toolbar.addAction(self.redo)

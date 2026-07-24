@@ -53,6 +53,17 @@ vieillissant par une expérience façon dwpicker :
   dwpicker) : on pose ses boutons librement, la zone se recadre autour
   (marge 10) et le centre est recalé — plus de champs à piloter à la main.
 - **Flèches = déplacer la sélection** d'1 unité (Maj = 10).
+- **Copier-coller de style** (Ctrl+Shift+C / Ctrl+Shift+V, ou les deux
+  boutons à côté de copier/coller) : copie les options d'une shape, puis
+  colle sur la sélection en choisissant quoi (forme, taille, couleurs &
+  bordure, style de texte, contenu, image, commandes) — via le
+  presse-papier système, donc entre hotboxes aussi.
+- **Sélection assainie** : cliquer un bouton posé sur un background ne
+  sélectionne plus que le bouton ; le rectangle de sélection n'attrape
+  plus un fond qui l'englobe (il faut le balayer vraiment) ; le
+  rectangle fonctionne dans les quatre directions.
+- **Menu clic droit** dans l'éditeur : copier/coller, style, ordre,
+  suppression, fit zone, recadrage.
 
 ## Point de départ
 

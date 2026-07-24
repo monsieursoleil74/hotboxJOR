@@ -315,6 +315,84 @@ def test_fit_zone():
     print('ajustement de la zone aux shapes + undo OK')
 
 
+def test_selection_ignores_background():
+    """Cliquer un bouton posé sur un background ne doit sélectionner QUE
+    le bouton ; un rectangle de sélection n'attrape pas le fond qui
+    l'englobe."""
+    from hotbox_designer.templates import BACKGROUND
+    editor = make_editor([(100, 100, 'btn'), (300, 200, 'btn2')])
+    area = editor.shape_editor
+    driver = Driver(area)
+    background_options = dict(BACKGROUND)
+    background_options.update({'shape.left': 0.0, 'shape.top': 0.0,
+                               'shape.width': 600.0, 'shape.height': 400.0})
+    from hotbox_designer.interactive import Shape
+    background = Shape(background_options)
+    area.shapes.insert(0, background)
+    area.repaint()
+    button = area.shapes[1]
+
+    # simple clic sur le bouton : le bouton seul, pas le fond
+    driver.click((160, 112))
+    assert area.selection.shapes == [button], [
+        s.options['text.content'] for s in area.selection.shapes]
+
+    # rectangle autour des deux boutons : les boutons, pas le fond
+    area.selection.clear()
+    area.update_selection()
+    driver.drag((50, 60), (450, 280))
+    assert background not in area.selection.shapes
+    assert len(area.selection.shapes) == 2
+
+    # clic sur le fond nu : le fond est sélectionnable normalement
+    driver.click((520, 380))
+    assert area.selection.shapes == [background]
+    editor.close()
+    print('sélection : background ignoré au clic et au rectangle OK')
+
+
+def test_copy_paste_style():
+    editor = make_editor([(100, 100, 'source'), (300, 200, 'cible')])
+    area = editor.shape_editor
+    source, target = area.shapes
+    source.options.update({
+        'bgcolor.normal': '#FF0000',
+        'text.size': 20,
+        'text.content': 'source',
+        'action.left.command': 'print("hello")',
+        'shape.width': 80.0})
+    area.selection.replace([source])
+    area.update_selection()
+    editor.copy_style()
+
+    area.selection.replace([target])
+    area.update_selection()
+    style = editor.clipboard_style()
+    assert style is not None
+    # collage : couleurs + texte (style) mais PAS contenu/commandes/taille
+    keys = []
+    from hotbox_designer.designer.application import STYLE_GROUPS
+    for label, group_keys, _ in STYLE_GROUPS:
+        if label in ('Colors & border', 'Text style'):
+            keys.extend(group_keys)
+    editor.apply_style(style, keys)
+    assert target.options['bgcolor.normal'] == '#FF0000'
+    assert target.options['text.size'] == 20
+    assert target.options['text.content'] == 'cible'
+    assert target.options['action.left.command'] == ''
+    assert target.options['shape.width'] == 120.0
+
+    # collage des commandes seulement
+    keys = next(k for label, k, _ in STYLE_GROUPS
+                if label == 'Commands (actions)')
+    editor.apply_style(style, keys)
+    assert target.options['action.left.command'] == 'print("hello")'
+    editor.undo()
+    assert area.shapes[1].options['action.left.command'] == ''
+    editor.close()
+    print('copier-coller de style par groupes + undo OK')
+
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -323,4 +401,6 @@ if __name__ == '__main__':
     test_fast_drag_does_not_drop()
     test_nudge_with_arrows()
     test_fit_zone()
+    test_selection_ignores_background()
+    test_copy_paste_style()
     print('TOUT EST VERT')

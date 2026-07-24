@@ -179,3 +179,34 @@ class HotkeySetter(QtWidgets.QDialog):
 
     def mode(self):
         return self.hotkeytype.currentText()
+
+
+class PasteStyleDialog(QtWidgets.QDialog):
+    """Choix des groupes d'options à coller sur les shapes
+    sélectionnées (copier/coller de style façon dwpicker)."""
+
+    def __init__(self, groups, parent=None):
+        super(PasteStyleDialog, self).__init__(parent)
+        self.setWindowTitle('Paste style')
+        self.checkboxes = []
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(QtWidgets.QLabel('Options to paste:'))
+        for label, keys, checked in groups:
+            checkbox = QtWidgets.QCheckBox(label)
+            checkbox.setChecked(checked)
+            checkbox.keys = keys
+            self.checkboxes.append(checkbox)
+            layout.addWidget(checkbox)
+        buttons = QtWidgets.QDialogButtonBox(
+            QtWidgets.QDialogButtonBox.Ok |
+            QtWidgets.QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def selected_keys(self):
+        keys = []
+        for checkbox in self.checkboxes:
+            if checkbox.isChecked():
+                keys.extend(checkbox.keys)
+        return keys

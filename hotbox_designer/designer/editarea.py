@@ -12,6 +12,7 @@ class ShapeEditArea(QtWidgets.QWidget):
     selectedShapesChanged = QtCore.Signal()
     increaseUndoStackRequested = QtCore.Signal()
     centerMoved = QtCore.Signal(int, int)
+    contextMenuRequested = QtCore.Signal(object)
 
     def __init__(self, options, parent=None):
         super(ShapeEditArea, self).__init__(parent)
@@ -203,14 +204,24 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.update_selection()
 
         if self.selection_square.handeling:
-            shapes = [
-                s for s in self.shapes
-                if s.rect.intersects(self.selection_square.rect)]
-            if shapes:
-                self.selection.set(shapes)
-                rects = [shape.rect for shape in self.selection]
-                self.manipulator.set_rect(get_combined_rects(rects))
-                self.selectedShapesChanged.emit()
+            square = self.selection_square.rect.normalized()
+            # un rectangle quasi nul est un simple clic : la sélection
+            # au clic (shape du dessus uniquement) a déjà eu lieu —
+            # avant, ce micro-rectangle embarquait AUSSI le background
+            width_px = self.viewport_mapper.to_viewport(square.width())
+            height_px = self.viewport_mapper.to_viewport(square.height())
+            if width_px > 3 or height_px > 3:
+                # une shape qui englobe tout le rectangle (un fond) n'a
+                # pas été « balayée » : on ne la prend pas
+                shapes = [
+                    s for s in self.shapes
+                    if s.rect.intersects(square)
+                    and not s.rect.contains(square)]
+                if shapes:
+                    self.selection.set(shapes)
+                    rects = [shape.rect for shape in self.selection]
+                    self.manipulator.set_rect(get_combined_rects(rects))
+                    self.selectedShapesChanged.emit()
         self.selection_square.release()
 
         if self.increase_undo_on_release:
@@ -227,6 +238,9 @@ class ShapeEditArea(QtWidgets.QWidget):
         QtCore.Qt.Key_Right: (1, 0),
         QtCore.Qt.Key_Up: (0, -1),
         QtCore.Qt.Key_Down: (0, 1)}
+
+    def contextMenuEvent(self, event):
+        self.contextMenuRequested.emit(event.globalPos())
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_F:
