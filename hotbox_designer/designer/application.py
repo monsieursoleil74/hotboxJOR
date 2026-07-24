@@ -67,6 +67,8 @@ class HotboxEditor(QtWidgets.QWidget):
         method = self.set_data_modified
         self.shape_editor.increaseUndoStackRequested.connect(method)
         self.shape_editor.contextMenuRequested.connect(self.show_context_menu)
+        self.shape_editor.editTextRequested.connect(self.edit_shape_text)
+        self._text_editor = None
 
         self.menu = MenuWidget()
         self.menu.copyRequested.connect(self.copy)
@@ -160,6 +162,51 @@ class HotboxEditor(QtWidgets.QWidget):
             return [dict(shape) for shape in shapes]
         except (ValueError, TypeError, KeyError):
             return []
+
+    def edit_shape_text(self, shape):
+        """Champ d'édition posé sur le bouton (double-clic) : Entrée
+        valide, Échap annule."""
+        editor = self.shape_editor
+        vp_rect = editor.viewport_mapper.to_viewport_rect(shape.rect)
+        line = QtWidgets.QLineEdit(shape.options.get('text.content', ''), editor)
+        line.setGeometry(vp_rect.toRect())
+        line.setAlignment(QtCore.Qt.AlignCenter)
+        line.selectAll()
+        line.show()
+        line.setFocus()
+        self._text_editor = line
+
+        def commit():
+            if self._text_editor is None:
+                return
+            value = line.text()
+            self._text_editor = None
+            line.deleteLater()
+            if value != shape.options.get('text.content', ''):
+                shape.options['text.content'] = value
+                editor.repaint()
+                self.selection_changed()
+                self.set_data_modified()
+
+        def cancel():
+            if self._text_editor is None:
+                return
+            self._text_editor = None
+            line.deleteLater()
+
+        line.returnPressed.connect(commit)
+        line.editingFinished.connect(commit)  # perte de focus = valider
+        # Échap annule (intercepté avant editingFinished)
+        line.installEventFilter(self)
+        line._cancel = cancel
+
+    def eventFilter(self, obj, event):
+        if (self._text_editor is not None and obj is self._text_editor
+                and event.type() == QtCore.QEvent.KeyPress
+                and event.key() == QtCore.Qt.Key_Escape):
+            self._text_editor._cancel()
+            return True
+        return super(HotboxEditor, self).eventFilter(obj, event)
 
     def show_context_menu(self, global_pos):
         menu = QtWidgets.QMenu(self)

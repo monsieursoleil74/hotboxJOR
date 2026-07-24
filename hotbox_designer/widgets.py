@@ -333,3 +333,13 @@ class BoolCheckBox(QtWidgets.QCheckBox):
             self.setTristate(False)
             self.setChecked(text == 'True')
         self.blockSignals(False)
+
+
+class CommandTextEdit(QtWidgets.QPlainTextEdit):
+    """Éditeur de commande qui se sauvegarde tout seul à la perte de
+    focus (fini le bouton « save command » et les commandes perdues)."""
+    committed = QtCore.Signal()
+
+    def focusOutEvent(self, event):
+        self.committed.emit()
+        super(CommandTextEdit, self).focusOutEvent(event)

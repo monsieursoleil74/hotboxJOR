@@ -5,7 +5,7 @@ from hotbox_designer.colorwheel import ColorDialog
 from hotbox_designer.qtutils import icon, VALIGNS, HALIGNS
 from hotbox_designer.widgets import (
     Title, BoolCombo, WidgetToggler, FloatEdit, BrowseEdit, ColorEdit,
-    ColorButton, OpacitySlider, BoolCheckBox)
+    ColorButton, OpacitySlider, BoolCheckBox, CommandTextEdit)
 from hotbox_designer.designer.highlighter import get_highlighter
 
 
@@ -298,10 +298,10 @@ class ActionSettings(QtWidgets.QWidget):
         self._llanguage = QtWidgets.QComboBox()
         method = partial(self.language_changed, 'left')
         self._llanguage.currentIndexChanged.connect(method)
-        self._lcommand = QtWidgets.QPlainTextEdit()
+        self._lcommand = CommandTextEdit()
         self._lcommand.setFixedHeight(100)
-        self._lsave = QtWidgets.QPushButton('save command')
-        self._lsave.released.connect(partial(self.save_command, 'left'))
+        # auto-save à la perte de focus (plus de bouton « save command »)
+        self._lcommand.committed.connect(partial(self.save_command, 'left'))
 
         self._ractive = BoolCombo(False)
         method = partial(self.optionSet.emit, 'action.right')
@@ -315,10 +315,9 @@ class ActionSettings(QtWidgets.QWidget):
         self._rlanguage = QtWidgets.QComboBox()
         method = partial(self.language_changed, 'right')
         self._rlanguage.currentIndexChanged.connect(method)
-        self._rcommand = QtWidgets.QPlainTextEdit()
+        self._rcommand = CommandTextEdit()
         self._rcommand.setFixedHeight(100)
-        self._rsave = QtWidgets.QPushButton('save command')
-        self._rsave.released.connect(partial(self.save_command, 'right'))
+        self._rcommand.committed.connect(partial(self.save_command, 'right'))
 
         self.layout = QtWidgets.QFormLayout(self)
         self.layout.setSpacing(0)
@@ -329,13 +328,11 @@ class ActionSettings(QtWidgets.QWidget):
         self.layout.addRow('Close Hotbox', self._lclose)
         self.layout.addRow('Language', self._llanguage)
         self.layout.addRow(self._lcommand)
-        self.layout.addRow(self._lsave)
         self.layout.addRow(Title('Right click'))
         self.layout.addRow('Has command', self._ractive)
         self.layout.addRow('Close Hotbox', self._rclose)
         self.layout.addRow('Language', self._rlanguage)
         self.layout.addRow(self._rcommand)
-        self.layout.addRow(self._rsave)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
@@ -377,11 +374,9 @@ class ActionSettings(QtWidgets.QWidget):
         if not options or len(options) > 1 or not options[0]['action.left']:
             self._lcommand.setPlainText('')
             self._lcommand.setEnabled(False)
-            self._lsave.setEnabled(False)
         else:
             self._lcommand.setPlainText(options[0]['action.left.command'])
             self._lcommand.setEnabled(True)
-            self._lsave.setEnabled(True)
 
         values = list({option['action.right'] for option in options})
         value = values[0] if len(values) == 1 else None
@@ -399,23 +394,19 @@ class ActionSettings(QtWidgets.QWidget):
         if not options or len(options) > 1 or not options[0]['action.right']:
             self._rcommand.setPlainText('')
             self._rcommand.setEnabled(False)
-            self._rsave.setEnabled(False)
         else:
             self._rcommand.setPlainText(options[0]['action.right.command'])
             self._rcommand.setEnabled(True)
-            self._rsave.setEnabled(True)
 
     def set_left_enabled(self, state):
         self._lclose.setEnabled(state)
         self._llanguage.setEnabled(state)
         self._lcommand.setEnabled(state)
-        self._lsave.setEnabled(state)
 
     def set_right_enabled(self, state):
         self._rclose.setEnabled(state)
         self._rlanguage.setEnabled(state)
         self._rcommand.setEnabled(state)
-        self._rsave.setEnabled(state)
 
 
 class TextSettings(QtWidgets.QWidget):

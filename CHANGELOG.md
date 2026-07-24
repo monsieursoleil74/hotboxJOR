@@ -4,6 +4,17 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Édition rapide + icônes redessinées
+
+- **Double-clic sur un bouton = éditer son texte** à même le canvas
+  (champ posé sur le bouton, à l'échelle du zoom ; Entrée valide, Échap
+  annule).
+- **Commandes auto-sauvées** : le champ de commande enregistre à la
+  perte de focus (CommandTextEdit) — le bouton « save command » et le
+  risque de commande perdue disparaissent.
+- **Icônes de barre d'outils redessinées** : jeu SVG cohérent, trait
+  clair + accent bleu (28 icônes), pensé pour le thème sombre.
+
 ## 2026-07 — Mode test + disposition radiale
 
 - **Mode test** (bouton play de la barre d'outils) : ouvre la hotbox

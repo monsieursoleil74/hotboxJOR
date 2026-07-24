@@ -790,6 +790,60 @@ def test_create_hotbox_dialog():
     print('dialogue de création (nom, menus, unicité) OK')
 
 
+def test_inline_text_and_autosave():
+    from hotbox_designer.vendor.Qt import QtGui
+
+    editor = make_editor([(100, 100, 'old')])
+    area = editor.shape_editor
+    shape = area.shapes[0]
+
+    # double-clic sur le bouton -> champ d'édition sur le canvas
+    class FakeDbl:
+        def button(self):
+            return QtCore.Qt.LeftButton
+    driver = Driver(area)
+    driver.pos = driver.units((160, 112))
+    area.mouseDoubleClickEvent(FakeDbl())
+    APP.processEvents()
+    assert editor._text_editor is not None
+    editor._text_editor.setText('NewName')
+    editor._text_editor.returnPressed.emit()
+    APP.processEvents()
+    assert shape.options['text.content'] == 'NewName'
+    assert editor._text_editor is None
+
+    # Échap annule la modification
+    driver.pos = driver.units((160, 112))
+    area.mouseDoubleClickEvent(FakeDbl())
+    editor._text_editor.setText('ShouldNotStick')
+
+    class FakeKey:
+        def type(self):
+            return QtCore.QEvent.KeyPress
+
+        def key(self):
+            return QtCore.Qt.Key_Escape
+    handled = editor.eventFilter(editor._text_editor, FakeKey())
+    APP.processEvents()
+    assert handled is True
+    assert shape.options['text.content'] == 'NewName'  # inchangé
+    assert editor._text_editor is None
+
+    # auto-save de la commande : la perte de focus enregistre
+    area.selection.replace([shape])
+    area.update_selection()
+    editor.selection_changed()
+    action = editor.attribute_editor.action
+    action._lactive.setCurrentText('True')
+    action._lactive.valueSet.emit(True)
+    action._lcommand.setPlainText('print("auto")')
+    action._lcommand.committed.emit()  # simule la perte de focus
+    APP.processEvents()
+    assert shape.options['action.left.command'] == 'print("auto")'
+    editor.close()
+    print('double-clic texte inline + auto-save commande OK')
+
+
 def test_radial_and_test_mode():
     from hotbox_designer.align import arrange_radial
 
@@ -954,4 +1008,5 @@ if __name__ == '__main__':
     test_checkboxes_apply_options()
     test_create_hotbox_dialog()
     test_radial_and_test_mode()
+    test_inline_text_and_autosave()
     print('TOUT EST VERT')

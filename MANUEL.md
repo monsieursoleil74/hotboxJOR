@@ -41,6 +41,7 @@ l'écran** quel que soit le zoom.
 
 | Geste | Action |
 |---|---|
+| **Double-clic** sur un bouton | Éditer son **texte** directement sur le canvas (Entrée valide, Échap annule) |
 | **Presser** un bouton | Le sélectionne immédiatement — le drag qui suit le **déplace** directement (façon dwpicker/Figma) |
 | **Clic** sur un bouton d'une multi-sélection | Le sélectionne **seul** |
 | **Glisser sur le fond** (zone vide ou shape verrouillée) | Rectangle de sélection multiple |
@@ -110,6 +111,7 @@ commandes des boutons s'exécutent réellement — c'est un vrai test.)
 
 | Raccourci | Action |
 |---|---|
+| **Double-clic** | Éditer le texte d'un bouton sur le canvas. |
 | **Ctrl+C / Ctrl+V** | Copier/coller des **boutons entiers**. Passe par le presse-papier système (JSON) : fonctionne **entre hotboxes**, entre éditeurs, et même entre deux sessions Maya. Les shapes collées sont sélectionnées. |
 | **Ctrl+Maj+C** | **Copier le style** d'une shape (une seule sélectionnée) |
 | **Ctrl+Maj+V** | **Coller le style** sur la sélection — un dialogue permet de cocher quoi coller : forme (carré/rond), taille, couleurs & bordure, style de texte, contenu du texte, image, **commandes**. Par défaut : forme + couleurs + style de texte. |
