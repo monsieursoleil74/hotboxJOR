@@ -8,6 +8,7 @@ from hotbox_designer.templates import SQUARE_BUTTON, TEXT, BACKGROUND
 from hotbox_designer.interactive import Shape
 from hotbox_designer.geometry import get_combined_rects
 from hotbox_designer.qtutils import icon, set_shortcut
+from hotbox_designer.theme import apply_dark_theme
 from hotbox_designer.data import copy_hotbox_data
 from hotbox_designer.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin,
@@ -56,6 +57,7 @@ class HotboxEditor(QtWidgets.QWidget):
         self.options = hotbox_data['general']
         self.application = application
         self.undo_manager = UndoManager(hotbox_data)
+        apply_dark_theme(self)
 
         self.shape_editor = ShapeEditArea(self.options)
         self.set_hotbox_data(hotbox_data)
@@ -70,6 +72,9 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.pasteRequested.connect(self.paste)
         self.menu.copyStyleRequested.connect(self.copy_style)
         self.menu.pasteStyleRequested.connect(self.paste_style)
+        self.menu.libraryRequested.connect(self.open_button_library)
+        self.menu.saveToLibraryRequested.connect(
+            self.save_selection_to_library)
         self.menu.deleteRequested.connect(self.delete_selection)
         self.menu.sizeChanged.connect(self.editor_size_changed)
         self.menu.fitZoneRequested.connect(self.fit_zone_to_shapes)
@@ -108,6 +113,7 @@ class HotboxEditor(QtWidgets.QWidget):
         set_shortcut("Ctrl+V", self.shape_editor, self.paste)
         set_shortcut("Ctrl+Shift+C", self.shape_editor, self.copy_style)
         set_shortcut("Ctrl+Shift+V", self.shape_editor, self.paste_style)
+        set_shortcut("Ctrl+H", self.shape_editor, self.open_search_replace)
         set_shortcut("del", self.shape_editor, self.delete_selection)
         set_shortcut("Ctrl+D", self.shape_editor, self.deselect_all)
         set_shortcut("Ctrl+A", self.shape_editor, self.select_all)
@@ -169,10 +175,113 @@ class HotboxEditor(QtWidgets.QWidget):
             icon('onbottom.png'), 'On bottom', self.set_selection_on_bottom)
         menu.addSeparator()
         menu.addAction(
+            icon('picker.png'), 'Button library...', self.open_button_library)
+        menu.addAction(
+            icon('save.png'), 'Save selection to library...',
+            self.save_selection_to_library)
+        menu.addSeparator()
+        menu.addAction(
+            'Search and replace...\tCtrl+H', self.open_search_replace)
+        menu.addSeparator()
+        lock = menu.addAction('Lock selection', self.lock_selection)
+        lock.setEnabled(bool(self.shape_editor.selection.shapes))
+        locked_count = sum(
+            1 for s in self.shape_editor.shapes if s.options.get('lock'))
+        unlock = menu.addAction(
+            'Unlock all (%d)' % locked_count, self.unlock_all)
+        unlock.setEnabled(bool(locked_count))
+        magnet = menu.addAction('Magnet snapping')
+        magnet.setCheckable(True)
+        magnet.setChecked(self.shape_editor.magnet_enabled)
+        magnet.toggled.connect(self.set_magnet_enabled)
+        menu.addSeparator()
+        menu.addAction(
             icon('fit_zone.png'), 'Fit zone to shapes',
             self.fit_zone_to_shapes)
         menu.addAction('Frame view\tF', self.shape_editor.focus_view)
         menu.exec_(global_pos)
+
+    def open_button_library(self):
+        from hotbox_designer.buttonlibrary import show_button_library
+        show_button_library(
+            self.application, parent=self.application.main_window)
+
+    def save_selection_to_library(self):
+        """Range les boutons sélectionnés dans la librairie (nom +
+        catégorie), pour les glisser-déposer dans d'autres hotboxes."""
+        from hotbox_designer.buttonlibrary import (
+            SaveToLibraryDialog, show_button_library)
+        from hotbox_designer.dialog import warning
+        shapes = list(self.shape_editor.selection)
+        if not shapes:
+            return warning('Button library', 'No shape selected')
+        window = show_button_library(
+            self.application, parent=self.application.main_window)
+        default = shapes[0].options.get('text.content') or 'button'
+        dialog = SaveToLibraryDialog(window.categories(), default, self)
+        if dialog.exec_() == QtWidgets.QDialog.Rejected:
+            return
+        name = dialog.name.text() or 'button'
+        category = dialog.category.currentText() or 'General'
+        entries = []
+        for index, shape in enumerate(shapes):
+            entry_name = name if index == 0 else '%s %d' % (name, index + 1)
+            entries.append({
+                'name': entry_name,
+                'category': category,
+                'options': dict(shape.options)})
+        window.add_entries(entries)
+
+    def open_search_replace(self):
+        from hotbox_designer.dialog import SearchReplaceDialog
+        SearchReplaceDialog(self.replace_in_shapes, self).exec_()
+
+    def replace_in_shapes(
+            self, search, replace, in_left, in_right, in_labels):
+        """Remplace dans les commandes/labels ; porte sur la sélection
+        si elle existe, sinon sur toutes les shapes. Retourne le nombre
+        de remplacements."""
+        keys = []
+        if in_left:
+            keys.append('action.left.command')
+        if in_right:
+            keys.append('action.right.command')
+        if in_labels:
+            keys.append('text.content')
+        shapes = (list(self.shape_editor.selection)
+                  or list(self.shape_editor.shapes))
+        count = 0
+        for shape in shapes:
+            for key in keys:
+                value = shape.options.get(key) or ''
+                occurrences = value.count(search)
+                if occurrences:
+                    shape.options[key] = value.replace(search, replace)
+                    count += occurrences
+        if count:
+            self.shape_editor.repaint()
+            self.selection_changed()
+            self.set_data_modified()
+        return count
+
+    def lock_selection(self):
+        """Verrouille la sélection : plus sélectionnable ni déplaçable
+        (idéal pour un background) — déverrouillage par « Unlock all »."""
+        for shape in self.shape_editor.selection:
+            shape.options['lock'] = True
+        self.shape_editor.selection.clear()
+        self.shape_editor.update_selection()
+        self.shape_editor.repaint()
+        self.set_data_modified()
+
+    def unlock_all(self):
+        for shape in self.shape_editor.shapes:
+            shape.options.pop('lock', None)
+        self.shape_editor.repaint()
+        self.set_data_modified()
+
+    def set_magnet_enabled(self, state):
+        self.shape_editor.magnet_enabled = state
 
     def copy_style(self):
         """Copie les options de la shape sélectionnée (une seule)."""

@@ -210,3 +210,54 @@ class PasteStyleDialog(QtWidgets.QDialog):
             if checkbox.isChecked():
                 keys.extend(checkbox.keys)
         return keys
+
+
+class SearchReplaceDialog(QtWidgets.QDialog):
+    """Recherche/remplacement dans les commandes et labels des shapes
+    (sélection si elle existe, sinon toute la hotbox)."""
+
+    def __init__(self, replace_callback, parent=None):
+        super(SearchReplaceDialog, self).__init__(parent)
+        self.setWindowTitle('Search and replace')
+        self.setMinimumWidth(340)
+        self.replace_callback = replace_callback
+
+        self.search = QtWidgets.QLineEdit()
+        self.replace = QtWidgets.QLineEdit()
+        self.in_left = QtWidgets.QCheckBox('Left click commands')
+        self.in_left.setChecked(True)
+        self.in_right = QtWidgets.QCheckBox('Right click commands')
+        self.in_right.setChecked(True)
+        self.in_labels = QtWidgets.QCheckBox('Button labels (text)')
+        self.result = QtWidgets.QLabel('')
+
+        form = QtWidgets.QFormLayout()
+        form.addRow('Search:', self.search)
+        form.addRow('Replace by:', self.replace)
+
+        apply_button = QtWidgets.QPushButton('Replace all')
+        apply_button.released.connect(self._apply)
+        close_button = QtWidgets.QPushButton('Close')
+        close_button.released.connect(self.close)
+        buttons = QtWidgets.QHBoxLayout()
+        buttons.addStretch(1)
+        buttons.addWidget(apply_button)
+        buttons.addWidget(close_button)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addLayout(form)
+        layout.addWidget(self.in_left)
+        layout.addWidget(self.in_right)
+        layout.addWidget(self.in_labels)
+        layout.addWidget(self.result)
+        layout.addLayout(buttons)
+
+    def _apply(self):
+        if not self.search.text():
+            self.result.setText('Nothing to search')
+            return
+        count = self.replace_callback(
+            self.search.text(), self.replace.text(),
+            self.in_left.isChecked(), self.in_right.isChecked(),
+            self.in_labels.isChecked())
+        self.result.setText('%d replacement(s) done' % count)

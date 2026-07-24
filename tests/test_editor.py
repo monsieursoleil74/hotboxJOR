@@ -186,6 +186,7 @@ def test_interactions():
 
     count = len(area.shapes)
     center = shape.rect.center()
+    area.magnet_enabled = False  # on teste la duplication, pas l'aimant
     driver.drag((center.x(), center.y()), (center.x() + 80, center.y()),
                 modifiers=QtCore.Qt.AltModifier)
     assert len(area.shapes) == count + 1
@@ -393,6 +394,148 @@ def test_copy_paste_style():
     print('copier-coller de style par groupes + undo OK')
 
 
+def test_lock():
+    editor = make_editor([(100, 100, 'bg'), (100, 100, 'btn')])
+    area = editor.shape_editor
+    driver = Driver(area)
+    locked, button = area.shapes
+    area.selection.replace([locked])
+    area.update_selection()
+    editor.lock_selection()
+    assert locked.options.get('lock') is True
+    assert area.selection.shapes == []
+    # le clic passe à travers la shape verrouillée (prend celle au-dessus,
+    # ici 'btn' qui est après dans la liste = au-dessus)
+    driver.click((160, 112))
+    assert area.selection.shapes == [button]
+    # le rectangle l'ignore aussi
+    area.selection.clear(); area.update_selection()
+    driver.drag((50, 60), (350, 200))
+    assert locked not in area.selection.shapes
+    editor.unlock_all()
+    assert 'lock' not in locked.options
+    editor.close()
+    print('lock/unlock OK')
+
+
+def test_magnet():
+    editor = make_editor([(100, 100, 'static'), (300, 300, 'moving')])
+    area = editor.shape_editor
+    driver = Driver(area)
+    static, moving = area.shapes
+    area.selection.replace([moving])
+    area.update_selection()
+    # glisser 'moving' pour amener son bord gauche PRÈS de celui de
+    # 'static' (à ~3 unités) : l'aimant doit finir l'alignement exact
+    driver.drag((360, 312), (163, 262))
+    assert moving.rect.left() == static.rect.left(), (
+        moving.rect.left(), static.rect.left())
+    assert area.magnet_guides == []  # nettoyés au relâchement
+    # magnet désactivable
+    area.magnet_enabled = False
+    driver.drag((163, 250 + 12), (170, 262))
+    assert moving.rect.left() != static.rect.left()
+    editor.close()
+    print('snap magnétique (alignement exact + toggle) OK')
+
+
+def test_search_replace():
+    editor = make_editor([(100, 100, 'walk'), (300, 200, 'run')])
+    area = editor.shape_editor
+    a, b = area.shapes
+    a.options['action.left.command'] = 'cmds.select("RIG_old:hip")'
+    b.options['action.left.command'] = 'cmds.select("RIG_old:head")'
+    b.options['action.right.command'] = 'print("RIG_old")'
+    count = editor.replace_in_shapes(
+        'RIG_old', 'RIG_new', True, True, False)
+    assert count == 3, count
+    assert a.options['action.left.command'] == 'cmds.select("RIG_new:hip")'
+    assert b.options['action.right.command'] == 'print("RIG_new")'
+    # labels seulement, sur la sélection seulement
+    area.selection.replace([a])
+    count = editor.replace_in_shapes('walk', 'WALK', False, False, True)
+    assert count == 1 and a.options['text.content'] == 'WALK'
+    assert b.options['text.content'] == 'run'
+    editor.undo()
+    assert area.shapes[0].options['text.content'] == 'walk'
+    editor.close()
+    print('recherche/remplacement (commandes, labels, portée) + undo OK')
+
+
+def test_button_library():
+    import tempfile
+    from hotbox_designer import buttonlibrary
+    from hotbox_designer.buttonlibrary import (
+        load_library, save_library, ButtonLibraryWindow, BUTTONS_MIME)
+
+    editor = make_editor([(100, 100, 'ikfk_switch')])
+    area = editor.shape_editor
+    shape = area.shapes[0]
+    shape.options['action.left.command'] = 'print("ikfk")'
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+
+    window = ButtonLibraryWindow(application)
+    window.add_entries([{
+        'name': 'IK/FK switch', 'category': 'Rig',
+        'options': dict(shape.options)}])
+    entries = load_library(window.path)
+    assert len(entries) == 1
+    assert entries[0]['category'] == 'Rig'
+    assert entries[0]['options']['action.left.command'] == 'print("ikfk")'
+    assert window.categories() == ['Rig']
+
+    # drop simulé dans l'éditeur : mime JSON -> nouvelle shape sélectionnée
+    class FakeMime:
+        def __init__(self, payload):
+            self._payload = payload
+
+        def hasFormat(self, fmt):
+            return fmt == BUTTONS_MIME
+
+        def data(self, fmt):
+            return self._payload
+
+    class FakeDropEvent:
+        def __init__(self, payload, pos):
+            self._mime, self._pos = FakeMime(payload), pos
+            self.accepted = False
+
+        def mimeData(self):
+            return self._mime
+
+        def pos(self):
+            return self._pos
+
+        position = None
+
+        def acceptProposedAction(self):
+            self.accepted = True
+
+    payload = json.dumps([entries[0]['options']]).encode('utf-8')
+    count = len(area.shapes)
+    drop_at = area.viewport_mapper.to_viewport_coords(
+        QtCore.QPointF(400, 300))
+    event = FakeDropEvent(payload, QtCore.QPoint(
+        int(drop_at.x()), int(drop_at.y())))
+    area.dropEvent(event)
+    assert event.accepted
+    assert len(area.shapes) == count + 1
+    dropped = area.shapes[-1]
+    assert dropped in area.selection.shapes
+    assert dropped.options['action.left.command'] == 'print("ikfk")'
+    assert near(dropped.rect.center().x(), 400, 3)
+
+    window.tree.selectAll()
+    editor.undo()
+    assert len(editor.shape_editor.shapes) == count
+    window.close()
+    editor.close()
+    print('librairie de boutons (stockage, catégories, drop, undo) OK')
+
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -403,4 +546,8 @@ if __name__ == '__main__':
     test_fit_zone()
     test_selection_ignores_background()
     test_copy_paste_style()
+    test_lock()
+    test_magnet()
+    test_search_replace()
+    test_button_library()
     print('TOUT EST VERT')

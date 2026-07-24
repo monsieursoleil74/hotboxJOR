@@ -86,6 +86,8 @@ class HotboxManager(QtWidgets.QWidget):
         parent = application.main_window
         super(HotboxManager, self).__init__(parent, QtCore.Qt.Tool)
         self.setWindowTitle('Hotbox Designer')
+        from hotbox_designer.theme import apply_dark_theme
+        apply_dark_theme(self)
         self.application = application
         # une fenêtre d'édition par hotbox, toutes ouvrables en même
         # temps (le copier-coller passe par le presse-papier système)

@@ -21,6 +21,7 @@ class ShapeEditArea(QtWidgets.QWidget):
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.setMouseTracking(True)
         self.setFocusPolicy(QtCore.Qt.StrongFocus)
+        self.setAcceptDrops(True)
         self.options = options
 
         self.viewport_mapper = ViewportMapper()
@@ -40,6 +41,9 @@ class ShapeEditArea(QtWidgets.QWidget):
         # 'move' ou 'resize' pendant un drag : le geste suit la souris
         # jusqu'au relâchement, même si le curseur sort du manipulateur
         self.drag_mode = None
+        # snap magnétique aux autres shapes pendant le déplacement
+        self.magnet_enabled = True
+        self.magnet_guides = []
         self.manipulator_moved = False
         self.edit_center_mode = False
         self.increase_undo_on_release = False
@@ -127,6 +131,7 @@ class ShapeEditArea(QtWidgets.QWidget):
             # pas de test contains() ici : un geste rapide sortait du
             # rectangle et le déplacement s'arrêtait (bug de l'original)
             self.transform.move([s.rect for s in self.selection], cursor)
+            self.apply_magnet()
             self.manipulator.update_geometries()
         for shape in self.shapes:
             shape.synchronize_rect()
@@ -163,6 +168,8 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.clicked_shape = None
         for shape in reversed(self.shapes):
+            if shape.options.get('lock'):
+                continue  # une shape verrouillée ne se sélectionne pas
             if shape.rect.contains(cursor):
                 self.clicked_shape = shape
                 break
@@ -215,7 +222,8 @@ class ShapeEditArea(QtWidgets.QWidget):
                 # pas été « balayée » : on ne la prend pas
                 shapes = [
                     s for s in self.shapes
-                    if s.rect.intersects(square)
+                    if not s.options.get('lock')
+                    and s.rect.intersects(square)
                     and not s.rect.contains(square)]
                 if shapes:
                     self.selection.set(shapes)
@@ -231,6 +239,7 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.clicked = False
         self.handeling = False
         self.drag_mode = None
+        self.magnet_guides = []
         self.repaint()
 
     NUDGES = {
@@ -241,6 +250,48 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def contextMenuEvent(self, event):
         self.contextMenuRequested.emit(event.globalPos())
+
+    def dragEnterEvent(self, event):
+        from hotbox_designer.buttonlibrary import BUTTONS_MIME
+        if event.mimeData().hasFormat(BUTTONS_MIME):
+            event.acceptProposedAction()
+
+    def dragMoveEvent(self, event):
+        from hotbox_designer.buttonlibrary import BUTTONS_MIME
+        if event.mimeData().hasFormat(BUTTONS_MIME):
+            event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        """Dépose des boutons de la librairie à l'endroit du curseur."""
+        import json
+        from hotbox_designer.buttonlibrary import BUTTONS_MIME
+        from hotbox_designer.interactive import Shape
+        data = event.mimeData().data(BUTTONS_MIME)
+        if not data:
+            return
+        try:
+            options_list = json.loads(bytes(data).decode('utf-8'))
+        except ValueError:
+            return
+        position = getattr(event, 'position', None)
+        point = position() if position else QtCore.QPointF(event.pos())
+        center = self.viewport_mapper.to_units_coords(point)
+        dropped = []
+        for index, options in enumerate(options_list):
+            shape = Shape(dict(options))
+            offset = QtCore.QPointF(index * 10.0, index * 10.0)
+            shape.rect.moveCenter(center + offset)
+            shape.synchronize_rect()
+            shape.synchronize_image()
+            self.shapes.append(shape)
+            dropped.append(shape)
+        if not dropped:
+            return
+        self.selection.replace(dropped)
+        self.update_selection()
+        self.increaseUndoStackRequested.emit()
+        self.repaint()
+        event.acceptProposedAction()
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_F:
@@ -282,6 +333,53 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.manipulator.set_rect(get_combined_rects(rects))
         self.selectedShapesChanged.emit()
 
+    MAGNET_THRESHOLD_PX = 6
+
+    def apply_magnet(self):
+        """Snap magnétique : pendant un déplacement, les bords et
+        centres de la sélection s'aimantent à ceux des autres shapes et
+        de la zone (guides dessinés). Désactivé si la grille est active."""
+        self.magnet_guides = []
+        if not self.magnet_enabled or self.transform.snap:
+            return
+        rect = self.transform.rect
+        if rect is None:
+            return
+        threshold = self.MAGNET_THRESHOLD_PX / self.viewport_mapper.zoom
+        selected = set(id(s) for s in self.selection)
+        statics = [s.rect for s in self.shapes if id(s) not in selected]
+        statics.append(self.hotbox_rect())
+
+        moving_x = (rect.left(), rect.center().x(), rect.right())
+        moving_y = (rect.top(), rect.center().y(), rect.bottom())
+        best_dx = best_dy = None
+        guide_x = guide_y = None
+        for static in statics:
+            for sx in (static.left(), static.center().x(), static.right()):
+                for mx in moving_x:
+                    offset = sx - mx
+                    if abs(offset) <= threshold and (
+                            best_dx is None or abs(offset) < abs(best_dx)):
+                        best_dx, guide_x = offset, sx
+            for sy in (static.top(), static.center().y(), static.bottom()):
+                for my in moving_y:
+                    offset = sy - my
+                    if abs(offset) <= threshold and (
+                            best_dy is None or abs(offset) < abs(best_dy)):
+                        best_dy, guide_y = offset, sy
+        if best_dx is None and best_dy is None:
+            return
+        dx = best_dx or 0.0
+        dy = best_dy or 0.0
+        rect.translate(dx, dy)
+        for shape in self.selection:
+            shape.rect.translate(dx, dy)
+        self.transform.reference_rect = QtCore.QRectF(rect)
+        if guide_x is not None:
+            self.magnet_guides.append(('v', guide_x))
+        if guide_y is not None:
+            self.magnet_guides.append(('h', guide_y))
+
     def nudge_selection(self, dx, dy, big=False):
         """Flèches : déplacer la sélection de 1 unité (Maj = 10)."""
         step = 10 if big else 1
@@ -293,6 +391,25 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.update_selection()
         self.increaseUndoStackRequested.emit()
         self.repaint()
+
+    def draw_magnet_guides(self, painter):
+        if not self.magnet_guides:
+            return
+        visible = self.viewport_mapper.to_units_rect(
+            QtCore.QRectF(0, 0, self.width(), self.height()))
+        pen = QtGui.QPen(QtGui.QColor('#00d0d0'))
+        pen.setWidthF(1.0 / self.viewport_mapper.zoom)
+        pen.setStyle(QtCore.Qt.DashLine)
+        painter.setPen(pen)
+        for orientation, value in self.magnet_guides:
+            if orientation == 'v':
+                painter.drawLine(
+                    QtCore.QPointF(value, visible.top()),
+                    QtCore.QPointF(value, visible.bottom()))
+            else:
+                painter.drawLine(
+                    QtCore.QPointF(visible.left(), value),
+                    QtCore.QPointF(visible.right(), value))
 
     def duplicate_selection(self):
         from copy import deepcopy
@@ -319,6 +436,7 @@ class ShapeEditArea(QtWidgets.QWidget):
         draw_editor(painter, self.hotbox_rect(), snap=self.transform.snap)
         for shape in self.shapes:
             shape.draw(painter)
+        self.draw_magnet_guides(painter)
         self.manipulator.draw(painter, self.units_cursor())
         self.selection_square.draw(painter, self.viewport_mapper.zoom)
         if self.edit_center_mode is True:

@@ -10,6 +10,8 @@ class MenuWidget(QtWidgets.QWidget):
     pasteRequested = QtCore.Signal()
     copyStyleRequested = QtCore.Signal()
     pasteStyleRequested = QtCore.Signal()
+    libraryRequested = QtCore.Signal()
+    saveToLibraryRequested = QtCore.Signal()
     undoRequested = QtCore.Signal()
     redoRequested = QtCore.Signal()
     sizeChanged = QtCore.Signal()
@@ -104,6 +106,14 @@ class MenuWidget(QtWidgets.QWidget):
         self.snap.toggled.connect(self.snapx.setEnabled)
         self.snap.toggled.connect(self.snapy.setEnabled)
 
+        self.library = QtWidgets.QAction(icon('picker.png'), '', self)
+        self.library.setToolTip(
+            'Open button library (drag & drop buttons into the hotbox)')
+        self.library.triggered.connect(self.libraryRequested.emit)
+        self.savetolibrary = QtWidgets.QAction(icon('save.png'), '', self)
+        self.savetolibrary.setToolTip('Save selected buttons to library')
+        self.savetolibrary.triggered.connect(self.saveToLibraryRequested.emit)
+
         icon_ = icon('addbutton.png')
         self.addbutton = QtWidgets.QAction(icon_, '', self)
         self.addbutton.setToolTip('Add button')
@@ -180,6 +190,9 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.addbutton)
         self.toolbar.addAction(self.addtext)
         self.toolbar.addAction(self.addbg)
+        self.toolbar.addSeparator()
+        self.toolbar.addAction(self.library)
+        self.toolbar.addAction(self.savetolibrary)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.onbottom)
         self.toolbar.addAction(self.movedown)

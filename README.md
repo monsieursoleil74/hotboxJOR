@@ -62,8 +62,26 @@ vieillissant par une expérience façon dwpicker :
   sélectionne plus que le bouton ; le rectangle de sélection n'attrape
   plus un fond qui l'englobe (il faut le balayer vraiment) ; le
   rectangle fonctionne dans les quatre directions.
-- **Menu clic droit** dans l'éditeur : copier/coller, style, ordre,
-  suppression, fit zone, recadrage.
+- **Menu clic droit** dans l'éditeur : copier/coller, style, librairie,
+  recherche/remplacement, verrouillage, ordre, suppression, fit zone,
+  recadrage.
+- **Thème sombre** de toute l'interface (éditeur, manager, librairie) —
+  le reader garde l'apparence de la hotbox, évidemment.
+- **Snap magnétique** pendant le déplacement : bords et centres
+  s'aimantent à ceux des autres shapes et de la zone, guides cyan
+  affichés (désactivable via clic droit → Magnet snapping ; la grille,
+  quand elle est active, garde la priorité).
+- **Verrouillage** (clic droit → Lock selection) : une shape verrouillée
+  — un background typiquement — devient transparente à la sélection ;
+  « Unlock all » pour libérer.
+- **Recherche / remplacement** (Ctrl+H) dans les commandes gauche/
+  droite et les labels — sur la sélection si elle existe, sinon toute la
+  hotbox. Pratique pour renommer un namespace de rig.
+- **Librairie de boutons** (bouton dans la barre d'outils, drag & drop) :
+  sauvegarde n'importe quel bouton configuré (commandes comprises) dans
+  une librairie rangée par catégories (`button_library.json` dans les
+  préférences), puis glisse-dépose-le dans n'importe quelle hotbox.
+  Partageable entre artistes en copiant le fichier.
 
 ## Point de départ
 
