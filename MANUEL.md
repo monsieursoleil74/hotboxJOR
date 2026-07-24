@@ -143,6 +143,9 @@ affiché avec son vrai rendu en vignette.
   juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
   Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.
 - **Supprimer** : clic droit sur un bouton de la shelf → Delete.
+- **Créer une catégorie** : bouton **＋** en haut à droite de la shelf
+  (persistée même vide). **Supprimer une catégorie** : clic droit sur
+  son onglet (possible seulement si elle est vide).
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 
@@ -188,10 +191,11 @@ Le JSON n'est jamais réécrit — seule la résolution d'affichage change.
 
 Refondu façon Photoshop :
 
-- **Couleurs = pastilles cliquables** : le bouton affiche la couleur
-  réelle (code hexa en surimpression, noir ou blanc selon la
-  luminosité) ; un clic ouvre le **sélecteur de couleurs natif**. Si la
-  sélection a des couleurs différentes, la pastille affiche « … ».
+- **Couleurs = pastilles cliquables**, les trois états (Normal / Hover /
+  Click) **sur une seule ligne** sous une petite légende ; le code hexa
+  est dans l'**infobulle** (survole la pastille). Un clic ouvre le
+  **sélecteur de couleurs natif**. Si la sélection a des couleurs
+  différentes, la pastille affiche « … ».
 - **Opacité = curseur 0-100 %** (une pour le fond, une pour la
   bordure) — la valeur est convertie vers la « transparence 0-255 »
   historique du JSON, rien ne change dans le format.

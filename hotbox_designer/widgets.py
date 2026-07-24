@@ -198,9 +198,11 @@ class ColorButton(QtWidgets.QPushButton):
     couleurs natif. set_color(None) = valeurs multiples ('...')."""
     valueSet = QtCore.Signal(str)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, show_text=True, label=''):
         super(ColorButton, self).__init__(parent)
         self._color = '#888888'
+        self._show_text = show_text
+        self._label = label
         self.setFixedHeight(22)
         self.setCursor(QtCore.Qt.PointingHandCursor)
         self.released.connect(self.pick_color)
@@ -216,6 +218,7 @@ class ColorButton(QtWidgets.QPushButton):
     def _update_face(self):
         if self._color is None:
             self.setText('...')
+            self.setToolTip(self._label)
             self.setStyleSheet(
                 'QPushButton {background: #4a4a4a; color: #bbbbbb;'
                 'border: 1px solid #5a5a5a; border-radius: 3px;}')
@@ -226,7 +229,11 @@ class ColorButton(QtWidgets.QPushButton):
             0.299 * qcolor.red() + 0.587 * qcolor.green() +
             0.114 * qcolor.blue())
         text_color = '#000000' if luminance > 130 else '#ffffff'
-        self.setText(self._color.upper())
+        self.setText(self._color.upper() if self._show_text else '')
+        tooltip = self._color.upper()
+        if self._label:
+            tooltip = '%s — %s' % (self._label, tooltip)
+        self.setToolTip(tooltip)
         self.setStyleSheet(
             'QPushButton {background: %s; color: %s;'
             'border: 1px solid #222222; border-radius: 3px;}'

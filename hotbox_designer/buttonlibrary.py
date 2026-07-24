@@ -19,14 +19,20 @@ LIBRARY_FILENAME = 'button_library.json'
 BUTTONS_MIME = 'application/x-hotbox-designer-buttons'
 DEFAULT_CATEGORY = 'General'
 THUMB_SIZE = 24
+# vignettes de la shelf (plus grandes que celles de la fenêtre legacy)
+SHELF_THUMB_WIDTH = 72
+SHELF_THUMB_HEIGHT = 36
+# une catégorie vide est persistée par une entrée marqueur
+CATEGORY_KEY = '__category__'
 
 
 def library_path(application):
     return os.path.join(application.get_data_folder(), LIBRARY_FILENAME)
 
 
-def load_library(path):
-    """Retourne la liste d'entrées [{'name', 'category', 'options'}]."""
+def load_library_raw(path):
+    """Toutes les entrées du fichier : boutons ET marqueurs de
+    catégories vides."""
     if not os.path.exists(path):
         return []
     try:
@@ -34,7 +40,18 @@ def load_library(path):
             entries = json.load(f)
     except (ValueError, OSError):
         return []
-    return [e for e in entries if isinstance(e, dict) and 'options' in e]
+    return [e for e in entries if isinstance(e, dict)]
+
+
+def load_library(path):
+    """Retourne la liste des boutons [{'name', 'category', 'options'}]."""
+    return [e for e in load_library_raw(path) if 'options' in e]
+
+
+def load_extra_categories(path):
+    """Catégories créées à la main, même sans bouton dedans."""
+    return [
+        e[CATEGORY_KEY] for e in load_library_raw(path) if CATEGORY_KEY in e]
 
 
 def save_library(path, entries):
@@ -42,20 +59,21 @@ def save_library(path, entries):
         json.dump(entries, f, indent=2)
 
 
-def button_thumbnail(options):
+def button_thumbnail(options, size=None):
     """Dessine le bouton lui-même en guise d'icône."""
+    thumb_width, thumb_height = size or (THUMB_SIZE * 2, THUMB_SIZE)
     shape = Shape(dict(options))
     rect = shape.rect
-    pixmap = QtGui.QPixmap(THUMB_SIZE * 2, THUMB_SIZE)
+    pixmap = QtGui.QPixmap(thumb_width, thumb_height)
     pixmap.fill(QtGui.QColor('#2b2b2b'))
     painter = QtGui.QPainter(pixmap)
     painter.setRenderHint(QtGui.QPainter.Antialiasing)
     width = rect.width() or 1.0
     height = rect.height() or 1.0
-    scale = min((THUMB_SIZE * 2 - 4) / width, (THUMB_SIZE - 4) / height)
+    scale = min((thumb_width - 4) / width, (thumb_height - 4) / height)
     painter.translate(
-        (THUMB_SIZE * 2 - width * scale) / 2 - rect.left() * scale,
-        (THUMB_SIZE - height * scale) / 2 - rect.top() * scale)
+        (thumb_width - width * scale) / 2 - rect.left() * scale,
+        (thumb_height - height * scale) / 2 - rect.top() * scale)
     painter.scale(scale, scale)
     draw_shape(painter, shape)
     painter.end()
@@ -196,12 +214,13 @@ class ShelfList(QtWidgets.QListWidget):
         self.setViewMode(QtWidgets.QListView.IconMode)
         self.setFlow(QtWidgets.QListView.LeftToRight)
         self.setWrapping(False)
-        self.setIconSize(QtCore.QSize(THUMB_SIZE * 2, THUMB_SIZE))
+        self.setIconSize(
+            QtCore.QSize(SHELF_THUMB_WIDTH, SHELF_THUMB_HEIGHT))
         self.setDragEnabled(True)
         self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        self.setSpacing(4)
+        self.setSpacing(6)
 
     def selected_entries(self):
         return [
@@ -220,7 +239,7 @@ class ShelfList(QtWidgets.QListWidget):
         drag = QtGui.QDrag(self)
         drag.setMimeData(mime)
         pixmap = self.selectedItems()[0].icon().pixmap(
-            THUMB_SIZE * 2, THUMB_SIZE)
+            SHELF_THUMB_WIDTH, SHELF_THUMB_HEIGHT)
         if not pixmap.isNull():
             drag.setPixmap(pixmap)
         drag.exec_(QtCore.Qt.CopyAction)
@@ -229,48 +248,63 @@ class ShelfList(QtWidgets.QListWidget):
 class LibraryShelf(QtWidgets.QWidget):
     """Librairie intégrée en bas de l'éditeur, façon shelf Maya :
     un onglet par catégorie, les boutons se glissent-déposent vers la
-    hotbox juste au-dessus. Clic droit sur un bouton : supprimer."""
+    hotbox juste au-dessus. Clic droit sur un bouton : supprimer.
+    « ＋ » : créer une catégorie ; clic droit sur un onglet vide : la
+    supprimer."""
 
     def __init__(self, application, parent=None):
         super(LibraryShelf, self).__init__(parent)
         self.path = library_path(application)
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setDocumentMode(True)
+        self.add_button = QtWidgets.QToolButton()
+        self.add_button.setText('＋')
+        self.add_button.setToolTip('Create a category')
+        self.add_button.released.connect(self._prompt_category)
+        self.tabs.setCornerWidget(
+            self.add_button, QtCore.Qt.TopRightCorner)
+        tab_bar = self.tabs.tabBar()
+        tab_bar.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        tab_bar.customContextMenuRequested.connect(self._tab_menu)
         layout = QtWidgets.QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.tabs)
-        self.setFixedHeight(THUMB_SIZE + 74)
+        self.setFixedHeight(SHELF_THUMB_HEIGHT + 96)
         register_shelf(self)
         self.refresh()
 
     def categories(self):
-        return sorted({
+        categories = {
             entry.get('category') or DEFAULT_CATEGORY
-            for entry in load_library(self.path)})
+            for entry in load_library(self.path)}
+        categories.update(load_extra_categories(self.path))
+        return sorted(categories)
 
     def refresh(self):
         current = self.tabs.tabText(self.tabs.currentIndex())
         self.tabs.clear()
-        by_category = {}
+        by_category = {
+            category: [] for category in load_extra_categories(self.path)}
         for entry in load_library(self.path):
             category = entry.get('category') or DEFAULT_CATEGORY
             by_category.setdefault(category, []).append(entry)
         if not by_category:
-            empty = ShelfList()
-            empty.setToolTip(
-                'Save buttons here: select shapes then use the save '
-                'button of the toolbar')
-            self.tabs.addTab(empty, DEFAULT_CATEGORY)
-            return
+            by_category = {DEFAULT_CATEGORY: []}
         for category in sorted(by_category):
             shelf_list = ShelfList()
             shelf_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
             shelf_list.customContextMenuRequested.connect(
                 lambda pos, lst=shelf_list: self._menu(lst, pos))
+            if not by_category[category]:
+                shelf_list.setToolTip(
+                    'Empty category — select shapes and use the save '
+                    'button of the toolbar to fill it')
             for entry in sorted(
                     by_category[category], key=lambda e: e.get('name') or ''):
                 item = QtWidgets.QListWidgetItem(entry.get('name') or 'button')
-                item.setIcon(button_thumbnail(entry['options']))
+                item.setIcon(button_thumbnail(
+                    entry['options'],
+                    (SHELF_THUMB_WIDTH, SHELF_THUMB_HEIGHT)))
                 item.setData(QtCore.Qt.UserRole, entry)
                 item.setToolTip(
                     '%s — drag & drop into the hotbox' % (
@@ -279,6 +313,55 @@ class LibraryShelf(QtWidgets.QWidget):
             index = self.tabs.addTab(shelf_list, category)
             if category == current:
                 self.tabs.setCurrentIndex(index)
+
+    def _prompt_category(self):
+        name, accepted = QtWidgets.QInputDialog.getText(
+            self, 'New category', 'Category name:')
+        if not accepted or not name.strip():
+            return
+        self.add_category(name.strip())
+
+    def add_category(self, name):
+        if name in self.categories():
+            return
+        raw = load_library_raw(self.path)
+        raw.append({CATEGORY_KEY: name})
+        save_library(self.path, raw)
+        refresh_shelves()
+        index = [
+            self.tabs.tabText(i) for i in range(self.tabs.count())
+        ].index(name)
+        self.tabs.setCurrentIndex(index)
+
+    def delete_category(self, name):
+        """Supprime une catégorie VIDE (marqueur seulement)."""
+        buttons = [
+            e for e in load_library(self.path)
+            if (e.get('category') or DEFAULT_CATEGORY) == name]
+        if buttons:
+            return False
+        raw = [
+            e for e in load_library_raw(self.path)
+            if e.get(CATEGORY_KEY) != name]
+        save_library(self.path, raw)
+        refresh_shelves()
+        return True
+
+    def _tab_menu(self, position):
+        tab_bar = self.tabs.tabBar()
+        index = tab_bar.tabAt(position)
+        if index < 0:
+            return
+        name = self.tabs.tabText(index)
+        widget = self.tabs.widget(index)
+        menu = QtWidgets.QMenu(self)
+        action = menu.addAction(
+            'Delete category "%s"' % name,
+            lambda: self.delete_category(name))
+        action.setEnabled(widget is not None and widget.count() == 0)
+        if not action.isEnabled():
+            action.setToolTip('Only empty categories can be deleted')
+        menu.exec_(tab_bar.mapToGlobal(position))
 
     def current_category(self):
         text = self.tabs.tabText(self.tabs.currentIndex())
@@ -295,12 +378,13 @@ class LibraryShelf(QtWidgets.QWidget):
         menu.exec_(shelf_list.mapToGlobal(position))
 
     def _delete(self, entries):
-        remaining = [e for e in load_library(self.path) if e not in entries]
+        remaining = [
+            e for e in load_library_raw(self.path) if e not in entries]
         save_library(self.path, remaining)
         refresh_shelves()
 
     def add_entries(self, new_entries):
-        entries = load_library(self.path)
+        entries = load_library_raw(self.path)
         entries.extend(new_entries)
         save_library(self.path, entries)
         refresh_shelves()

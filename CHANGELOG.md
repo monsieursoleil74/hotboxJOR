@@ -4,6 +4,16 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Retours du troisième test studio
+
+- **Shelf plus grande** : vignettes 72×36 (au lieu de 48×24).
+- **Création de catégories** : bouton ＋ sur la shelf (persistées même
+  vides via un marqueur dans le fichier) ; suppression d'une catégorie
+  vide au clic droit sur son onglet.
+- **Panneau couleurs aéré** : les 3 états sur une seule ligne de
+  pastilles sous une légende Normal/Hover/Click, hexa en infobulle,
+  espacement des lignes augmenté.
+
 ## 2026-07 — Import dwpicker
 
 - Le bouton Import du manager reconnaît et convertit les fichiers

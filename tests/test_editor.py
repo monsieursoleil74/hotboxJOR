@@ -501,6 +501,23 @@ def test_button_library():
     shelf._delete([entries[0]])
     assert load_library(shelf.path) == []
     shelf.add_entries([entries[0]])  # remis pour la suite du test
+
+    # création de catégorie (persistée même vide)
+    shelf.add_category('FX')
+    assert 'FX' in shelf.categories()
+    tab_names = [shelf.tabs.tabText(i) for i in range(shelf.tabs.count())]
+    assert 'FX' in tab_names
+    shelf.refresh()  # survit à un refresh (marqueur dans le fichier)
+    assert 'FX' in shelf.categories()
+    # une sauvegarde de bouton n'efface pas la catégorie vide
+    shelf.add_entries([{
+        'name': 'other', 'category': 'Rig',
+        'options': dict(shape.options)}])
+    assert 'FX' in shelf.categories()
+    # suppression : refusée si des boutons dedans, ok si vide
+    assert shelf.delete_category('Rig') is False
+    assert shelf.delete_category('FX') is True
+    assert 'FX' not in shelf.categories()
     window = shelf  # compat suite du test
 
     # drop simulé dans l'éditeur : mime JSON -> nouvelle shape sélectionnée
@@ -590,8 +607,10 @@ def test_attribute_panel():
     area.update_selection()
     editor.selection_changed()
     appearence = editor.attribute_editor.appearence
-    # les deux shapes ont le même fond -> pastille unique
-    assert appearence.color_buttons['bgcolor.normal'].text() == '#888888'
+    # les deux shapes ont le même fond -> pastille unique (hexa en
+    # infobulle, plus de texte sur la pastille)
+    assert '#888888' in appearence.color_buttons['bgcolor.normal'].toolTip()
+    assert appearence.color_buttons['bgcolor.normal'].text() == ''
     # simule un choix de couleur : l'option est appliquée à la sélection
     appearence.color_buttons['bgcolor.normal'].set_color('#12AB34')
     appearence.color_buttons['bgcolor.normal'].valueSet.emit('#12ab34')

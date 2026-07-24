@@ -177,14 +177,17 @@ class AppearenceSettings(QtWidgets.QWidget):
     WIDTH_KEYS = (
         'borderwidth.normal', 'borderwidth.hovered', 'borderwidth.clicked')
 
+    STATE_LABELS = ('Normal', 'Hover', 'Click')
+
     def __init__(self, parent=None):
         super(AppearenceSettings, self).__init__(parent)
-        # pastilles de couleur façon Photoshop : un clic = le sélecteur
-        # natif ; l'opacité est un curseur 0-100 % (stockée en
-        # transparence 0-255 inversée, conversion dans OpacitySlider)
+        # pastilles de couleur façon Photoshop, les 3 états sur UNE
+        # ligne (hexa dans l'infobulle) ; opacité en curseur 0-100 %
         self.color_buttons = {}
         for key in self.COLOR_KEYS:
-            button = ColorButton()
+            state = self.STATE_LABELS[
+                ('normal', 'hovered', 'clicked').index(key.split('.')[-1])]
+            button = ColorButton(show_text=False, label=state)
             button.valueSet.connect(partial(self.optionSet.emit, key))
             self.color_buttons[key] = button
 
@@ -209,34 +212,50 @@ class AppearenceSettings(QtWidgets.QWidget):
             edit.setFixedWidth(42)
             edit.valueSet.connect(partial(self.optionSet.emit, key))
             edit.setToolTip(
-                {'N': 'Normal', 'H': 'Hovered', 'C': 'Clicked'}[label])
+                {'N': 'Normal', 'H': 'Hover', 'C': 'Click'}[label])
             self.width_edits[key] = edit
             widths.addWidget(QtWidgets.QLabel(label))
             widths.addWidget(edit)
         widths.addStretch(1)
 
+        def legend_row():
+            row = QtWidgets.QHBoxLayout()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(4)
+            for text in self.STATE_LABELS:
+                label = QtWidgets.QLabel(text)
+                label.setAlignment(QtCore.Qt.AlignCenter)
+                label.setStyleSheet('color: #999999; font-size: 10px;')
+                row.addWidget(label, stretch=1)
+            return row
+
+        def swatch_row(prefix):
+            row = QtWidgets.QHBoxLayout()
+            row.setContentsMargins(0, 0, 0, 0)
+            row.setSpacing(4)
+            for state in ('normal', 'hovered', 'clicked'):
+                row.addWidget(
+                    self.color_buttons['%s.%s' % (prefix, state)], stretch=1)
+            return row
+
         self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(2)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(6)
+        self.layout.setContentsMargins(0, 0, 0, 4)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow(Title('Background'))
-        self.layout.addRow('normal', self.color_buttons['bgcolor.normal'])
-        self.layout.addRow('hovered', self.color_buttons['bgcolor.hovered'])
-        self.layout.addRow('clicked', self.color_buttons['bgcolor.clicked'])
+        self.layout.addRow('', legend_row())
+        self.layout.addRow('color', swatch_row('bgcolor'))
         self.layout.addRow('opacity', self.bg_opacity)
-        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 10))
         self.layout.addRow(Title('Border'))
         self.layout.addRow('visible', self.border)
-        self.layout.addRow(
-            'normal', self.color_buttons['bordercolor.normal'])
-        self.layout.addRow(
-            'hovered', self.color_buttons['bordercolor.hovered'])
-        self.layout.addRow(
-            'clicked', self.color_buttons['bordercolor.clicked'])
+        self.layout.addRow('color', swatch_row('bordercolor'))
         self.layout.addRow('opacity', self.border_opacity)
         self.layout.addRow('width', widths)
         for label in self.findChildren(QtWidgets.QLabel):
-            if not isinstance(label, Title) and label.text() not in 'NHC':
+            if (not isinstance(label, Title)
+                    and label.text() not in ('N', 'H', 'C')
+                    and label.text() not in self.STATE_LABELS):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
 
     def set_options(self, options):
