@@ -67,7 +67,12 @@ class AttributeEditor(QtWidgets.QWidget):
         self.main_layout.setContentsMargins(0, 0, 0, 0)
         self.main_layout.addWidget(self.scroll_area)
 
-        self.setFixedWidth(self.sizeHint().width() * 1.075)
+        # largeur fixe (la largeur auto gonflait avec les nouveaux
+        # widgets — on garde le gabarit d'origine)
+        self.setFixedWidth(290)
+        self.scroll_area.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarAlwaysOff)
+        self.scroll_area.setWidgetResizable(True)
 
     def set_options(self, options):
         self.blockSignals(True)
@@ -201,12 +206,14 @@ class AppearenceSettings(QtWidgets.QWidget):
         widths.setSpacing(4)
         for key, label in zip(self.WIDTH_KEYS, ('N', 'H', 'C')):
             edit = FloatEdit(minimum=0.0)
+            edit.setFixedWidth(42)
             edit.valueSet.connect(partial(self.optionSet.emit, key))
             edit.setToolTip(
                 {'N': 'Normal', 'H': 'Hovered', 'C': 'Clicked'}[label])
             self.width_edits[key] = edit
             widths.addWidget(QtWidgets.QLabel(label))
             widths.addWidget(edit)
+        widths.addStretch(1)
 
         self.layout = QtWidgets.QFormLayout(self)
         self.layout.setSpacing(2)
