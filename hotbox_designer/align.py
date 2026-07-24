@@ -4,6 +4,8 @@ Adapté de dwpicker (DreamWall Animation, licence MIT), ramené au Shape
 de hotbox_designer : le rect est la seule géométrie, on resynchronise
 options et image après chaque déplacement.
 """
+import math
+
 from hotbox_designer.vendor.Qt import QtCore
 from hotbox_designer.geometry import split_line
 
@@ -33,6 +35,34 @@ def _synchronize(shapes):
     for shape in shapes:
         shape.synchronize_rect()
         shape.synchronize_image()
+
+
+def arrange_radial(shapes, center=None, radius=None, start_angle=-90.0):
+    """Répartit les centres des shapes en cercle autour d'un point,
+    façon marking menu. center = QPointF (sinon barycentre) ; radius en
+    unités (sinon déduit de l'étalement). start_angle en degrés,
+    -90 = premier bouton en haut ; sens horaire."""
+    shapes = list(shapes)
+    if len(shapes) < 2:
+        return False
+    if center is None:
+        cx = sum(s.rect.center().x() for s in shapes) / len(shapes)
+        cy = sum(s.rect.center().y() for s in shapes) / len(shapes)
+        center = QtCore.QPointF(cx, cy)
+    if radius is None:
+        # rayon = de quoi ne pas chevaucher, basé sur la plus grosse
+        # shape et le nombre de boutons
+        max_dim = max(
+            max(s.rect.width(), s.rect.height()) for s in shapes)
+        radius = max(max_dim * 1.2, max_dim * len(shapes) / (2 * math.pi))
+    for index, shape in enumerate(shapes):
+        angle = math.radians(start_angle + 360.0 * index / len(shapes))
+        point = QtCore.QPointF(
+            center.x() + radius * math.cos(angle),
+            center.y() + radius * math.sin(angle))
+        shape.rect.moveCenter(point)
+    _synchronize(shapes)
+    return True
 
 
 def align_left(shapes):

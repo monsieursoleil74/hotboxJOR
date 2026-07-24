@@ -4,6 +4,17 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Mode test + disposition radiale
+
+- **Mode test** (bouton play de la barre d'outils) : ouvre la hotbox
+  comme en production (reader) à l'endroit du curseur, pour tester
+  survol / clics / états / sous-menus sans quitter l'éditeur ; se ferme
+  avec l'éditeur.
+- **Disposition radiale** (align.arrange_radial + bouton cible) :
+  répartit les boutons sélectionnés en cercle autour du centre de la
+  hotbox, façon marking menu (rayon adaptatif, premier en haut, sens
+  horaire), annulable.
+
 ## 2026-07 — UI du manager rafraîchie
 
 - En-tête « Hotbox Designer JOR », onglets Personal/Shared soulignés

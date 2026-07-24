@@ -3,7 +3,7 @@ import json
 from functools import partial
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore
 
-from hotbox_designer.align import align_shapes, arrange_shapes
+from hotbox_designer.align import align_shapes, arrange_shapes, arrange_radial
 from hotbox_designer.templates import SQUARE_BUTTON, TEXT, BACKGROUND
 from hotbox_designer.interactive import Shape
 from hotbox_designer.geometry import get_combined_rects
@@ -106,6 +106,9 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.onBottomRequested.connect(method)
         self.menu.alignRequested.connect(self.align_selection)
         self.menu.arrangeRequested.connect(self.arrange_selection)
+        self.menu.testRequested.connect(self.test_hotbox)
+        self.menu.radialRequested.connect(self.arrange_selection_radial)
+        self.test_reader = None
 
         set_shortcut("Ctrl+Z", self.shape_editor, self.undo)
         set_shortcut("Ctrl+Y", self.shape_editor, self.redo)
@@ -540,6 +543,40 @@ class HotboxEditor(QtWidgets.QWidget):
         self.shape_editor.update_selection()
         self.shape_editor.repaint()
         self.set_data_modified()
+
+    def arrange_selection_radial(self):
+        """Dispose les boutons sélectionnés en cercle autour du centre
+        de la hotbox (façon marking menu)."""
+        from hotbox_designer.dialog import warning
+        shapes = list(self.shape_editor.selection)
+        if len(shapes) < 2:
+            return warning(
+                'Radial layout', 'Select at least 2 buttons to arrange')
+        center = QtCore.QPointF(
+            self.options['centerx'], self.options['centery'])
+        if not arrange_radial(shapes, center=center):
+            return
+        self.shape_editor.update_selection()
+        self.shape_editor.repaint()
+        self.set_data_modified()
+
+    def test_hotbox(self):
+        """Ouvre la hotbox exactement comme en production (reader), pour
+        tester survol / clics / états sans quitter l'éditeur."""
+        from hotbox_designer.reader import HotboxReader
+        from copy import deepcopy
+        if self.test_reader is not None:
+            self.test_reader.close()
+        data = deepcopy(self.hotbox_data())
+        # au moins une frame d'affichage même sans commande
+        self.test_reader = HotboxReader(data, parent=None)
+        self.test_reader.show()
+
+    def closeEvent(self, event):
+        if self.test_reader is not None:
+            self.test_reader.close()
+            self.test_reader = None
+        super(HotboxEditor, self).closeEvent(event)
 
     def delete_selection(self):
         for shape in reversed(self.shape_editor.selection.shapes):

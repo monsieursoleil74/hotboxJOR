@@ -790,6 +790,49 @@ def test_create_hotbox_dialog():
     print('dialogue de création (nom, menus, unicité) OK')
 
 
+def test_radial_and_test_mode():
+    from hotbox_designer.align import arrange_radial
+
+    # 8 boutons disposés en cercle autour du centre de la hotbox
+    editor = make_editor([(i * 20.0, 0.0, 'b%d' % i) for i in range(8)])
+    area = editor.shape_editor
+    area.selection.replace(list(area.shapes))
+    area.update_selection()
+    editor.arrange_selection_radial()
+    center = QtCore.QPointF(
+        editor.options['centerx'], editor.options['centery'])
+    dists = [
+        ((s.rect.center().x() - center.x()) ** 2 +
+         (s.rect.center().y() - center.y()) ** 2) ** 0.5
+        for s in area.shapes]
+    # tous à la même distance du centre (± arrondi)
+    assert max(dists) - min(dists) < 1.0, dists
+    # angles distincts et régulièrement espacés
+    import math
+    angles = sorted(
+        math.degrees(math.atan2(
+            s.rect.center().y() - center.y(),
+            s.rect.center().x() - center.x())) % 360
+        for s in area.shapes)
+    gaps = [round(b - a) for a, b in zip(angles, angles[1:])]
+    assert all(abs(g - 45) <= 1 for g in gaps), gaps
+    # annulable
+    editor.undo()
+    assert editor.shape_editor.shapes[0].options['shape.left'] == 0.0
+
+    # moins de 2 boutons : pas d'effet
+    assert arrange_radial([area.shapes[0]]) is False
+
+    # mode test : ouvre un reader avec les mêmes shapes, fermé avec
+    # l'éditeur
+    editor.test_hotbox()
+    assert editor.test_reader is not None
+    assert len(editor.test_reader.shapes) == len(area.shapes)
+    editor.close()
+    assert editor.test_reader is None
+    print('disposition radiale + mode test OK')
+
+
 def test_dwpicker_import():
     from hotbox_designer.dwpickerimport import (
         is_dwpicker_data, convert_dwpicker_to_hotbox)
@@ -898,4 +941,5 @@ if __name__ == '__main__':
     test_dwpicker_import()
     test_checkboxes_apply_options()
     test_create_hotbox_dialog()
+    test_radial_and_test_mode()
     print('TOUT EST VERT')
