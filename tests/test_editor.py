@@ -823,14 +823,26 @@ def test_radial_and_test_mode():
     # moins de 2 boutons : pas d'effet
     assert arrange_radial([area.shapes[0]]) is False
 
-    # mode test : ouvre un reader avec les mêmes shapes, fermé avec
-    # l'éditeur
+    # mode test : ouvre un reader avec les mêmes shapes, CENTRÉ sur
+    # l'éditeur (pas sous le curseur/bouton play)
+    editor.resize(800, 600)
+    editor.move(100, 100)
+    APP.processEvents()
     editor.test_hotbox()
-    assert editor.test_reader is not None
-    assert len(editor.test_reader.shapes) == len(area.shapes)
+    reader = editor.test_reader
+    assert reader is not None
+    assert len(reader.shapes) == len(area.shapes)
+    # le centre du reader tombe près du centre de l'éditeur
+    editor_center = editor.mapToGlobal(
+        QtCore.QPoint(editor.width() // 2, editor.height() // 2))
+    reader_center = reader.mapToGlobal(
+        QtCore.QPoint(reader.width() // 2, reader.height() // 2))
+    assert abs(reader_center.x() - editor_center.x()) < 5
+    assert abs(reader_center.y() - editor_center.y()) < 5
+    # fermé avec l'éditeur
     editor.close()
     assert editor.test_reader is None
-    print('disposition radiale + mode test OK')
+    print('disposition radiale + mode test (centré) OK')
 
 
 def test_dwpicker_import():

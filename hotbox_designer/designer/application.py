@@ -1,7 +1,8 @@
 
 import json
 from functools import partial
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore
+from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
+from hotbox_designer.reader import HotboxReader
 
 from hotbox_designer.align import align_shapes, arrange_shapes, arrange_radial
 from hotbox_designer.templates import SQUARE_BUTTON, TEXT, BACKGROUND
@@ -561,16 +562,15 @@ class HotboxEditor(QtWidgets.QWidget):
         self.set_data_modified()
 
     def test_hotbox(self):
-        """Ouvre la hotbox exactement comme en production (reader), pour
-        tester survol / clics / états sans quitter l'éditeur."""
-        from hotbox_designer.reader import HotboxReader
+        """Ouvre la hotbox comme en production (reader), CENTRÉE sur
+        l'éditeur, pour tester survol / clics / états. Se ferme avec
+        Échap ou un clic en dehors."""
         from copy import deepcopy
         if self.test_reader is not None:
             self.test_reader.close()
         data = deepcopy(self.hotbox_data())
-        # au moins une frame d'affichage même sans commande
-        self.test_reader = HotboxReader(data, parent=None)
-        self.test_reader.show()
+        self.test_reader = _TestReader(data, anchor=self)
+        self.test_reader.show_centered()
 
     def closeEvent(self, event):
         if self.test_reader is not None:
@@ -602,6 +602,35 @@ class HotboxEditor(QtWidgets.QWidget):
         self.shape_editor.repaint()
         if reset_stacks is True:
             self.undo_manager.reset_stacks()
+
+
+class _TestReader(HotboxReader):
+    """Reader du mode test : centré sur l'éditeur (pas sous le curseur,
+    qui est sur le bouton play), et refermable au clic en dehors."""
+
+    def __init__(self, hotbox_data, anchor=None):
+        super(_TestReader, self).__init__(hotbox_data, parent=None)
+        self._anchor = anchor
+
+    def show_centered(self):
+        QtWidgets.QWidget.show(self)
+        if self._anchor is not None:
+            geo = self._anchor.geometry()
+            global_center = self._anchor.mapToGlobal(
+                QtCore.QPoint(geo.width() // 2, geo.height() // 2))
+        else:
+            global_center = QtGui.QCursor.pos()
+        self.move(
+            global_center.x() - self.width() // 2,
+            global_center.y() - self.height() // 2)
+        self.set_hovered_shapes()
+        self.activateWindow()
+        self.setFocus()
+
+    def focusOutEvent(self, event):
+        # un clic en dehors (ou Alt-Tab) referme le test
+        self.close()
+        super(_TestReader, self).focusOutEvent(event)
 
 
 class UndoManager():
