@@ -4,12 +4,24 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
-## 2026-07 — Sauvegardes auto, aperçu, coins arrondis
+## 2026-07 — Nettoyage + performances
 
-- **Sauvegardes automatiques** : chaque enregistrement dépose une copie
-  horodatée dans `backups/` (30 gardées, throttle anti-rafale) ; bouton
-  de restauration dans le manager (choix d'une date, état courant
-  sauvé avant).
+- **Sauvegarde auto retirée** : plus de dossier `backups/` — on ne
+  touche au dossier Maya que pour lire/écrire `hotboxes.json`, rien de
+  plus.
+- **Gros nettoyage de code** : suppression du code mort (fenêtre
+  librairie flottante remplacée par la shelf, ancien widget `ColorEdit`
+  et `colorwheel.py` remplacés par les pastilles natives), imports
+  inutilisés purgés, `__init__` clarifié (API publique explicite).
+  pyflakes clean.
+- **Cache des vignettes** : les rendus de boutons ne sont plus
+  recalculés à chaque rafraîchissement de la shelf (clé sur
+  l'apparence) — plus fluide sur les grosses librairies.
+- **Anti-doublon** : un bouton identique (nom + catégorie + options)
+  n'est plus stocké deux fois dans la librairie.
+
+## 2026-07 — Aperçu + coins arrondis
+
 - **Vignette d'aperçu** dans le manager : mini-rendu de la hotbox
   sélectionnée en haut du panneau de droite.
 - **Coins arrondis** (forme `rounded_rect` + rayon, façon dwpicker) :

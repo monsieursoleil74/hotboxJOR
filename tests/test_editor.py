@@ -821,50 +821,41 @@ def test_rounded_rect():
     print('coins arrondis (rendu + défauts) OK')
 
 
-def test_backup_and_thumbnail():
+def test_thumbnail_cache_and_dedup():
     import tempfile
-    from hotbox_designer import backup
-    from hotbox_designer.backup import backup_file, list_backups, MAX_BACKUPS
-    from hotbox_designer.data import save_datas
-    from hotbox_designer.buttonlibrary import hotbox_thumbnail
+    from hotbox_designer import buttonlibrary
+    from hotbox_designer.buttonlibrary import (
+        hotbox_thumbnail, button_thumbnail, LibraryShelf, _THUMB_CACHE)
 
-    tmp = tempfile.mkdtemp()
-    hb_file = os.path.join(tmp, 'hotboxes.json')
-    save_datas(hb_file, [{'general': dict(HOTBOX, name='v1'), 'shapes': []}])
-
-    # première sauvegarde (force pour ignorer le throttle)
-    path = backup_file(hb_file, force=True)
-    assert path and os.path.exists(path)
-    backups = list_backups(hb_file)
-    assert len(backups) == 1
-    assert '/' in backups[0][1]  # horodatage lisible JJ/MM/AAAA
-
-    # throttle : deux backups rapprochés sans force -> un seul en plus
-    backup.MIN_INTERVAL = 9999
-    assert backup_file(hb_file) is None
-
-    # purge FIFO : on fabrique MAX_BACKUPS+5 sauvegardes horodatées
-    # distinctes (la boucle réelle serait trop rapide, collisions à la
-    # seconde), puis une sauvegarde forcée déclenche la purge
-    folder = backup.backup_dir(hb_file)
-    for i in range(MAX_BACKUPS + 5):
-        name = 'hotboxes_200001%02d_000000.json' % (i + 1)
-        save_datas(os.path.join(folder, name), [])
-    backup._last_backup_time.clear()
-    backup_file(hb_file, force=True)  # +1 puis purge
-    assert len(list_backups(hb_file)) == MAX_BACKUPS
-    # les plus anciennes ont été retirées, les récentes conservées
-    kept = [os.path.basename(p) for p, _ in list_backups(hb_file)]
-    assert 'hotboxes_20000101_000000.json' not in kept
-
-    # vignette d'une hotbox : pixmap non vide, taille demandée
+    # vignette de hotbox : pixmap à la taille demandée, non vide
     data = {'general': dict(HOTBOX, name='t', width=400, height=300),
             'shapes': [dict(SQUARE_BUTTON, **{'shape.left': 50.0,
                        'shape.top': 50.0, 'bgcolor.normal': '#3388ff'})]}
     pixmap = hotbox_thumbnail(data, 190, 120)
     assert pixmap.width() == 190 and pixmap.height() == 120
     assert not pixmap.isNull()
-    print('sauvegarde auto (throttle, purge) + vignette OK')
+
+    # cache des vignettes de bouton : deux appels identiques = même objet
+    _THUMB_CACHE.clear()
+    options = dict(SQUARE_BUTTON, **{'text.content': 'A'})
+    icon1 = button_thumbnail(options, (72, 36))
+    icon2 = button_thumbnail(dict(options), (72, 36))
+    assert icon1 is icon2  # servi depuis le cache
+    icon3 = button_thumbnail(dict(options, **{'text.content': 'B'}), (72, 36))
+    assert icon3 is not icon1  # apparence différente = nouveau rendu
+
+    # anti-doublon en librairie
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    shelf = LibraryShelf(application)
+    entry = {'name': 'IK', 'category': 'Rig', 'options': dict(SQUARE_BUTTON)}
+    assert shelf.add_entries([entry]) == 1
+    assert shelf.add_entries([dict(entry)]) == 0  # doublon ignoré
+    from hotbox_designer.buttonlibrary import load_library
+    assert len(load_library(shelf.path)) == 1
+    shelf.close()
+    print('cache vignettes + anti-doublon librairie OK')
 
 
 def test_inline_text_and_autosave():
@@ -1087,5 +1078,5 @@ if __name__ == '__main__':
     test_radial_and_test_mode()
     test_inline_text_and_autosave()
     test_rounded_rect()
-    test_backup_and_thumbnail()
+    test_thumbnail_cache_and_dedup()
     print('TOUT EST VERT')

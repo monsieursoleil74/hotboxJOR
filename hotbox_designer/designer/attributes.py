@@ -1,10 +1,9 @@
 from functools import partial
-from hotbox_designer.vendor.Qt import QtCore, QtWidgets, QtGui
+from hotbox_designer.vendor.Qt import QtCore, QtWidgets
 
-from hotbox_designer.colorwheel import ColorDialog
-from hotbox_designer.qtutils import icon, VALIGNS, HALIGNS
+from hotbox_designer.qtutils import VALIGNS, HALIGNS
 from hotbox_designer.widgets import (
-    Title, BoolCombo, WidgetToggler, FloatEdit, BrowseEdit, ColorEdit,
+    Title, BoolCombo, WidgetToggler, FloatEdit, BrowseEdit,
     ColorButton, OpacitySlider, BoolCheckBox, CommandTextEdit)
 from hotbox_designer.designer.highlighter import get_highlighter
 

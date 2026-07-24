@@ -1,6 +1,5 @@
 from hotbox_designer.vendor.Qt import QtGui, QtCore, QtWidgets
 from hotbox_designer.qtutils import icon
-from hotbox_designer.colorwheel import ColorDialog
 
 
 TOGGLER_STYLESHEET = (
@@ -80,55 +79,6 @@ class WidgetToggler(QtWidgets.QPushButton):
         else:
             self.widget.hide()
             self.setText(self.text().replace('v', '>'))
-
-
-class ColorEdit(QtWidgets.QWidget):
-    valueSet = QtCore.Signal(str)
-
-    def __init__(self, parent=None):
-        super(ColorEdit, self).__init__(parent)
-
-        self.text = QtWidgets.QLineEdit()
-        self.text.returnPressed.connect(self.apply)
-        self.button = QtWidgets.QPushButton(icon('picker.png'), '')
-        self.button.setFixedSize(21, 21)
-        self.button.released.connect(self.pick_color)
-
-        self.layout = QtWidgets.QHBoxLayout(self)
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.layout.setSpacing(0)
-        self.layout.addWidget(self.text)
-        self.layout.addWidget(self.button)
-
-        self._value = self.value()
-
-    def focusInEvent(self, event):
-        self._value = self.value()
-        return super(ColorEdit, self).focusInEvent(event)
-
-    def focusOutEvent(self, event):
-        self.apply()
-        return super(ColorEdit, self).focusOutEvent(event)
-
-    def pick_color(self):
-        color = self.text.text() if self.text.text() else None
-        dialog = ColorDialog(color)
-        result = dialog.exec_()
-        if result == QtWidgets.QDialog.Accepted:
-            self.text.setText(dialog.colorname())
-            self.apply()
-
-    def apply(self):
-        if self._value != self.value():
-            self.valueSet.emit(self.value())
-        self._value = self.value()
-
-    def value(self):
-        value = self.text.text()
-        return value if value != '' else None
-
-    def set_color(self, color):
-        self.text.setText(color)
 
 
 class FloatEdit(QtWidgets.QLineEdit):

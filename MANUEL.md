@@ -202,15 +202,6 @@ dans :
 
 Le JSON n'est jamais réécrit — seule la résolution d'affichage change.
 
-## Sauvegardes automatiques
-
-À chaque enregistrement, une copie horodatée du fichier `hotboxes.json`
-est déposée dans `<préférences>/backups/`. On garde les 30 plus
-récentes. Pour **restaurer une version** : bouton ↩ (dernier de la barre
-d'outils du manager) → choisir une date → l'état courant est lui-même
-sauvegardé avant remplacement. Filet de sécurité : on ne perd jamais son
-travail.
-
 ## Formes des boutons
 
 Trois formes : **square** (rectangle), **rounded** (rectangle à coins

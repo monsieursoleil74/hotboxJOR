@@ -1,10 +1,8 @@
 
-import json
 import os
 from functools import partial
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore
 
-import hotbox_designer
 from hotbox_designer.commands import OPEN_COMMAND, CLOSE_COMMAND, SWITCH_COMMAND
 from hotbox_designer.reader import HotboxReader
 from hotbox_designer.designer.application import HotboxEditor
@@ -116,7 +114,6 @@ class HotboxManager(QtWidgets.QWidget):
         self.toolbar.importRequested.connect(self._call_import)
         self.toolbar.exportRequested.connect(self._call_export)
         self.toolbar.setHotkeyRequested.connect(self._call_set_hotkey)
-        self.toolbar.restoreRequested.connect(self._call_restore)
         setter_enabled = bool(application.available_set_hotkey_modes)
         self.toolbar.hotkeyset.setEnabled(setter_enabled)
 
@@ -190,9 +187,6 @@ class HotboxManager(QtWidgets.QWidget):
         return model.hotboxes[row]
 
     def save_hotboxes(self, *_):
-        # sauvegarde horodatée de l'état PRÉCÉDENT avant d'écraser
-        from hotbox_designer.backup import backup_file
-        backup_file(self.application.local_file)
         save_datas(self.application.local_file, self.personnal_model.hotboxes)
         datas = self.shared_model.hotboxes_links
         save_datas(self.application.shared_file, datas)
@@ -400,40 +394,6 @@ class HotboxManager(QtWidgets.QWidget):
             close_cmd=CLOSE_COMMAND.format(name=name),
             switch_cmd=switch_cmd)
 
-    def _call_restore(self):
-        """Choisit une sauvegarde et remplace les hotboxes personnelles
-        par son contenu (l'état courant est lui-même sauvegardé avant)."""
-        from hotbox_designer.backup import list_backups
-        backups = list_backups(self.application.local_file)
-        if not backups:
-            return warning(
-                'Restore backup', 'No backup available yet')
-        labels = [label for _, label in backups]
-        choice, ok = QtWidgets.QInputDialog.getItem(
-            self, 'Restore backup',
-            'Pick a version to restore (current state is backed up first):',
-            labels, 0, False)
-        if not ok:
-            return
-        path = backups[labels.index(choice)][0]
-        data = load_json(path, default=None)
-        if data is None:
-            return warning('Restore backup', 'Could not read this backup')
-        areyousure = QtWidgets.QMessageBox.question(
-            self, 'Restore backup',
-            'Replace all personal hotboxes with the version of %s ?' % choice,
-            buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
-            defaultButton=QtWidgets.QMessageBox.No)
-        if areyousure == QtWidgets.QMessageBox.No:
-            return
-        self.save_hotboxes()  # filet : l'état actuel part en backup
-        hotboxes = [ensure_old_data_compatible(hb) for hb in data]
-        self.personnal_model.layoutAboutToBeChanged.emit()
-        self.personnal_model.hotboxes[:] = hotboxes
-        self.personnal_model.layoutChanged.emit()
-        save_datas(self.application.local_file, self.personnal_model.hotboxes)
-        clear_loaded_hotboxes()
-
     def _call_export(self):
         hotbox = self.get_selected_hotbox()
         if not hotbox:
@@ -498,7 +458,6 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
     importRequested = QtCore.Signal()
     exportRequested = QtCore.Signal()
     setHotkeyRequested = QtCore.Signal()
-    restoreRequested = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(HotboxManagerToolbar, self).__init__(parent)
@@ -527,9 +486,6 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.hotkeyset = QtWidgets.QAction(icon('touch.png'), '', self)
         self.hotkeyset.setToolTip('Set hotkey')
         self.hotkeyset.triggered.connect(self.setHotkeyRequested.emit)
-        self.restore = QtWidgets.QAction(icon('undo.png'), '', self)
-        self.restore.setToolTip('Restore a previous backup')
-        self.restore.triggered.connect(self.restoreRequested.emit)
 
         self.addAction(self.new)
         self.addAction(self.edit)
@@ -542,8 +498,6 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.addAction(self.export)
         self.addSeparator()
         self.addAction(self.hotkeyset)
-        self.addSeparator()
-        self.addAction(self.restore)
 
 
 class HotboxTableView(QtWidgets.QTableView):

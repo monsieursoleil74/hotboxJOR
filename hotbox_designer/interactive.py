@@ -1,4 +1,3 @@
-import os
 from hotbox_designer.vendor.Qt import QtCore, QtGui
 
 from hotbox_designer.geometry import (

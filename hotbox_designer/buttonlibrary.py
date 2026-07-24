@@ -13,7 +13,6 @@ import os
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 from hotbox_designer.interactive import Shape
 from hotbox_designer.painting import draw_shape
-from hotbox_designer.theme import apply_dark_theme
 
 LIBRARY_FILENAME = 'button_library.json'
 BUTTONS_MIME = 'application/x-hotbox-designer-buttons'
@@ -59,9 +58,29 @@ def save_library(path, entries):
         json.dump(entries, f, indent=2)
 
 
+# cache des vignettes : les rendus sont coûteux et la shelf se
+# rafraîchit souvent (ajout/suppression) — on ré-dessine seulement
+# quand l'apparence d'un bouton change réellement
+_THUMB_CACHE = {}
+_THUMB_KEYS = (
+    'shape', 'shape.cornersx', 'shape.cornersy', 'border',
+    'borderwidth.normal', 'bordercolor.normal', 'bordercolor.transparency',
+    'bgcolor.normal', 'bgcolor.transparency', 'text.content', 'text.size',
+    'text.bold', 'text.italic', 'text.color', 'text.valign', 'text.halign',
+    'image.path', 'image.fit')
+
+
+def _thumb_cache_key(options, size):
+    return (size,) + tuple(options.get(k) for k in _THUMB_KEYS)
+
+
 def button_thumbnail(options, size=None):
-    """Dessine le bouton lui-même en guise d'icône."""
+    """Dessine le bouton lui-même en guise d'icône (mis en cache)."""
     thumb_width, thumb_height = size or (THUMB_SIZE * 2, THUMB_SIZE)
+    key = _thumb_cache_key(options, (thumb_width, thumb_height))
+    cached = _THUMB_CACHE.get(key)
+    if cached is not None:
+        return cached
     shape = Shape(dict(options))
     rect = shape.rect
     pixmap = QtGui.QPixmap(thumb_width, thumb_height)
@@ -77,7 +96,11 @@ def button_thumbnail(options, size=None):
     painter.scale(scale, scale)
     draw_shape(painter, shape)
     painter.end()
-    return QtGui.QIcon(pixmap)
+    icon = QtGui.QIcon(pixmap)
+    if len(_THUMB_CACHE) > 512:  # garde-fou mémoire
+        _THUMB_CACHE.clear()
+    _THUMB_CACHE[key] = icon
+    return icon
 
 
 def hotbox_thumbnail(hotbox_data, width=190, height=120):
@@ -123,112 +146,6 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addRow(buttons)
-
-
-class ButtonLibraryTree(QtWidgets.QTreeWidget):
-    """Arbre catégories → boutons, source du drag & drop."""
-
-    def __init__(self, parent=None):
-        super(ButtonLibraryTree, self).__init__(parent)
-        self.setHeaderHidden(True)
-        self.setDragEnabled(True)
-        self.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
-        self.setIconSize(QtCore.QSize(THUMB_SIZE * 2, THUMB_SIZE))
-
-    def selected_options(self):
-        options = []
-        for item in self.selectedItems():
-            entry = item.data(0, QtCore.Qt.UserRole)
-            if entry is not None:
-                options.append(entry['options'])
-        return options
-
-    def startDrag(self, actions):
-        options = self.selected_options()
-        if not options:
-            return
-        mime = QtCore.QMimeData()
-        payload = json.dumps(options).encode('utf-8')
-        mime.setData(BUTTONS_MIME, QtCore.QByteArray(payload))
-        drag = QtGui.QDrag(self)
-        drag.setMimeData(mime)
-        item = self.selectedItems()[0]
-        pixmap = item.icon(0).pixmap(THUMB_SIZE * 2, THUMB_SIZE)
-        if not pixmap.isNull():
-            drag.setPixmap(pixmap)
-        drag.exec_(QtCore.Qt.CopyAction)
-
-
-class ButtonLibraryWindow(QtWidgets.QWidget):
-    """Fenêtre de librairie, partagée par tous les éditeurs."""
-
-    def __init__(self, application, parent=None):
-        super(ButtonLibraryWindow, self).__init__(parent, QtCore.Qt.Window)
-        self.setWindowTitle('Button library')
-        self.resize(280, 420)
-        apply_dark_theme(self)
-        self.path = library_path(application)
-
-        self.tree = ButtonLibraryTree()
-        self.hint = QtWidgets.QLabel(
-            'Drag & drop buttons into a hotbox editor.')
-        self.hint.setWordWrap(True)
-        delete_button = QtWidgets.QPushButton('Delete selected')
-        delete_button.released.connect(self.delete_selected)
-
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(self.tree)
-        layout.addWidget(self.hint)
-        layout.addWidget(delete_button)
-        self.refresh()
-
-    def entries(self):
-        return load_library(self.path)
-
-    def categories(self):
-        return sorted({
-            entry.get('category') or DEFAULT_CATEGORY
-            for entry in self.entries()})
-
-    def refresh(self):
-        self.tree.clear()
-        by_category = {}
-        for entry in self.entries():
-            category = entry.get('category') or DEFAULT_CATEGORY
-            by_category.setdefault(category, []).append(entry)
-        for category in sorted(by_category):
-            top = QtWidgets.QTreeWidgetItem([category])
-            top.setFlags(QtCore.Qt.ItemIsEnabled)
-            self.tree.addTopLevelItem(top)
-            for entry in sorted(
-                    by_category[category], key=lambda e: e.get('name') or ''):
-                item = QtWidgets.QTreeWidgetItem(
-                    [entry.get('name') or 'button'])
-                item.setIcon(0, button_thumbnail(entry['options']))
-                item.setData(0, QtCore.Qt.UserRole, entry)
-                flags = (
-                    QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable |
-                    QtCore.Qt.ItemIsDragEnabled)
-                item.setFlags(flags)
-                top.addChild(item)
-            top.setExpanded(True)
-
-    def add_entries(self, new_entries):
-        entries = self.entries()
-        entries.extend(new_entries)
-        save_library(self.path, entries)
-        self.refresh()
-
-    def delete_selected(self):
-        selected = [
-            item.data(0, QtCore.Qt.UserRole)
-            for item in self.tree.selectedItems()]
-        selected = [entry for entry in selected if entry]
-        if not selected:
-            return
-        entries = [e for e in self.entries() if e not in selected]
-        save_library(self.path, entries)
-        self.refresh()
 
 
 class ShelfList(QtWidgets.QListWidget):
@@ -410,9 +327,19 @@ class LibraryShelf(QtWidgets.QWidget):
 
     def add_entries(self, new_entries):
         entries = load_library_raw(self.path)
-        entries.extend(new_entries)
-        save_library(self.path, entries)
-        refresh_shelves()
+        # anti-doublon : on ne stocke pas deux fois un bouton identique
+        # (même nom, catégorie ET options)
+        existing = [e for e in entries if 'options' in e]
+        added = 0
+        for entry in new_entries:
+            if entry not in existing:
+                entries.append(entry)
+                existing.append(entry)
+                added += 1
+        if added:
+            save_library(self.path, entries)
+            refresh_shelves()
+        return added
 
 
 _shelves = []
@@ -431,20 +358,3 @@ def refresh_shelves():
             shelf.refresh()
         except RuntimeError:  # widget C++ détruit
             _shelves.remove(shelf)
-
-
-_library_windows = {}
-
-
-def show_button_library(application, parent=None):
-    """Une seule fenêtre de librairie par dossier de données."""
-    key = library_path(application)
-    window = _library_windows.get(key)
-    if window is None:
-        window = ButtonLibraryWindow(application, parent)
-        _library_windows[key] = window
-    window.refresh()
-    window.show()
-    window.raise_()
-    window.activateWindow()
-    return window
