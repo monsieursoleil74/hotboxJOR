@@ -78,6 +78,11 @@ def ensure_old_data_compatible(data):
     except KeyError:
         data['general']['leaveclose'] = False
 
+    # coins arrondis (façon dwpicker) : rayons par défaut si absents
+    for shape in data.get('shapes', []):
+        shape.setdefault('shape.cornersx', 8)
+        shape.setdefault('shape.cornersy', 8)
+
     return data
 
 

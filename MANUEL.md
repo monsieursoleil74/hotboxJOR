@@ -202,6 +202,27 @@ dans :
 
 Le JSON n'est jamais réécrit — seule la résolution d'affichage change.
 
+## Sauvegardes automatiques
+
+À chaque enregistrement, une copie horodatée du fichier `hotboxes.json`
+est déposée dans `<préférences>/backups/`. On garde les 30 plus
+récentes. Pour **restaurer une version** : bouton ↩ (dernier de la barre
+d'outils du manager) → choisir une date → l'état courant est lui-même
+sauvegardé avant remplacement. Filet de sécurité : on ne perd jamais son
+travail.
+
+## Formes des boutons
+
+Trois formes : **square** (rectangle), **rounded** (rectangle à coins
+arrondis, façon dwpicker — le rayon se règle dans le champ « Corner ») et
+**round** (ellipse). Le sélecteur est en haut du panneau d'attributs.
+
+## Aperçu dans le manager
+
+La hotbox sélectionnée est affichée en **vignette** (mini-rendu de tous
+ses boutons) en haut du panneau de droite — pour la reconnaître d'un
+coup d'œil.
+
 ## Panneau d'attributs (à droite)
 
 Refondu façon Photoshop :

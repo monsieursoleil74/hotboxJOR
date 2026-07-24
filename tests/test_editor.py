@@ -790,6 +790,83 @@ def test_create_hotbox_dialog():
     print('dialogue de création (nom, menus, unicité) OK')
 
 
+def test_rounded_rect():
+    from hotbox_designer.interactive import Shape
+    from hotbox_designer.painting import draw_shape
+    from hotbox_designer.data import ensure_old_data_compatible
+
+    # rendu : un rounded_rect ne remplit pas les coins (fond visible)
+    options = dict(SQUARE_BUTTON)
+    options.update({
+        'shape': 'rounded_rect', 'shape.left': 10.0, 'shape.top': 10.0,
+        'shape.width': 80.0, 'shape.height': 40.0,
+        'shape.cornersx': 18, 'shape.cornersy': 18,
+        'bgcolor.normal': '#00FF00', 'border': False})
+    image = QtGui.QImage(100, 60, QtGui.QImage.Format_RGB32)
+    image.fill(QtGui.QColor('#000000'))
+    painter = QtGui.QPainter(image)
+    painter.setRenderHint(QtGui.QPainter.Antialiasing)
+    draw_shape(painter, Shape(options))
+    painter.end()
+    corner = QtGui.QColor(image.pixel(12, 12)).name()  # coin haut-gauche
+    center = QtGui.QColor(image.pixel(50, 30)).name()
+    assert center == '#00ff00', center       # centre rempli
+    assert corner != '#00ff00', corner       # coin arrondi = fond noir
+
+    # compat : ensure_old_data_compatible ajoute les rayons par défaut
+    data = ensure_old_data_compatible(
+        {'general': dict(HOTBOX, name='x'),
+         'shapes': [{'shape': 'square', 'shape.left': 0.0}]})
+    assert data['shapes'][0]['shape.cornersx'] == 8
+    print('coins arrondis (rendu + défauts) OK')
+
+
+def test_backup_and_thumbnail():
+    import tempfile
+    from hotbox_designer import backup
+    from hotbox_designer.backup import backup_file, list_backups, MAX_BACKUPS
+    from hotbox_designer.data import save_datas
+    from hotbox_designer.buttonlibrary import hotbox_thumbnail
+
+    tmp = tempfile.mkdtemp()
+    hb_file = os.path.join(tmp, 'hotboxes.json')
+    save_datas(hb_file, [{'general': dict(HOTBOX, name='v1'), 'shapes': []}])
+
+    # première sauvegarde (force pour ignorer le throttle)
+    path = backup_file(hb_file, force=True)
+    assert path and os.path.exists(path)
+    backups = list_backups(hb_file)
+    assert len(backups) == 1
+    assert '/' in backups[0][1]  # horodatage lisible JJ/MM/AAAA
+
+    # throttle : deux backups rapprochés sans force -> un seul en plus
+    backup.MIN_INTERVAL = 9999
+    assert backup_file(hb_file) is None
+
+    # purge FIFO : on fabrique MAX_BACKUPS+5 sauvegardes horodatées
+    # distinctes (la boucle réelle serait trop rapide, collisions à la
+    # seconde), puis une sauvegarde forcée déclenche la purge
+    folder = backup.backup_dir(hb_file)
+    for i in range(MAX_BACKUPS + 5):
+        name = 'hotboxes_200001%02d_000000.json' % (i + 1)
+        save_datas(os.path.join(folder, name), [])
+    backup._last_backup_time.clear()
+    backup_file(hb_file, force=True)  # +1 puis purge
+    assert len(list_backups(hb_file)) == MAX_BACKUPS
+    # les plus anciennes ont été retirées, les récentes conservées
+    kept = [os.path.basename(p) for p, _ in list_backups(hb_file)]
+    assert 'hotboxes_20000101_000000.json' not in kept
+
+    # vignette d'une hotbox : pixmap non vide, taille demandée
+    data = {'general': dict(HOTBOX, name='t', width=400, height=300),
+            'shapes': [dict(SQUARE_BUTTON, **{'shape.left': 50.0,
+                       'shape.top': 50.0, 'bgcolor.normal': '#3388ff'})]}
+    pixmap = hotbox_thumbnail(data, 190, 120)
+    assert pixmap.width() == 190 and pixmap.height() == 120
+    assert not pixmap.isNull()
+    print('sauvegarde auto (throttle, purge) + vignette OK')
+
+
 def test_inline_text_and_autosave():
     from hotbox_designer.vendor.Qt import QtGui
 
@@ -1009,4 +1086,6 @@ if __name__ == '__main__':
     test_create_hotbox_dialog()
     test_radial_and_test_mode()
     test_inline_text_and_autosave()
+    test_rounded_rect()
+    test_backup_and_thumbnail()
     print('TOUT EST VERT')

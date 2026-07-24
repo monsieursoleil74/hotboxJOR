@@ -10,7 +10,9 @@ from hotbox_designer.designer.highlighter import get_highlighter
 
 
 LEFT_CELL_WIDTH = 80
-SHAPE_TYPES = 'square', 'round'
+SHAPE_TYPES = 'square', 'rounded_rect', 'round'
+SHAPE_LABELS = {
+    'square': 'square', 'rounded_rect': 'rounded', 'round': 'round'}
 
 
 class AttributeEditor(QtWidgets.QWidget):
@@ -98,25 +100,55 @@ class ShapeSettings(QtWidgets.QWidget):
         # section « Dimensions » (dont le champ top écrivait dans
         # shape.right !) a été retirée
         self.shape = QtWidgets.QComboBox()
-        self.shape.addItems(SHAPE_TYPES)
+        for shape_type in SHAPE_TYPES:
+            self.shape.addItem(SHAPE_LABELS[shape_type], shape_type)
         self.shape.currentIndexChanged.connect(self.shape_changed)
 
+        # rayon des coins (seulement pour rounded_rect)
+        self.corners = FloatEdit(minimum=0.0)
+        self.corners.setFixedWidth(60)
+        self.corners.valueSet.connect(self._corners_changed)
+        self.corners_row = QtWidgets.QWidget()
+        corners_layout = QtWidgets.QHBoxLayout(self.corners_row)
+        corners_layout.setContentsMargins(0, 0, 0, 0)
+        corners_layout.addWidget(self.corners)
+        corners_layout.addStretch(1)
+
         self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(0)
+        self.layout.setSpacing(2)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Shape', self.shape)
+        self.corners_label = QtWidgets.QLabel('Corner')
+        self.layout.addRow(self.corners_label, self.corners_row)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
 
     def shape_changed(self, _):
-        self.optionSet.emit('shape', self.shape.currentText())
+        shape_type = self.shape.currentData()
+        self.optionSet.emit('shape', shape_type)
+        self._update_corners_visibility(shape_type)
+
+    def _corners_changed(self, value):
+        # même rayon en x et y (simple et suffisant pour une hotbox)
+        self.optionSet.emit('shape.cornersx', value)
+        self.optionSet.emit('shape.cornersy', value)
+
+    def _update_corners_visibility(self, shape_type):
+        visible = shape_type == 'rounded_rect'
+        self.corners_label.setVisible(visible)
+        self.corners_row.setVisible(visible)
 
     def set_options(self, options):
         values = list({option['shape'] for option in options})
-        value = values[0] if len(values) == 1 else '...'
-        self.shape.setCurrentText(value)
+        value = values[0] if len(values) == 1 else None
+        if value in SHAPE_TYPES:
+            self.shape.setCurrentIndex(SHAPE_TYPES.index(value))
+        self._update_corners_visibility(value)
+
+        radii = list({option.get('shape.cornersx', 8) for option in options})
+        self.corners.setText(str(radii[0]) if len(radii) == 1 else None)
 
 
 class ImageSettings(QtWidgets.QWidget):

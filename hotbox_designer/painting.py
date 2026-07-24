@@ -86,10 +86,14 @@ def draw_shape(painter, shape):
     pen.setWidthF(bordersize)
     painter.setPen(pen)
     painter.setBrush(QtGui.QBrush(backgroundcolor))
-    if options['shape'] == 'square':
-        painter.drawRect(shape.rect)
-    else:
+    if options['shape'] == 'round':
         painter.drawEllipse(shape.rect)
+    elif options['shape'] == 'rounded_rect':
+        radius_x = options.get('shape.cornersx', 8)
+        radius_y = options.get('shape.cornersy', 8)
+        painter.drawRoundedRect(shape.rect, radius_x, radius_y)
+    else:  # square (défaut)
+        painter.drawRect(shape.rect)
 
     if shape.pixmap is not None:
         rect = shape.image_rect or content_rect

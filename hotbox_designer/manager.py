@@ -116,6 +116,7 @@ class HotboxManager(QtWidgets.QWidget):
         self.toolbar.importRequested.connect(self._call_import)
         self.toolbar.exportRequested.connect(self._call_export)
         self.toolbar.setHotkeyRequested.connect(self._call_set_hotkey)
+        self.toolbar.restoreRequested.connect(self._call_restore)
         setter_enabled = bool(application.available_set_hotkey_modes)
         self.toolbar.hotkeyset.setEnabled(setter_enabled)
 
@@ -189,6 +190,9 @@ class HotboxManager(QtWidgets.QWidget):
         return model.hotboxes[row]
 
     def save_hotboxes(self, *_):
+        # sauvegarde horodatée de l'état PRÉCÉDENT avant d'écraser
+        from hotbox_designer.backup import backup_file
+        backup_file(self.application.local_file)
         save_datas(self.application.local_file, self.personnal_model.hotboxes)
         datas = self.shared_model.hotboxes_links
         save_datas(self.application.shared_file, datas)
@@ -201,6 +205,7 @@ class HotboxManager(QtWidgets.QWidget):
         hotbox = self.get_selected_hotbox()
         if hotbox is not None:
             self.edit.set_hotbox_settings(hotbox['general'])
+            self.edit.set_preview(hotbox)
             self.edit.setEnabled(True)
         else:
             self.edit.setEnabled(False)
@@ -395,6 +400,40 @@ class HotboxManager(QtWidgets.QWidget):
             close_cmd=CLOSE_COMMAND.format(name=name),
             switch_cmd=switch_cmd)
 
+    def _call_restore(self):
+        """Choisit une sauvegarde et remplace les hotboxes personnelles
+        par son contenu (l'état courant est lui-même sauvegardé avant)."""
+        from hotbox_designer.backup import list_backups
+        backups = list_backups(self.application.local_file)
+        if not backups:
+            return warning(
+                'Restore backup', 'No backup available yet')
+        labels = [label for _, label in backups]
+        choice, ok = QtWidgets.QInputDialog.getItem(
+            self, 'Restore backup',
+            'Pick a version to restore (current state is backed up first):',
+            labels, 0, False)
+        if not ok:
+            return
+        path = backups[labels.index(choice)][0]
+        data = load_json(path, default=None)
+        if data is None:
+            return warning('Restore backup', 'Could not read this backup')
+        areyousure = QtWidgets.QMessageBox.question(
+            self, 'Restore backup',
+            'Replace all personal hotboxes with the version of %s ?' % choice,
+            buttons=QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+            defaultButton=QtWidgets.QMessageBox.No)
+        if areyousure == QtWidgets.QMessageBox.No:
+            return
+        self.save_hotboxes()  # filet : l'état actuel part en backup
+        hotboxes = [ensure_old_data_compatible(hb) for hb in data]
+        self.personnal_model.layoutAboutToBeChanged.emit()
+        self.personnal_model.hotboxes[:] = hotboxes
+        self.personnal_model.layoutChanged.emit()
+        save_datas(self.application.local_file, self.personnal_model.hotboxes)
+        clear_loaded_hotboxes()
+
     def _call_export(self):
         hotbox = self.get_selected_hotbox()
         if not hotbox:
@@ -459,6 +498,7 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
     importRequested = QtCore.Signal()
     exportRequested = QtCore.Signal()
     setHotkeyRequested = QtCore.Signal()
+    restoreRequested = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(HotboxManagerToolbar, self).__init__(parent)
@@ -487,6 +527,9 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.hotkeyset = QtWidgets.QAction(icon('touch.png'), '', self)
         self.hotkeyset.setToolTip('Set hotkey')
         self.hotkeyset.triggered.connect(self.setHotkeyRequested.emit)
+        self.restore = QtWidgets.QAction(icon('undo.png'), '', self)
+        self.restore.setToolTip('Restore a previous backup')
+        self.restore.triggered.connect(self.restoreRequested.emit)
 
         self.addAction(self.new)
         self.addAction(self.edit)
@@ -499,6 +542,8 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.addAction(self.export)
         self.addSeparator()
         self.addAction(self.hotkeyset)
+        self.addSeparator()
+        self.addAction(self.restore)
 
 
 class HotboxTableView(QtWidgets.QTableView):
@@ -634,6 +679,12 @@ class HotboxGeneralSettingWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(HotboxGeneralSettingWidget, self).__init__(parent)
         self.setFixedWidth(200)
+        self.preview = QtWidgets.QLabel()
+        self.preview.setFixedHeight(120)
+        self.preview.setAlignment(QtCore.Qt.AlignCenter)
+        self.preview.setStyleSheet(
+            'background: #2b2b2b; border: 1px solid #494949;'
+            'border-radius: 3px;')
         self.name = QtWidgets.QLineEdit()
         self.name.textEdited.connect(partial(self.optionSet.emit, 'name'))
         self.submenu = BoolCombo(False)
@@ -655,6 +706,10 @@ class HotboxGeneralSettingWidget(QtWidgets.QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
         self.layout.setHorizontalSpacing(5)
+        self.layout.addRow(Title('Preview'))
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 4))
+        self.layout.addRow(self.preview)
+        self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
         self.layout.addRow(Title('Options'))
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
         self.layout.addRow('name', self.name)
@@ -669,6 +724,10 @@ class HotboxGeneralSettingWidget(QtWidgets.QWidget):
         self.layout.addRow(self.open_command)
         self.layout.addRow(self.close_command)
         self.layout.addRow(self.switch_command)
+
+    def set_preview(self, hotbox_data):
+        from hotbox_designer.buttonlibrary import hotbox_thumbnail
+        self.preview.setPixmap(hotbox_thumbnail(hotbox_data))
 
     def _triggering_changed(self, _):
         self.optionSet.emit('triggering', self.triggering.currentText())

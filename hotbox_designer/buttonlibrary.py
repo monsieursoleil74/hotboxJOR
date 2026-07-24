@@ -80,6 +80,31 @@ def button_thumbnail(options, size=None):
     return QtGui.QIcon(pixmap)
 
 
+def hotbox_thumbnail(hotbox_data, width=190, height=120):
+    """Mini-rendu d'une hotbox complète, pour l'aperçu du manager."""
+    general = hotbox_data.get('general', {})
+    hb_w = general.get('width') or 1
+    hb_h = general.get('height') or 1
+    pixmap = QtGui.QPixmap(width, height)
+    pixmap.fill(QtGui.QColor('#2b2b2b'))
+    shapes = hotbox_data.get('shapes') or []
+    if not shapes:
+        return pixmap
+    painter = QtGui.QPainter(pixmap)
+    painter.setRenderHint(QtGui.QPainter.Antialiasing)
+    margin = 6
+    scale = min(
+        (width - 2 * margin) / float(hb_w),
+        (height - 2 * margin) / float(hb_h))
+    painter.translate(
+        (width - hb_w * scale) / 2, (height - hb_h * scale) / 2)
+    painter.scale(scale, scale)
+    for options in shapes:
+        Shape(dict(options)).draw(painter)
+    painter.end()
+    return pixmap
+
+
 class SaveToLibraryDialog(QtWidgets.QDialog):
     """Nom + catégorie pour ranger un bouton dans la librairie."""
 

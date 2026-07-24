@@ -4,6 +4,18 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Sauvegardes auto, aperçu, coins arrondis
+
+- **Sauvegardes automatiques** : chaque enregistrement dépose une copie
+  horodatée dans `backups/` (30 gardées, throttle anti-rafale) ; bouton
+  de restauration dans le manager (choix d'une date, état courant
+  sauvé avant).
+- **Vignette d'aperçu** dans le manager : mini-rendu de la hotbox
+  sélectionnée en haut du panneau de droite.
+- **Coins arrondis** (forme `rounded_rect` + rayon, façon dwpicker) :
+  nouvelle forme au sélecteur, compatible avec l'import dwpicker,
+  rayons par défaut ajoutés aux anciennes hotboxes.
+
 ## 2026-07 — Édition rapide + icônes redessinées
 
 - **Double-clic sur un bouton = éditer son texte** à même le canvas
