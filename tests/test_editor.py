@@ -622,8 +622,17 @@ def test_attribute_panel():
     assert all(
         126 <= s.options['bgcolor.transparency'] <= 129
         for s in area.shapes)
+
+    # slider d'épaisseur de bordure : une valeur pilote les 3 états
+    # proportionnellement (normal, survol ×1.25, clic ×2)
+    appearence.border_width.set_value(4.0)
+    appearence.border_width._emit()
+    for s in area.shapes:
+        assert s.options['borderwidth.normal'] == 4.0
+        assert s.options['borderwidth.hovered'] == 5.0
+        assert s.options['borderwidth.clicked'] == 8.0
     editor.close()
-    print('panneau d attributs (pastilles, opacité, cases) OK')
+    print('panneau d attributs (pastilles, opacité, épaisseur, cases) OK')
 
 
 def test_press_selects_and_moves():

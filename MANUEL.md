@@ -228,8 +228,9 @@ Refondu façon Photoshop :
   historique du JSON, rien ne change dans le format.
 - **Cases à cocher** pour bordure visible / gras / italique (état
   intermédiaire si la sélection est mixte).
-- **Épaisseurs de bordure** compactées en une ligne N / H / C
-  (normal / survol / clic).
+- **Épaisseur de bordure = un curseur** (comme l'opacité, en px) : il
+  pilote les trois états d'un coup — survol ×1.25 et clic ×2 par
+  rapport à la valeur normale.
 - La section **Dimensions a été retirée** (tout se manipule au
   viewport) — son champ « top » écrivait d'ailleurs dans `shape.right`
   (bug de l'original).

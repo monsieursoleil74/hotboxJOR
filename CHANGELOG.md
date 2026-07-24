@@ -4,6 +4,13 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Épaisseur de bordure au curseur
+
+- L'épaisseur de bordure passe des trois champs N/H/C à **un seul
+  curseur** (widget `ValueSlider`, même ergonomie que l'opacité, en px)
+  qui pilote les trois états proportionnellement (survol ×1.25,
+  clic ×2). Émission au relâchement (undo propre).
+
 ## 2026-07 — Direction artistique « pro DCC »
 
 - Palette repensée en **gris neutres désaturés** (façon Maya/Nuke),

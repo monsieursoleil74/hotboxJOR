@@ -255,6 +255,60 @@ class OpacitySlider(QtWidgets.QWidget):
         self.slider.blockSignals(False)
 
 
+class ValueSlider(QtWidgets.QWidget):
+    """Curseur générique min..max avec valeur affichée à droite (même
+    ergonomie que l'opacité). Émet un float au relâchement (pas à
+    chaque tick, pour ne pas inonder l'undo). Le slider travaille en
+    pas entiers ``STEPS`` par unité pour autoriser les décimales."""
+    valueSet = QtCore.Signal(object)
+    STEPS = 2  # 2 crans par unité -> pas de 0.5
+
+    def __init__(self, minimum=0.0, maximum=10.0, suffix=' px', parent=None):
+        super(ValueSlider, self).__init__(parent)
+        self._min, self._max, self._suffix = minimum, maximum, suffix
+        self.slider = QtWidgets.QSlider(QtCore.Qt.Horizontal)
+        self.slider.setRange(
+            int(minimum * self.STEPS), int(maximum * self.STEPS))
+        self.label = QtWidgets.QLabel('')
+        self.label.setFixedWidth(38)
+        self.label.setAlignment(QtCore.Qt.AlignRight)
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        layout.addWidget(self.slider)
+        layout.addWidget(self.label)
+        self.slider.valueChanged.connect(self._update_label)
+        self.slider.sliderReleased.connect(self._emit)
+        self.slider.actionTriggered.connect(self._action_triggered)
+
+    def _pretty(self, value):
+        text = ('%.1f' % value).rstrip('0').rstrip('.')
+        return text + self._suffix
+
+    def _update_label(self, raw):
+        self.label.setText(self._pretty(raw / float(self.STEPS)))
+
+    def _action_triggered(self, action):
+        if action != QtWidgets.QAbstractSlider.SliderMove:
+            QtCore.QTimer.singleShot(0, self._emit)
+
+    def _emit(self):
+        self.valueSet.emit(self.value())
+
+    def value(self):
+        return self.slider.value() / float(self.STEPS)
+
+    def set_value(self, value):
+        self.slider.blockSignals(True)
+        if value is None:
+            self.slider.setValue(self.slider.minimum())
+            self.label.setText('...')
+        else:
+            self.slider.setValue(int(round(float(value) * self.STEPS)))
+            self.label.setText(self._pretty(self.value()))
+        self.slider.blockSignals(False)
+
+
 class BoolCheckBox(QtWidgets.QCheckBox):
     """Case à cocher compatible avec l'API des BoolCombo (setCurrentText
     'True'/'False'/None pour les valeurs multiples)."""

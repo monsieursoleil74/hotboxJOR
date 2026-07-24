@@ -4,7 +4,7 @@ from hotbox_designer.vendor.Qt import QtCore, QtWidgets
 from hotbox_designer.qtutils import VALIGNS, HALIGNS
 from hotbox_designer.widgets import (
     Title, BoolCombo, WidgetToggler, FloatEdit, BrowseEdit,
-    ColorButton, OpacitySlider, BoolCheckBox, CommandTextEdit)
+    ColorButton, OpacitySlider, ValueSlider, BoolCheckBox, CommandTextEdit)
 from hotbox_designer.designer.highlighter import get_highlighter
 
 
@@ -205,8 +205,6 @@ class AppearenceSettings(QtWidgets.QWidget):
     COLOR_KEYS = (
         'bgcolor.normal', 'bgcolor.hovered', 'bgcolor.clicked',
         'bordercolor.normal', 'bordercolor.hovered', 'bordercolor.clicked')
-    WIDTH_KEYS = (
-        'borderwidth.normal', 'borderwidth.hovered', 'borderwidth.clicked')
 
     STATE_LABELS = ('Normal', 'Hover', 'Click')
 
@@ -234,20 +232,11 @@ class AppearenceSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'bordercolor.transparency')
         self.border_opacity.valueSet.connect(method)
 
-        self.width_edits = {}
-        widths = QtWidgets.QHBoxLayout()
-        widths.setContentsMargins(0, 0, 0, 0)
-        widths.setSpacing(4)
-        for key, label in zip(self.WIDTH_KEYS, ('N', 'H', 'C')):
-            edit = FloatEdit(minimum=0.0)
-            edit.setFixedWidth(42)
-            edit.valueSet.connect(partial(self.optionSet.emit, key))
-            edit.setToolTip(
-                {'N': 'Normal', 'H': 'Hover', 'C': 'Click'}[label])
-            self.width_edits[key] = edit
-            widths.addWidget(QtWidgets.QLabel(label))
-            widths.addWidget(edit)
-        widths.addStretch(1)
+        # épaisseur de bordure = un seul slider (comme l'opacité) qui
+        # pilote les 3 états proportionnellement (survol ×1.25, clic ×2,
+        # les ratios par défaut)
+        self.border_width = ValueSlider(minimum=0.0, maximum=10.0)
+        self.border_width.valueSet.connect(self._width_changed)
 
         def legend_row():
             row = QtWidgets.QHBoxLayout()
@@ -282,21 +271,29 @@ class AppearenceSettings(QtWidgets.QWidget):
         self.layout.addRow('visible', self.border)
         self.layout.addRow('color', swatch_row('bordercolor'))
         self.layout.addRow('opacity', self.border_opacity)
-        self.layout.addRow('width', widths)
+        self.layout.addRow('width', self.border_width)
         for label in self.findChildren(QtWidgets.QLabel):
             if (not isinstance(label, Title)
-                    and label.text() not in ('N', 'H', 'C')
                     and label.text() not in self.STATE_LABELS):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
+
+    WIDTH_RATIOS = {
+        'borderwidth.normal': 1.0,
+        'borderwidth.hovered': 1.25,
+        'borderwidth.clicked': 2.0}
+
+    def _width_changed(self, value):
+        for key, ratio in self.WIDTH_RATIOS.items():
+            self.optionSet.emit(key, round(value * ratio, 3))
 
     def set_options(self, options):
         for key, button in self.color_buttons.items():
             values = list({option[key] for option in options})
             button.set_color(values[0] if len(values) == 1 else None)
 
-        for key, edit in self.width_edits.items():
-            values = list({option[key] for option in options})
-            edit.setText(str(values[0]) if len(values) == 1 else None)
+        # le slider affiche l'épaisseur « normale »
+        widths = list({option['borderwidth.normal'] for option in options})
+        self.border_width.set_value(widths[0] if len(widths) == 1 else None)
 
         values = list({option['border'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
