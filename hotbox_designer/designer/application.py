@@ -47,12 +47,15 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.pasteRequested.connect(self.paste)
         self.menu.deleteRequested.connect(self.delete_selection)
         self.menu.sizeChanged.connect(self.editor_size_changed)
+        self.menu.fitZoneRequested.connect(self.fit_zone_to_shapes)
         self.menu.editCenterToggled.connect(self.edit_center_mode_changed)
         self.menu.useSnapToggled.connect(self.use_snap)
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
         self.menu.centerValuesChanged.connect(self.move_center)
         width, height = self.options['width'], self.options['height']
-        self.menu.set_size_values(width, height)
+        # emit=False : à l'ouverture, rien n'a été modifié (sinon un
+        # état fantôme entrait dans la pile d'undo)
+        self.menu.set_size_values(width, height, emit=False)
         x, y = self.options['centerx'], self.options['centery']
         self.menu.set_center_values(x, y)
         self.menu.undoRequested.connect(self.undo)
@@ -193,6 +196,36 @@ class HotboxEditor(QtWidgets.QWidget):
         self.shape_editor.repaint()
         self.set_data_modified()
 
+    FIT_ZONE_MARGIN = 10
+
+    def fit_zone_to_shapes(self):
+        """Recadre le plan de travail sur les shapes (façon dwpicker :
+        on pose ses boutons librement, la zone s'ajuste autour)."""
+        shapes = self.shape_editor.shapes
+        if not shapes:
+            return
+        margin = self.FIT_ZONE_MARGIN
+        bounds = get_combined_rects([shape.rect for shape in shapes])
+        dx, dy = margin - bounds.left(), margin - bounds.top()
+        for shape in shapes:
+            shape.rect.moveLeft(shape.rect.left() + dx)
+            shape.rect.moveTop(shape.rect.top() + dy)
+            shape.synchronize_rect()
+            shape.synchronize_image()
+        width = int(round(bounds.width())) + 2 * margin
+        height = int(round(bounds.height())) + 2 * margin
+        self.options['width'] = width
+        self.options['height'] = height
+        self.options['centerx'] = int(round(self.options['centerx'] + dx))
+        self.options['centery'] = int(round(self.options['centery'] + dy))
+        self.menu.set_size_values(width, height, emit=False)
+        self.menu.set_center_values(
+            self.options['centerx'], self.options['centery'])
+        if self.shape_editor.selection.shapes:
+            self.shape_editor.update_selection()
+        self.shape_editor.focus_view()
+        self.set_data_modified()
+
     def move_center(self, x, y):
         self.options['centerx'] = x
         self.options['centery'] = y
@@ -318,7 +351,9 @@ class HotboxEditor(QtWidgets.QWidget):
 
 class UndoManager():
     def __init__(self, data):
-        self._current_state = data
+        # copie profonde : l'état initial était stocké par référence et
+        # se retrouvait corrompu par la première modification in place
+        self._current_state = copy_hotbox_data(data)
         self._modified = False
         self._undo_stack = []
         self._redo_stack = []

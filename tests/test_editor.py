@@ -249,9 +249,78 @@ def test_cross_hotbox_copy_paste():
     print('copier-coller entre hotboxes OK')
 
 
+def test_fast_drag_does_not_drop():
+    """Le bug d'origine : un geste rapide sortait du rectangle de
+    sélection et le déplacement s'arrêtait (il fallait recliquer)."""
+    editor = make_editor([(100, 100, 'btn')])
+    area = editor.shape_editor
+    driver = Driver(area)
+    shape = area.shapes[0]
+    driver.click((160, 112))
+    # 2 pas énormes : le curseur quitte largement le rectangle
+    driver.drag((160, 112), (400, 300), steps=2)
+    assert near(shape.rect.center().x(), 400, 3)
+    assert near(shape.rect.center().y(), 300, 3)
+    editor.close()
+    print('drag rapide sans décrochage OK')
+
+
+def test_nudge_with_arrows():
+    editor = make_editor([(100, 100, 'btn')])
+    area = editor.shape_editor
+    Driver(area)  # installe le curseur contrôlé
+    shape = area.shapes[0]
+    area.selection.replace([shape])
+    area.update_selection()
+
+    class FakeKeyEvent:
+        def __init__(self, key, modifiers=QtCore.Qt.NoModifier):
+            self._key, self._modifiers = key, modifiers
+
+        def key(self):
+            return self._key
+
+        def modifiers(self):
+            return self._modifiers
+
+    area.keyPressEvent(FakeKeyEvent(QtCore.Qt.Key_Right))
+    assert shape.options['shape.left'] == 101.0
+    area.keyPressEvent(
+        FakeKeyEvent(QtCore.Qt.Key_Down, QtCore.Qt.ShiftModifier))
+    assert shape.options['shape.top'] == 110.0
+    editor.undo()
+    editor.undo()
+    assert editor.shape_editor.shapes[0].options['shape.left'] == 100.0
+    editor.close()
+    print('déplacement aux flèches (1, Maj=10) + undo OK')
+
+
+def test_fit_zone():
+    editor = make_editor([(100, 100, 'a'), (300, 250, 'b')])
+    area = editor.shape_editor
+    editor.fit_zone_to_shapes()
+    # bounding box : 100,100 -> 420,275 (boutons 120x25) ; marge 10
+    assert editor.options['width'] == 340, editor.options['width']
+    assert editor.options['height'] == 195, editor.options['height']
+    lefts = sorted(s.options['shape.left'] for s in area.shapes)
+    tops = sorted(s.options['shape.top'] for s in area.shapes)
+    assert lefts[0] == 10.0 and tops[0] == 10.0, (lefts, tops)
+    # l'écart relatif entre les boutons est conservé
+    assert lefts[1] - lefts[0] == 200.0
+    editor.undo()
+    assert editor.options['width'] == 600
+    assert min(s.options['shape.left']
+               for s in editor.shape_editor.shapes) == 100.0
+    editor.close()
+    print('ajustement de la zone aux shapes + undo OK')
+
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
     test_align_and_handles()
     test_cross_hotbox_copy_paste()
+    test_fast_drag_does_not_drop()
+    test_nudge_with_arrows()
+    test_fit_zone()
     print('TOUT EST VERT')

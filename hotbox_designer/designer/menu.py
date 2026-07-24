@@ -11,6 +11,7 @@ class MenuWidget(QtWidgets.QWidget):
     undoRequested = QtCore.Signal()
     redoRequested = QtCore.Signal()
     sizeChanged = QtCore.Signal()
+    fitZoneRequested = QtCore.Signal()
     useSnapToggled = QtCore.Signal(bool)
     snapValuesChanged = QtCore.Signal()
     editCenterToggled = QtCore.Signal(bool)
@@ -53,6 +54,11 @@ class MenuWidget(QtWidgets.QWidget):
         self.hbheight.setFixedWidth(35)
         self.hbheight.setValidator(validator)
         self.hbheight.textEdited.connect(self.size_changed)
+
+        self.fitzone = QtWidgets.QAction(icon('fit_zone.png'), '', self)
+        self.fitzone.setToolTip(
+            'Fit zone to shapes (resize the hotbox around its buttons)')
+        self.fitzone.triggered.connect(self.fitZoneRequested.emit)
 
         icon_ = icon('center.png')
         self.editcenter = QtWidgets.QAction(icon_, '', self)
@@ -152,6 +158,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addWidget(QtWidgets.QLabel('size'))
         self.toolbar.addWidget(self.hbwidth)
         self.toolbar.addWidget(self.hbheight)
+        self.toolbar.addAction(self.fitzone)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.editcenter)
         self.toolbar.addWidget(self.editcenterx)
@@ -204,10 +211,11 @@ class MenuWidget(QtWidgets.QWidget):
         y = int(self.editcentery.text()) if self.editcentery.text() else 0
         self.centerValuesChanged.emit(x, y)
 
-    def set_size_values(self, width, height):
+    def set_size_values(self, width, height, emit=True):
         self.hbwidth.setText(str(width))
         self.hbheight.setText(str(height))
-        self.sizeChanged.emit()
+        if emit:
+            self.sizeChanged.emit()
 
     def get_size(self):
         width = int(self.hbwidth.text()) if self.hbwidth.text() else 1

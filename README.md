@@ -46,6 +46,13 @@ vieillissant par une expérience façon dwpicker :
 - **Copier-coller entre hotboxes** : Ctrl+C/Ctrl+V passe par le
   presse-papier système (JSON) — on copie des boutons dans une hotbox et
   on les colle dans une autre, y compris entre deux sessions.
+- **Glisser fluide** : le déplacement suit la souris jusqu'au
+  relâchement — dans l'original, un geste rapide « décrochait » et il
+  fallait recliquer.
+- **Ajuster la zone aux shapes** (bouton à côté des champs size, façon
+  dwpicker) : on pose ses boutons librement, la zone se recadre autour
+  (marge 10) et le centre est recalé — plus de champs à piloter à la main.
+- **Flèches = déplacer la sélection** d'1 unité (Maj = 10).
 
 ## Point de départ
 

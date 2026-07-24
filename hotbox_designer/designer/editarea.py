@@ -36,6 +36,9 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.clicked_shape = None
         self.clicked = False
         self.handeling = False
+        # 'move' ou 'resize' pendant un drag : le geste suit la souris
+        # jusqu'au relâchement, même si le curseur sort du manipulateur
+        self.drag_mode = None
         self.manipulator_moved = False
         self.edit_center_mode = False
         self.increase_undo_on_release = False
@@ -116,10 +119,12 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.manipulator_moved = True
         rect = self.manipulator.rect
-        if self.transform.direction:
+        if self.drag_mode == 'resize' and self.transform.direction:
             self.transform.resize([s.rect for s in self.selection], cursor)
             self.manipulator.update_geometries()
-        elif rect is not None and rect.contains(cursor):
+        elif self.drag_mode == 'move' and rect is not None:
+            # pas de test contains() ici : un geste rapide sortait du
+            # rectangle et le déplacement s'arrêtait (bug de l'original)
             self.transform.move([s.rect for s in self.selection], cursor)
             self.manipulator.update_geometries()
         for shape in self.shapes:
@@ -166,7 +171,12 @@ class ShapeEditArea(QtWidgets.QWidget):
         handeling = bool(direction or rect.contains(cursor) if rect else False)
 
         self.handeling = handeling
-        if not self.handeling:
+        if direction:
+            self.drag_mode = 'resize'
+        elif handeling:
+            self.drag_mode = 'move'
+        else:
+            self.drag_mode = None
             self.selection_square.clicked(cursor)
 
         self.repaint()
@@ -209,11 +219,22 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.clicked = False
         self.handeling = False
+        self.drag_mode = None
         self.repaint()
+
+    NUDGES = {
+        QtCore.Qt.Key_Left: (-1, 0),
+        QtCore.Qt.Key_Right: (1, 0),
+        QtCore.Qt.Key_Up: (0, -1),
+        QtCore.Qt.Key_Down: (0, 1)}
 
     def keyPressEvent(self, event):
         if event.key() == QtCore.Qt.Key_F:
             return self.focus_view()
+
+        if event.key() in self.NUDGES and self.selection.shapes:
+            return self.nudge_selection(*self.NUDGES[event.key()], big=bool(
+                event.modifiers() & QtCore.Qt.ShiftModifier))
 
         if event.key() == QtCore.Qt.Key_Shift:
             self.transform.square = True
@@ -246,6 +267,18 @@ class ShapeEditArea(QtWidgets.QWidget):
         rects = [shape.rect for shape in self.selection]
         self.manipulator.set_rect(get_combined_rects(rects))
         self.selectedShapesChanged.emit()
+
+    def nudge_selection(self, dx, dy, big=False):
+        """Flèches : déplacer la sélection de 1 unité (Maj = 10)."""
+        step = 10 if big else 1
+        for shape in self.selection:
+            shape.rect.moveLeft(shape.rect.left() + dx * step)
+            shape.rect.moveTop(shape.rect.top() + dy * step)
+            shape.synchronize_rect()
+            shape.synchronize_image()
+        self.update_selection()
+        self.increaseUndoStackRequested.emit()
+        self.repaint()
 
     def duplicate_selection(self):
         from copy import deepcopy
