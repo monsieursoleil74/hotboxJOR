@@ -4,6 +4,14 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — UI du manager rafraîchie
+
+- En-tête « Hotbox Designer JOR », onglets Personal/Shared soulignés
+  (accent bleu) au lieu des cartouches, liste de hotboxes aux lignes
+  plus hautes et aérées avec sélection bleue pleine largeur.
+- Titres de section (Options, Commands, Shape, Background…) en petites
+  capitales bleutées ; bandeaux de repli (togglers) plus discrets.
+
 ## 2026-07 — Fix cases à cocher + dialogue de création
 
 - **Bug « border visible »** : le signal `clicked` se résout sans

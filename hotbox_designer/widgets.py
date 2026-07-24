@@ -3,9 +3,11 @@ from hotbox_designer.qtutils import icon
 from hotbox_designer.colorwheel import ColorDialog
 
 
-# don't use style sheet like that, find better design
 TOGGLER_STYLESHEET = (
-    'background: rgba(0, 0, 0, 75); text-align: left; font: bold')
+    'QPushButton {background: #333333; color: #cfcfcf; text-align: left;'
+    'font-weight: bold; padding: 5px 8px; border: none;'
+    'border-top: 1px solid #444444;}'
+    'QPushButton:hover {background: #3a3a3a;}')
 
 
 class BoolCombo(QtWidgets.QComboBox):
@@ -165,9 +167,11 @@ class FloatEdit(QtWidgets.QLineEdit):
 class Title(QtWidgets.QLabel):
     def __init__(self, title, parent=None):
         super(Title, self).__init__(parent)
-        self.setFixedHeight(20)
-        self.setStyleSheet('background: rgba(0, 0, 0, 25)')
-        self.setText('<b>&nbsp;&nbsp;&nbsp;' + title)
+        self.setFixedHeight(22)
+        self.setStyleSheet(
+            'color: #8fb4e0; font-weight: bold; letter-spacing: 1px;'
+            'background: transparent; padding-left: 2px;')
+        self.setText(title.upper())
 
 
 class TouchEdit(QtWidgets.QLineEdit):

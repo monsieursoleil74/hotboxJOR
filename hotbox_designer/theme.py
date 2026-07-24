@@ -70,15 +70,20 @@ QHeaderView::section {
     border-right: 1px solid #494949;
     padding: 3px;
 }
-QTabWidget::pane { border: 1px solid #494949; }
+QTabWidget::pane { border: none; }
 QTabBar::tab {
-    background: #353535;
-    border: 1px solid #494949;
-    border-bottom: none;
-    padding: 4px 12px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 7px 16px;
+    margin-right: 2px;
+    color: #999999;
 }
-QTabBar::tab:selected { background: #3c3c3c; }
-QTabBar::tab:!selected { color: #999999; }
+QTabBar::tab:selected {
+    color: #ffffff;
+    border-bottom: 2px solid #3388ff;
+}
+QTabBar::tab:hover:!selected { color: #cccccc; }
 QMenu {
     background-color: #333333;
     border: 1px solid #555555;

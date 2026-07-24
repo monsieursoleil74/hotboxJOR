@@ -170,9 +170,12 @@ class HotboxManager(QtWidgets.QWidget):
         self.tabwidget.addTab(self.shared, "Shared")
         self.tabwidget.currentChanged.connect(self.tab_index_changed)
 
+        header = _ManagerHeader()
+
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
+        self.layout.addWidget(header)
         self.layout.addWidget(self.toolbar)
         self.layout.addWidget(self.tabwidget)
 
@@ -422,6 +425,31 @@ class _EditorLink():
         self.data = data
 
 
+class _ManagerHeader(QtWidgets.QWidget):
+    """Bandeau de titre du manager."""
+
+    def __init__(self, parent=None):
+        super(_ManagerHeader, self).__init__(parent)
+        self.setFixedHeight(46)
+        self.setStyleSheet(
+            '_ManagerHeader {background: #2b2b2b;'
+            'border-bottom: 1px solid #1e1e1e;}')
+        title = QtWidgets.QLabel('Hotbox Designer')
+        title.setStyleSheet(
+            'color: #f0f0f0; font-size: 15px; font-weight: bold;'
+            'background: transparent;')
+        subtitle = QtWidgets.QLabel('JOR')
+        subtitle.setStyleSheet(
+            'color: #3388ff; font-size: 15px; font-weight: bold;'
+            'background: transparent;')
+        layout = QtWidgets.QHBoxLayout(self)
+        layout.setContentsMargins(12, 0, 12, 0)
+        layout.setSpacing(4)
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addStretch(1)
+
+
 class HotboxManagerToolbar(QtWidgets.QToolBar):
     newRequested = QtCore.Signal()
     editRequested = QtCore.Signal()
@@ -490,6 +518,13 @@ class HotboxTableView(QtWidgets.QTableView):
         self.setShowGrid(False)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
+        vheader.setDefaultSectionSize(34)  # lignes plus hautes et aérées
+        self.setStyleSheet(
+            'QTableView {border: none; background: #2f2f2f;'
+            'alternate-background-color: #333333;}'
+            'QTableView::item {padding: 6px 10px; border: none;}'
+            'QTableView::item:selected {background: #2b6bbf;'
+            'color: #ffffff;}')
 
     def selection_changed(self, *_):
         return self.selectedRowChanged.emit()
