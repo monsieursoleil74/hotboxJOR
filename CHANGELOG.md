@@ -4,6 +4,12 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Placer l'image : flèches du clavier
+
+- En mode « Place in button », les **flèches** décalent l'image dans le
+  bouton d'1 unité (**Maj** = 10) — réglage fin en complément du drag et
+  de la molette. La shape, elle, ne bouge pas.
+
 ## 2026-07 — Quatre templates de plus (choisis sur planche de propositions)
 
 - **Manette** : croix directionnelle + A/B/X/Y colorés + gâchettes

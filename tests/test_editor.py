@@ -991,6 +991,23 @@ def test_image_placement():
     assert shape.options['image.offsetx'] == 0
     assert shape.options['image.offsety'] == 0
 
+    # flèches : décalage de l'image d'1 unité, Maj = 10, et la SHAPE
+    # ne bouge pas (les flèches servent à l'image dans ce mode)
+    shape_left = shape.options['shape.left']
+    area.keyPressEvent(QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress, QtCore.Qt.Key_Right, QtCore.Qt.NoModifier))
+    assert shape.options['image.offsetx'] == 1
+    area.keyPressEvent(QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress, QtCore.Qt.Key_Down,
+        QtCore.Qt.ShiftModifier))
+    assert shape.options['image.offsety'] == 10
+    area.keyPressEvent(QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress, QtCore.Qt.Key_Left, QtCore.Qt.NoModifier))
+    assert shape.options['image.offsetx'] == 0
+    assert shape.options['shape.left'] == shape_left
+    shape.options['image.offsety'] = 0
+    shape.synchronize_image()
+
     # sortie du mode
     editor.shape_editor.stop_place_image()
     assert area.place_image_shape is None

@@ -279,8 +279,9 @@ la section Image affiche deux boutons :
 
 - **◈ Place in button** : active le mode placement. On **glisse
   l'image** dans le bouton pour la positionner, la **molette** la
-  redimensionne. **Échap** (ou re-cliquer le bouton) termine. Un
-  contour vert en pointillés montre la position de l'image.
+  redimensionne, et les **flèches** la décalent d'1 unité (**Maj** = 10)
+  pour un réglage au pixel près. **Échap** (ou re-cliquer le bouton)
+  termine. Un contour vert en pointillés montre la position de l'image.
 - **Center** : recentre l'image dans le bouton.
 
 Tout est annulable (Ctrl+Z). Le placement n'est possible que sur un

@@ -423,6 +423,13 @@ class ShapeEditArea(QtWidgets.QWidget):
             # ressort en stop_place_image
             return self.placeImageEscaped.emit()
 
+        # en mode « placer l'image » : les flèches déplacent l'IMAGE
+        # dans le bouton, d'1 unité (Maj = 10) — complément de la souris
+        if event.key() in self.NUDGES and self.place_image_shape is not None:
+            dx, dy = self.NUDGES[event.key()]
+            big = bool(event.modifiers() & QtCore.Qt.ShiftModifier)
+            return self.nudge_place_image(dx, dy, big)
+
         if event.key() == QtCore.Qt.Key_F:
             return self.focus_view()
 
@@ -534,6 +541,16 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.magnet_guides.append(('v', guide_x))
         if guide_y is not None:
             self.magnet_guides.append(('h', guide_y))
+
+    def nudge_place_image(self, dx, dy, big=False):
+        """Flèches en mode placement : décaler l'image dans le bouton."""
+        step = 10 if big else 1
+        shape = self.place_image_shape
+        shape.options['image.offsetx'] += dx * step
+        shape.options['image.offsety'] += dy * step
+        shape.synchronize_image()
+        self.increaseUndoStackRequested.emit()
+        self.repaint()
 
     def nudge_selection(self, dx, dy, big=False):
         """Flèches : déplacer la sélection de 1 unité (Maj = 10)."""
