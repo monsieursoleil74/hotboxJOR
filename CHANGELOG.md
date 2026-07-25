@@ -4,6 +4,15 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Fix : les catégories studio vides s'affichent enfin
+
+- Une catégorie studio créée mais pas encore remplie (« New studio
+  category… ») restait **invisible** : les onglets studio n'étaient
+  construits qu'à partir des boutons, pas des marqueurs de catégorie
+  vide. `refresh()` charge désormais aussi `load_extra_categories()` du
+  fichier studio — comme il le faisait déjà côté perso. On voit donc
+  toutes ses catégories studio, remplies ou non.
+
 ## 2026-07 — Librairie studio librement modifiable (retrait du mode mainteneur)
 
 - Retrait de la couche « mainteneur studio » (variable

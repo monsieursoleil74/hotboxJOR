@@ -863,7 +863,8 @@ def test_studio_library():
 
     studio_dir = tempfile.mkdtemp()
     json.dump(
-        [entry('IK/FK', 'Rig'), entry('Playblast', 'Anim')],
+        [entry('IK/FK', 'Rig'), entry('Playblast', 'Anim'),
+         {'__category__': 'EXTRA TOOLS'}],  # catégorie studio VIDE
         open(os.path.join(studio_dir, 'button_library.json'), 'w'))
     os.environ[STUDIO_ENV_VARIABLE] = studio_dir
     try:
@@ -880,7 +881,13 @@ def test_studio_library():
         assert readonly[-1] is False
         # onglet studio affiche le logo (icône non vide) et un nom propre
         assert not shelf.tabs.tabIcon(0).isNull()
-        assert shelf.tabs.tabText(0) in ('Anim', 'Rig')  # pas de ★
+        assert shelf.tabs.tabText(0) in ('Anim', 'EXTRA TOOLS', 'Rig')
+        # une catégorie studio VIDE est bien visible en onglet
+        studio_tabs = [shelf.tabs.tabText(i)
+                       for i in range(shelf.tabs.count())
+                       if shelf.tabs.widget(i).readonly]
+        assert 'EXTRA TOOLS' in studio_tabs
+        assert set(studio_tabs) == {'Anim', 'EXTRA TOOLS', 'Rig'}
         # sauvegarde depuis un onglet studio retombe sur une cat. perso
         shelf.tabs.setCurrentIndex(0)
         assert shelf.current_category() == 'General'

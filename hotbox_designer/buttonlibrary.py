@@ -446,8 +446,14 @@ class LibraryShelf(QtWidgets.QWidget):
         current = self._current_key()
         self.tabs.clear()
 
-        # 1) onglets studio (partagés, lecture seule) EN PREMIER
+        # 1) onglets studio (partagés) EN PREMIER — on affiche AUSSI les
+        # catégories studio vides (marqueurs), sinon une catégorie créée
+        # mais pas encore remplie resterait invisible
         studio = {}
+        studio_src = studio_library_path()
+        if studio_src:
+            for category in load_extra_categories(studio_src):
+                studio.setdefault(category, [])
         for entry in load_studio_library():
             category = entry.get('category') or DEFAULT_CATEGORY
             studio.setdefault(category, []).append(entry)
