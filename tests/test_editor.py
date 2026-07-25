@@ -896,20 +896,7 @@ def test_studio_library():
         assert any(e['name'] == 'MyTool' for e in load_studio_library())
         # ré-export du même bouton = doublon ignoré
         assert export_to_studio([perso_entry]) == 0
-        # sans HOTBOX_STUDIO_ADMIN : pas de badge mainteneur
-        assert shelf.admin_badge.isVisible() is False
         shelf.close()
-
-        # avec HOTBOX_STUDIO_ADMIN : le badge mainteneur apparaît
-        os.environ['HOTBOX_STUDIO_ADMIN'] = '1'
-        try:
-            shelf2 = LibraryShelf(application)
-            shelf2.show()
-            APP.processEvents()
-            assert shelf2.admin_badge.isVisible() is True
-            shelf2.close()
-        finally:
-            del os.environ['HOTBOX_STUDIO_ADMIN']
     finally:
         del os.environ[STUDIO_ENV_VARIABLE]
     print('librairie studio (onglets logo, lecture seule, export) OK')
@@ -1244,30 +1231,6 @@ def test_library_category_ops():
     print('organisation des catégories (créer/renommer/déplacer/vider) OK')
 
 
-def test_studio_admin_gate():
-    """Mode mainteneur studio : la variable HOTBOX_STUDIO_ADMIN décide si
-    la librairie studio est modifiable. Sans elle = lecture seule
-    (animateur) ; le _can_edit d'un onglet perso reste toujours vrai."""
-    from hotbox_designer import buttonlibrary as bl
-
-    saved = os.environ.get('HOTBOX_STUDIO_ADMIN')
-    try:
-        for value in ('', '0', 'false', 'no', 'off'):
-            os.environ['HOTBOX_STUDIO_ADMIN'] = value
-            assert bl.is_studio_admin() is False, value
-        for value in ('1', 'true', 'YES', 'on'):
-            os.environ['HOTBOX_STUDIO_ADMIN'] = value
-            assert bl.is_studio_admin() is True, value
-        os.environ.pop('HOTBOX_STUDIO_ADMIN', None)
-        assert bl.is_studio_admin() is False
-    finally:
-        if saved is None:
-            os.environ.pop('HOTBOX_STUDIO_ADMIN', None)
-        else:
-            os.environ['HOTBOX_STUDIO_ADMIN'] = saved
-    print('garde mainteneur studio (HOTBOX_STUDIO_ADMIN) OK')
-
-
 def test_hotkey_registry():
     """Registre des raccourcis : on peut noter, relire, mettre à jour et
     RETIRER un raccourci — ce que l'ancien Maya ne permettait pas (pose
@@ -1419,7 +1382,6 @@ if __name__ == '__main__':
     test_thumbnail_cache_and_dedup()
     test_submenu_opener()
     test_library_category_ops()
-    test_studio_admin_gate()
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()

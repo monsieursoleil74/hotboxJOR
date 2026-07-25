@@ -177,35 +177,20 @@ affiché avec son vrai rendu en vignette.
 - **Perso** (modifiable) : `button_library.json` dans le dossier de
   données — préférences Maya (`Documents\maya\<version>\prefs\`), ou
   `~/.hotboxjor` en standalone.
-- **Studio** (partagée, lecture seule) : un fichier commun sur le
-  réseau, désigné par la variable d'environnement
-  **`HOTBOX_STUDIO_LIBRARY`** (un `.json`, ou un dossier contenant
-  `button_library.json`). À défaut de variable, l'outil regarde
-  `C:\Users\ortzj\Desktop\JOR\hotbox`. Les catégories studio
-  apparaissent en tête de la shelf avec le **logo du studio** en icône ;
-  leurs boutons se glissent-déposent normalement dans une hotbox. Pour un
-  **animateur**, tout le contenu studio est en **lecture seule** : ni
-  édition, ni suppression, ni changement de catégorie — il ne fait que
-  piocher des boutons.
+- **Studio** (partagée, catégories officielles) : un fichier commun,
+  désigné par la variable d'environnement **`HOTBOX_STUDIO_LIBRARY`**
+  (un `.json`, ou un dossier contenant `button_library.json`). À défaut
+  de variable, l'outil regarde `C:\Users\ortzj\Desktop\JOR\hotbox`. Les
+  catégories studio apparaissent en tête de la shelf avec le **logo du
+  studio** (TAT) en icône ; leurs boutons se glissent-déposent
+  normalement dans une hotbox.
 
-### Mode mainteneur studio (`HOTBOX_STUDIO_ADMIN`)
-
-C'est le lead qui construit et entretient les catégories officielles.
-Pour cela il pose la variable d'environnement **`HOTBOX_STUDIO_ADMIN=1`**
-sur SA machine : elle débloque, sur les onglets studio, la création /
-le renommage / la suppression de catégories, le déplacement de boutons
-et la publication (« Send to studio library »). Les animateurs ne
-posent pas cette variable → les onglets studio restent intouchables.
-
-**Comment savoir si je suis en mode mainteneur ?** Quand la variable est
-active, un badge **★ STUDIO ADMIN** (couleur d'accent) s'affiche en haut
-à droite de la shelf, à côté du « ＋ ». L'infobulle d'un onglet studio le
-confirme aussi (« maintainer mode (editable) » au lieu de « read-only »).
-Sans la variable, pas de badge : tu es en mode animateur.
-
-C'est un garde-fou logiciel dans l'interface ; en vrai studio, on
-combine avec un dossier réseau en lecture seule au niveau des droits
-Windows pour les animateurs.
+  Pour l'instant la librairie studio est **pleinement modifiable** :
+  créer une **catégorie officielle** (clic droit sur un onglet studio →
+  *New studio category…*) l'écrit dans le `button_library.json` du
+  dossier studio, avec le logo TAT ; on peut y **envoyer des boutons**
+  (*Send to studio library*), les renommer, les ranger. La restriction
+  d'accès pour les animateurs viendra plus tard.
 
   **Logo du studio** : pose un `studio_logo.png` (ou `logo.png`) dans le
   dossier de la librairie studio — il devient l'icône des onglets. On
@@ -229,8 +214,8 @@ studio.
    playblast…) dans sa librairie perso, catégories claires.
 2. Il les publie : clic droit → « Send to studio library » (ou copie
    manuelle du `button_library.json` dans le dossier studio).
-3. Chaque animateur voit automatiquement les onglets studio (logo TAT,
-   lecture seule) + ses propres onglets perso. Pour pointer un autre
+3. Chaque animateur voit automatiquement les onglets studio (logo TAT)
+   + ses propres onglets perso. Pour pointer un autre
    chemin : définir `HOTBOX_STUDIO_LIBRARY` (variable d'environnement
    Windows, ou dans le `userSetup.py` commun :
    `os.environ['HOTBOX_STUDIO_LIBRARY'] = r"P:\pipeline\hotbox"`).

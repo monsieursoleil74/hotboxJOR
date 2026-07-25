@@ -4,20 +4,15 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
-## 2026-07 — Mode mainteneur studio (catégories officielles protégées)
+## 2026-07 — Librairie studio librement modifiable (retrait du mode mainteneur)
 
-- Nouvelle variable **`HOTBOX_STUDIO_ADMIN`** : seul le mainteneur
-  (lead) qui la pose peut modifier la librairie studio — création /
-  renommage / suppression de catégories, déplacement de boutons,
-  publication vers le studio. Sans elle (cas des **animateurs**), les
-  onglets studio redeviennent **entièrement en lecture seule** : ils ne
-  font que piocher des boutons. Corrige le fait que l'organisation des
-  catégories, ajoutée juste avant, était ouverte à tous.
-- `is_studio_admin()` + garde `_can_edit()` sur les menus de la shelf ;
-  « Send to studio library » n'apparaît plus que pour le mainteneur.
-- **Indicateur visible** : badge « ★ STUDIO ADMIN » en haut à droite de
-  la shelf quand le mode mainteneur est actif, + infobulle d'onglet
-  studio adaptée (« maintainer mode » / « read-only »).
+- Retrait de la couche « mainteneur studio » (variable
+  `HOTBOX_STUDIO_ADMIN`, garde `_can_edit`, badge « STUDIO ADMIN »)
+  ajoutée juste avant : trop tôt. Pour l'instant la librairie studio est
+  **pleinement modifiable** par l'utilisateur — créer des catégories
+  officielles (écrites dans le `button_library.json` du dossier studio,
+  logo TAT), envoyer/renommer/ranger des boutons. La restriction d'accès
+  pour les animateurs sera reprise plus tard.
 
 ## 2026-07 — Catégories de librairie : créer / renommer / déplacer (perso ET studio)
 
