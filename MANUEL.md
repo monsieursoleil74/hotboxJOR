@@ -35,9 +35,12 @@ infini, façon dwpicker/Figma.
 | **Espace + glisser** | Pan aussi (façon Photoshop — curseur main) |
 | **F** | Recadrer : sur la sélection s'il y en a une, sinon sur la hotbox |
 
-À l'ouverture, la hotbox est cadrée automatiquement. Les poignées du
-manipulateur et les traits d'interface gardent une **taille constante à
-l'écran** quel que soit le zoom.
+À l'ouverture, la hotbox est **cadrée automatiquement** — et le reste
+tant qu'on n'a pas zoomé/panné soi-même (redimensionner la fenêtre
+recadre proprement). Dès qu'on navigue (molette, +/−, pan, F), la vue
+nous appartient et n'est plus touchée. Les poignées du manipulateur et
+les traits d'interface gardent une **taille constante à l'écran** quel
+que soit le zoom.
 
 ## L'éditeur — sélection
 

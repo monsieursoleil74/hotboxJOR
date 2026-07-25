@@ -4,6 +4,15 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Fix : hotbox cadrée dès l'ouverture de l'éditeur
+
+- La vue n'était cadrée qu'au **premier** `resizeEvent`, qui arrive
+  pendant la mise en place du layout (taille provisoire) → hotbox
+  décentrée au démarrage, il fallait presser F. Désormais chaque resize
+  recadre la hotbox **tant que l'utilisateur n'a pas navigué lui-même**
+  (molette, +/−, pan, F) ; ensuite la vue lui appartient et n'est plus
+  touchée.
+
 ## 2026-07 — Manipulation allégée dans l'éditeur
 
 - **Tout le contour de la sélection est saisissable** pour

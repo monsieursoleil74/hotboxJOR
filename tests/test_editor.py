@@ -1315,6 +1315,43 @@ def test_manipulation_ergonomics():
     print('manipulation allégée (bords, curseurs, Maj, Espace, zoom) OK')
 
 
+def test_startup_framing():
+    """Au démarrage la hotbox doit être cadrée même si le layout
+    redimensionne le widget après le premier resizeEvent (avant, seul le
+    PREMIER resize cadrait → vue décentrée tant qu'on ne pressait pas F).
+    Dès que l'utilisateur navigue, les resizes ne recadrent plus."""
+    editor = make_editor([(100, 100, 'btn')])
+    area = editor.shape_editor
+
+    def framed_center():
+        # centre de la hotbox exprimé en pixels de la vue
+        center = area.hotbox_rect().center()
+        view = area.viewport_mapper.to_viewport_coords(center)
+        return view
+
+    # simule le layout : plusieurs resizes successifs → toujours cadré
+    area.resize(300, 200)
+    APP.processEvents()
+    area.resize(900, 500)
+    APP.processEvents()
+    view_center = framed_center()
+    assert near(view_center.x(), area.width() / 2.0, 2)
+    assert near(view_center.y(), area.height() / 2.0, 2)
+
+    # l'utilisateur zoome : la vue lui appartient, un resize ne touche
+    # plus au cadrage (l'origine du viewport reste la sienne)
+    area.wheelEvent(FakeWheelEvent(120))
+    origin = QtCore.QPointF(area.viewport_mapper.origin)
+    zoom = area.viewport_mapper.zoom
+    area.resize(700, 400)
+    APP.processEvents()
+    assert area.viewport_mapper.origin == origin
+    assert area.viewport_mapper.zoom == zoom
+
+    editor.close()
+    print('cadrage au démarrage (resizes successifs) OK')
+
+
 def test_library_rename_and_save_studio():
     """Renommer un bouton déjà rangé, et sauvegarder directement dans la
     librairie studio (sans passer par General + Move to)."""
@@ -1522,6 +1559,7 @@ if __name__ == '__main__':
     test_library_category_ops()
     test_library_rename_and_save_studio()
     test_manipulation_ergonomics()
+    test_startup_framing()
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()

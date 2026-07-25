@@ -26,7 +26,11 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.options = options
 
         self.viewport_mapper = ViewportMapper()
-        self.focused_once = False
+        # tant que l'utilisateur n'a pas zoomé/panné lui-même, la vue se
+        # recadre sur la hotbox à chaque resize : le premier resizeEvent
+        # arrive pendant la mise en place du layout (taille provisoire),
+        # cadrer une seule fois laissait la hotbox décentrée au démarrage
+        self.user_navigated = False
         self.panning = False
         self.pan_reference = None
         # barre Espace enfoncée = pan au clic gauche (façon Photoshop)
@@ -70,6 +74,8 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def focus_view(self):
         """F : cadre la sélection si elle existe, sinon la hotbox."""
+        # cadrage volontaire : la vue appartient désormais à l'utilisateur
+        self.user_navigated = True
         rect = self.manipulator.rect if self.selection.shapes else None
         self.viewport_mapper.viewsize = self.size()
         self.viewport_mapper.focus(rect or self.hotbox_rect())
@@ -84,8 +90,7 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def resizeEvent(self, event):
         self.viewport_mapper.viewsize = self.size()
-        if not self.focused_once and self.width() > 0:
-            self.focused_once = True
+        if not self.user_navigated and self.width() > 0:
             self.viewport_mapper.focus(self.hotbox_rect())
         self.sync_zoom()
         self.repaint()
@@ -107,6 +112,7 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.repaint()
             return
         # sinon zoom vers le curseur, façon dwpicker
+        self.user_navigated = True
         factor = 1.15 if delta > 0 else 1 / 1.15
         self.viewport_mapper.zoom_towards(get_cursor(self), factor)
         self.sync_zoom()
@@ -209,6 +215,7 @@ class ShapeEditArea(QtWidgets.QWidget):
         if event.button() == QtCore.Qt.MiddleButton or (
                 event.button() == QtCore.Qt.LeftButton
                 and self.space_pressed):
+            self.user_navigated = True
             self.panning = True
             self.pan_reference = get_cursor(self)
             self.setCursor(QtCore.Qt.ClosedHandCursor)
@@ -450,6 +457,7 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def zoom_keyboard(self, factor):
         """+/- : zoom autour du centre de la vue."""
+        self.user_navigated = True
         center = QtCore.QPointF(self.width() / 2.0, self.height() / 2.0)
         self.viewport_mapper.zoom_towards(center, factor)
         self.sync_zoom()
