@@ -124,16 +124,21 @@ QMenu::item {{ padding: 5px 24px 5px 10px; border-radius: 2px; }}
 QMenu::item:selected {{ background-color: {ACCENT_DIM}; }}
 QMenu::separator {{ height: 1px; background: {BORDER_SOFT}; margin: 4px 8px; }}
 QCheckBox::indicator, QRadioButton::indicator {{
-    width: 13px; height: 13px;
-    border: 1px solid {BORDER_SOFT};
-    border-radius: 2px;
+    width: 14px; height: 14px;
+    border: 1px solid #6d6d6d;
+    border-radius: 3px;
     background: {INPUT};
 }}
-QCheckBox::indicator:checked {{
+QCheckBox::indicator:hover, QRadioButton::indicator:hover {{
+    border-color: {ACCENT};
+}}
+QCheckBox::indicator:checked, QRadioButton::indicator:checked {{
     background: {ACCENT};
     border-color: {ACCENT};
 }}
-QRadioButton::indicator {{ border-radius: 7px; }}
+QRadioButton::indicator {{ border-radius: 8px; }}
+QRadioButton {{ spacing: 6px; }}
+QRadioButton:disabled {{ color: {TEXT_DIM}; }}
 QScrollBar:vertical {{ background: {PANEL}; width: 11px; margin: 0; }}
 QScrollBar::handle:vertical {{
     background: {BORDER_SOFT}; border-radius: 3px; min-height: 24px;
