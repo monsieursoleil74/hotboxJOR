@@ -25,8 +25,6 @@ class MenuWidget(QtWidgets.QWidget):
     addTextRequested = QtCore.Signal()
     addBackgroundRequested = QtCore.Signal()
     onBottomRequested = QtCore.Signal()
-    moveDownRequested = QtCore.Signal()
-    moveUpRequested = QtCore.Signal()
     onTopRequested = QtCore.Signal()
     alignRequested = QtCore.Signal(str)
     arrangeRequested = QtCore.Signal(str)
@@ -130,17 +128,12 @@ class MenuWidget(QtWidgets.QWidget):
         self.addbg.setToolTip('Add background shape')
         self.addbg.triggered.connect(self.addBackgroundRequested.emit)
 
+        # ordre de superposition : uniquement « tout au fond » et « tout
+        # devant » — les deux pas-à-pas de dwpicker ne servaient à rien
         icon_ = icon('onbottom.png')
         self.onbottom = QtWidgets.QAction(icon_, '', self)
         self.onbottom.setToolTip('Set selected shapes on bottom')
         self.onbottom.triggered.connect(self.onBottomRequested.emit)
-        icon_ = icon('movedown.png')
-        self.movedown = QtWidgets.QAction(icon_, '', self)
-        self.movedown.setToolTip('Move down selected shapes')
-        self.movedown.triggered.connect(self.moveDownRequested.emit)
-        self.moveup = QtWidgets.QAction(icon('moveup.png'), '', self)
-        self.moveup.setToolTip('Move up selected shapes')
-        self.moveup.triggered.connect(self.moveUpRequested.emit)
         self.ontop = QtWidgets.QAction(icon('ontop.png'), '', self)
         self.ontop.setToolTip('Set selected shapes on top')
         self.ontop.triggered.connect(self.onTopRequested.emit)
@@ -202,8 +195,6 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.savetolibrary)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.onbottom)
-        self.toolbar.addAction(self.movedown)
-        self.toolbar.addAction(self.moveup)
         self.toolbar.addAction(self.ontop)
         self.toolbar.addSeparator()
         for action in self.align_actions:

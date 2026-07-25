@@ -13,8 +13,7 @@ from hotbox_designer.qtutils import icon, set_shortcut
 from hotbox_designer.theme import apply_dark_theme
 from hotbox_designer.data import copy_hotbox_data
 from hotbox_designer.arrayutils import (
-    move_elements_to_array_end, move_elements_to_array_begin,
-    move_up_array_elements, move_down_array_elements)
+    move_elements_to_array_end, move_elements_to_array_begin)
 
 from .editarea import ShapeEditArea
 from .menu import MenuWidget
@@ -102,10 +101,6 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.addTextRequested.connect(method)
         method = partial(self.create_shape, BACKGROUND, before=True)
         self.menu.addBackgroundRequested.connect(method)
-        method = self.set_selection_move_down
-        self.menu.moveDownRequested.connect(method)
-        method = self.set_selection_move_up
-        self.menu.moveUpRequested.connect(method)
         method = self.set_selection_on_top
         self.menu.onTopRequested.connect(method)
         method = self.set_selection_on_bottom
@@ -538,20 +533,6 @@ class HotboxEditor(QtWidgets.QWidget):
             shape.options['action.left.command'] = command
             shape.options['action.left.close'] = False
         self.selection_changed()
-        self.shape_editor.repaint()
-        self.set_data_modified()
-
-    def set_selection_move_down(self):
-        array = self.shape_editor.shapes
-        elements = self.shape_editor.selection
-        move_down_array_elements(array, elements)
-        self.shape_editor.repaint()
-        self.set_data_modified()
-
-    def set_selection_move_up(self):
-        array = self.shape_editor.shapes
-        elements = self.shape_editor.selection
-        move_up_array_elements(array, elements)
         self.shape_editor.repaint()
         self.set_data_modified()
 

@@ -4,6 +4,13 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Ordre de superposition simplifié
+
+- Les deux boutons pas-à-pas « Move down » / « Move up » (hérités de
+  dwpicker) sont retirés : ils ne servaient à rien. Ne restent que
+  « tout au fond » (onbottom) et « tout devant » (ontop). Signaux,
+  actions, méthodes et import inutilisés nettoyés.
+
 ## 2026-07 — Sous-menu fluide + refonte des raccourcis
 
 - **Sous-menu fluide** : un bouton peut ouvrir une autre hotbox sans

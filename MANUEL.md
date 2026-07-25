@@ -305,7 +305,7 @@ Supprimer • copier • coller • copier style • coller style — undo /
 redo — grille (aimant rouge) + pas x/y — champs **size** + **fit
 zone** — édition du **centre** + coordonnées — ajout : bouton / texte /
 background — **librairie** / **enregistrer dans la librairie** — ordre :
-dessous / descendre / monter / dessus — alignements (6) — distributions
+tout au fond / tout devant — alignements (6) — distributions
 (2).
 
 ## Raccourcis clavier (gestionnaire)
