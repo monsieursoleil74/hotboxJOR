@@ -13,7 +13,6 @@ class ShapeEditArea(QtWidgets.QWidget):
     increaseUndoStackRequested = QtCore.Signal()
     centerMoved = QtCore.Signal(int, int)
     contextMenuRequested = QtCore.Signal(object)
-    editTextRequested = QtCore.Signal(object)  # shape à renommer
     placeImageEscaped = QtCore.Signal()        # Échap en mode placement
 
     def __init__(self, options, parent=None):
@@ -307,18 +306,6 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def contextMenuEvent(self, event):
         self.contextMenuRequested.emit(event.globalPos())
-
-    def mouseDoubleClickEvent(self, event):
-        # double-clic sur un bouton = éditer son texte à même le canvas
-        if event.button() != QtCore.Qt.LeftButton:
-            return
-        cursor = self.units_cursor()
-        for shape in reversed(self.shapes):
-            if shape.options.get('lock'):
-                continue
-            if shape.rect.contains(cursor):
-                self.editTextRequested.emit(shape)
-                return
 
     def dragEnterEvent(self, event):
         from hotbox_designer.buttonlibrary import BUTTONS_MIME

@@ -4,6 +4,14 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Export studio + retrait du double-clic
+
+- **Publier vers la librairie studio** : clic droit sur des boutons de
+  la shelf → « Send to studio library » (dédup, crée le fichier/dossier
+  studio au besoin) — plus besoin de copier le JSON à la main.
+- **Double-clic pour éditer le texte retiré** (à la demande) : le texte
+  se modifie via le panneau d'attributs (champ Content).
+
 ## 2026-07 — Librairie studio partagée
 
 - Deuxième niveau de librairie **studio, en lecture seule**, désigné

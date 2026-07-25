@@ -94,6 +94,48 @@ def load_studio_library():
     return load_library(path) if path else []
 
 
+def studio_write_path():
+    """Chemin où ÉCRIRE la librairie studio (crée le dossier au besoin).
+    Retourne None si aucun emplacement studio n'est configuré."""
+    location = studio_location()
+    if not location:
+        return None
+    if location.lower().endswith('.json'):
+        path = location
+    else:
+        path = os.path.join(location, LIBRARY_FILENAME)
+    folder = os.path.dirname(path)
+    if folder and not os.path.exists(folder):
+        try:
+            os.makedirs(folder)
+        except OSError:
+            return None
+    return path
+
+
+def export_to_studio(entries):
+    """Ajoute des boutons à la librairie studio (dédupliqués). Retourne
+    le nombre réellement ajouté, ou -1 si le studio n'est pas
+    accessible en écriture."""
+    path = studio_write_path()
+    if not path:
+        return -1
+    existing = load_library_raw(path)
+    already = [e for e in existing if 'options' in e]
+    added = 0
+    for entry in entries:
+        if entry not in already:
+            existing.append(entry)
+            already.append(entry)
+            added += 1
+    if added:
+        try:
+            save_library(path, existing)
+        except OSError:
+            return -1
+    return added
+
+
 def load_library_raw(path):
     """Toutes les entrées du fichier : boutons ET marqueurs de
     catégories vides."""
@@ -422,10 +464,34 @@ class LibraryShelf(QtWidgets.QWidget):
         if not entries:
             return
         menu = QtWidgets.QMenu(self)
-        label = ('Delete "%s"' % entries[0]['name']
-                 if len(entries) == 1 else 'Delete %d buttons' % len(entries))
-        menu.addAction(label, lambda: self._delete(entries))
+        count = len(entries)
+        # envoyer vers la librairie studio partagée
+        send_label = (
+            'Send "%s" to studio library' % entries[0]['name']
+            if count == 1 else 'Send %d buttons to studio library' % count)
+        send = menu.addAction(
+            self.studio_icon, send_label,
+            lambda: self._send_to_studio(entries))
+        send.setEnabled(studio_write_path() is not None)
+        menu.addSeparator()
+        del_label = ('Delete "%s"' % entries[0]['name']
+                     if count == 1 else 'Delete %d buttons' % count)
+        menu.addAction(del_label, lambda: self._delete(entries))
         menu.exec_(shelf_list.mapToGlobal(position))
+
+    def _send_to_studio(self, entries):
+        added = export_to_studio(entries)
+        if added < 0:
+            QtWidgets.QMessageBox.warning(
+                self, 'Studio library',
+                'Studio library is not configured or not writable.\n'
+                'Set the HOTBOX_STUDIO_LIBRARY location first.')
+            return
+        refresh_shelves()
+        QtWidgets.QMessageBox.information(
+            self, 'Studio library',
+            '%d button(s) sent to the studio library.' % added
+            if added else 'These buttons are already in the studio library.')
 
     def _delete(self, entries):
         remaining = [

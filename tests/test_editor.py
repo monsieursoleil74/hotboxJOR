@@ -865,10 +865,20 @@ def test_studio_library():
         assert shelf.current_category() == 'General'
         # le studio n'est jamais écrit dans la perso
         assert all(e['name'] != 'IK/FK' for e in load_library(shelf.path))
+
+        # export vers la librairie studio depuis la perso
+        from hotbox_designer.buttonlibrary import (
+            export_to_studio, load_studio_library)
+        perso_entry = entry('MyTool', 'Perso')
+        added = export_to_studio([perso_entry])
+        assert added == 1
+        assert any(e['name'] == 'MyTool' for e in load_studio_library())
+        # ré-export du même bouton = doublon ignoré
+        assert export_to_studio([perso_entry]) == 0
         shelf.close()
     finally:
         del os.environ[STUDIO_ENV_VARIABLE]
-    print('librairie studio partagée (onglets ★, lecture seule) OK')
+    print('librairie studio (onglets logo, lecture seule, export) OK')
 
 
 def test_thumbnail_cache_and_dedup():
@@ -966,44 +976,10 @@ def test_image_placement():
     print('mode placer l image (drag, molette, center, zoom) OK')
 
 
-def test_inline_text_and_autosave():
-    from hotbox_designer.vendor.Qt import QtGui
-
-    editor = make_editor([(100, 100, 'old')])
+def test_command_autosave():
+    editor = make_editor([(100, 100, 'btn')])
     area = editor.shape_editor
     shape = area.shapes[0]
-
-    # double-clic sur le bouton -> champ d'édition sur le canvas
-    class FakeDbl:
-        def button(self):
-            return QtCore.Qt.LeftButton
-    driver = Driver(area)
-    driver.pos = driver.units((160, 112))
-    area.mouseDoubleClickEvent(FakeDbl())
-    APP.processEvents()
-    assert editor._text_editor is not None
-    editor._text_editor.setText('NewName')
-    editor._text_editor.returnPressed.emit()
-    APP.processEvents()
-    assert shape.options['text.content'] == 'NewName'
-    assert editor._text_editor is None
-
-    # Échap annule la modification
-    driver.pos = driver.units((160, 112))
-    area.mouseDoubleClickEvent(FakeDbl())
-    editor._text_editor.setText('ShouldNotStick')
-
-    class FakeKey:
-        def type(self):
-            return QtCore.QEvent.KeyPress
-
-        def key(self):
-            return QtCore.Qt.Key_Escape
-    handled = editor.eventFilter(editor._text_editor, FakeKey())
-    APP.processEvents()
-    assert handled is True
-    assert shape.options['text.content'] == 'NewName'  # inchangé
-    assert editor._text_editor is None
 
     # auto-save de la commande : la perte de focus enregistre
     area.selection.replace([shape])
@@ -1017,7 +993,7 @@ def test_inline_text_and_autosave():
     APP.processEvents()
     assert shape.options['action.left.command'] == 'print("auto")'
     editor.close()
-    print('double-clic texte inline + auto-save commande OK')
+    print('auto-save commande OK')
 
 
 def test_radial_and_test_mode():
@@ -1184,7 +1160,7 @@ if __name__ == '__main__':
     test_checkboxes_apply_options()
     test_create_hotbox_dialog()
     test_radial_and_test_mode()
-    test_inline_text_and_autosave()
+    test_command_autosave()
     test_image_placement()
     test_rounded_rect()
     test_studio_library()

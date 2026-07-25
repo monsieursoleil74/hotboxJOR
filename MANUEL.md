@@ -41,7 +41,6 @@ l'écran** quel que soit le zoom.
 
 | Geste | Action |
 |---|---|
-| **Double-clic** sur un bouton | Éditer son **texte** directement sur le canvas (Entrée valide, Échap annule) |
 | **Presser** un bouton | Le sélectionne immédiatement — le drag qui suit le **déplace** directement (façon dwpicker/Figma) |
 | **Clic** sur un bouton d'une multi-sélection | Le sélectionne **seul** |
 | **Glisser sur le fond** (zone vide ou shape verrouillée) | Rectangle de sélection multiple |
@@ -111,7 +110,6 @@ commandes des boutons s'exécutent réellement — c'est un vrai test.)
 
 | Raccourci | Action |
 |---|---|
-| **Double-clic** | Éditer le texte d'un bouton sur le canvas. |
 | **Ctrl+C / Ctrl+V** | Copier/coller des **boutons entiers**. Passe par le presse-papier système (JSON) : fonctionne **entre hotboxes**, entre éditeurs, et même entre deux sessions Maya. Les shapes collées sont sélectionnées. |
 | **Ctrl+Maj+C** | **Copier le style** d'une shape (une seule sélectionnée) |
 | **Ctrl+Maj+V** | **Coller le style** sur la sélection — un dialogue permet de cocher quoi coller : forme (carré/rond), taille, couleurs & bordure, style de texte, contenu du texte, image, **commandes**. Par défaut : forme + couleurs + style de texte. |
@@ -183,17 +181,27 @@ affiché avec son vrai rendu en vignette.
   peut aussi pointer un fichier précis via la variable
   `HOTBOX_STUDIO_LOGO`. Sans rien, un logo par défaut est utilisé.
 
+### Publier vers la librairie studio (export)
+
+Le plus simple : **clic droit sur un ou plusieurs boutons de la
+shelf → « Send to studio library »**. Les boutons sont copiés dans la
+librairie studio (dédupliqués), et les onglets se rafraîchissent — pas
+de fichier à copier à la main. (L'action n'est disponible que si un
+emplacement studio est configuré et accessible en écriture.)
+
+Alternative manuelle : copier son `button_library.json` dans le dossier
+studio.
+
 ### Organiser la librairie studio
 
-1. Le lead construit une hotbox, sélectionne les boutons officiels
-   (IK/FK, sélections, playblast…) et les enregistre dans SA librairie
-   perso avec des catégories claires.
-2. Il copie son `button_library.json` dans le dossier partagé
-   (`C:\Users\ortzj\Desktop\JOR\hotbox\button_library.json`).
-3. Chaque animateur voit automatiquement les onglets ★ studio (lecture
-   seule) + ses propres onglets perso. Pour pointer un autre chemin :
-   définir `HOTBOX_STUDIO_LIBRARY` (variable d'environnement Windows,
-   ou dans le `userSetup.py` commun :
+1. Le lead construit ses boutons officiels (IK/FK, sélections,
+   playblast…) dans sa librairie perso, catégories claires.
+2. Il les publie : clic droit → « Send to studio library » (ou copie
+   manuelle du `button_library.json` dans le dossier studio).
+3. Chaque animateur voit automatiquement les onglets studio (logo TAT,
+   lecture seule) + ses propres onglets perso. Pour pointer un autre
+   chemin : définir `HOTBOX_STUDIO_LIBRARY` (variable d'environnement
+   Windows, ou dans le `userSetup.py` commun :
    `os.environ['HOTBOX_STUDIO_LIBRARY'] = r"P:\pipeline\hotbox"`).
 
 ## Import de pickers dwpicker
