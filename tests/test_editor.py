@@ -1418,7 +1418,8 @@ def test_new_builtin_templates():
 
     templates = load_templates()
     names = [t['general']['name'] for t in templates]
-    for expected in ('Pie_8_Directions', 'Mini_Shelf_4x3', 'Barre_6_Boutons'):
+    for expected in ('Pie_8_Directions', 'Mini_Shelf_4x3', 'Barre_6_Boutons',
+                     'Manette', 'Nid_Abeille', 'Colonnes_TAT', 'Grille_6x4'):
         assert expected in names, expected
         data = templates[names.index(expected)]
         assert data['shapes'], expected

@@ -4,6 +4,16 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Quatre templates de plus (choisis sur planche de propositions)
+
+- **Manette** : croix directionnelle + A/B/X/Y colorés + gâchettes
+  L1/R1 + sel/start — la mémoire musculaire du pad.
+- **Nid_Abeille** : 14 boutons ronds en quinconce serré, densité max.
+- **Colonnes_TAT** : 4 colonnes titrées SHELF / ANIM / EXTRA / ANIMBOT,
+  calquées sur les catégories de la librairie studio.
+- **Grille_6x4** : 24 boutons titrés, pour hotbox bien remplie.
+- Sélection faite sur deux planches d'aperçus (15 propositions).
+
 ## 2026-07 — Trois nouveaux templates embarqués
 
 - **Pie_8_Directions** : marking menu complet à 8 directions (N/NE/E/…)
