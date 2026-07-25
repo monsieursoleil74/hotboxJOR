@@ -20,6 +20,7 @@ class AttributeEditor(QtWidgets.QWidget):
     imageModified = QtCore.Signal()
     placeImageToggled = QtCore.Signal(bool)
     centerImageRequested = QtCore.Signal()
+    submenuChosen = QtCore.Signal(str)
 
     def __init__(self, application, parent=None):
         super(AttributeEditor, self).__init__(parent)
@@ -48,6 +49,7 @@ class AttributeEditor(QtWidgets.QWidget):
         self.action = ActionSettings()
         self.action.set_languages(self.application.available_languages)
         self.action.optionSet.connect(self.optionSet.emit)
+        self.action.submenuChosen.connect(self.submenuChosen.emit)
         self.action_toggler = WidgetToggler('Action', self.action)
 
         self.layout = QtWidgets.QVBoxLayout(self.widget)
@@ -87,6 +89,9 @@ class AttributeEditor(QtWidgets.QWidget):
         self.text.set_options(options)
         self.action.set_options(options)
         self.blockSignals(False)
+
+    def set_submenus(self, names):
+        self.action.set_submenus(names)
 
     def image_modified(self, option, value):
         self.optionSet.emit(option, value)
@@ -349,9 +354,16 @@ class AppearenceSettings(QtWidgets.QWidget):
 
 class ActionSettings(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
+    submenuChosen = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(ActionSettings, self).__init__(parent)
+        # raccourci « sous-menu fluide » : choisir une hotbox marquée
+        # « is submenu » génère automatiquement la commande d'ouverture
+        # sur le clic gauche (plus besoin d'écrire show('...') à la main)
+        self._submenu = QtWidgets.QComboBox()
+        self._submenu.currentIndexChanged.connect(self._submenu_chosen)
+
         self._lactive = BoolCombo(False)
         method = partial(self.optionSet.emit, 'action.left')
         self._lactive.valueSet.connect(method)
@@ -389,6 +401,8 @@ class ActionSettings(QtWidgets.QWidget):
         self.layout.setSpacing(0)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setHorizontalSpacing(5)
+        self.layout.addRow(Title('Open sub-hotbox'))
+        self.layout.addRow('Sub-menu', self._submenu)
         self.layout.addRow(Title('Left click'))
         self.layout.addRow('Has command', self._lactive)
         self.layout.addRow('Close Hotbox', self._lclose)
@@ -408,6 +422,31 @@ class ActionSettings(QtWidgets.QWidget):
         self._llanguage.addItems(languages)
         self._rlanguage.addItems(languages)
         self.blockSignals(False)
+
+    def set_submenus(self, names):
+        """Peuple la liste des sous-menus disponibles. Cachée s'il n'y a
+        aucune hotbox marquée « is submenu »."""
+        self._submenu.blockSignals(True)
+        self._submenu.clear()
+        self._submenu.addItem('— none —', '')
+        for name in names:
+            self._submenu.addItem(name, name)
+        self._submenu.blockSignals(False)
+        has_submenus = bool(names)
+        self._submenu.setVisible(has_submenus)
+        label = self.layout.labelForField(self._submenu)
+        if label is not None:
+            label.setVisible(has_submenus)
+
+    def _submenu_chosen(self, index):
+        name = self._submenu.itemData(index)
+        if name:
+            self.submenuChosen.emit(name)
+            # on repasse sur « none » : le choix est un déclencheur, pas
+            # un état persistant (la commande est écrite dans le clic)
+            self._submenu.blockSignals(True)
+            self._submenu.setCurrentIndex(0)
+            self._submenu.blockSignals(False)
 
     def language_changed(self, side, *_):
         option = 'action.' + side + '.language'

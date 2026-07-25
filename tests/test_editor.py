@@ -1131,6 +1131,60 @@ def test_dwpicker_import():
     print('import dwpicker (targets, commandes, zone, fond) OK')
 
 
+def test_submenu_opener():
+    """Sous-menu fluide : choisir une hotbox « is submenu » dans le
+    panneau Action doit générer la commande d'ouverture sur le clic
+    gauche du/des bouton(s) sélectionné(s), sans écrire de code."""
+    from hotbox_designer.commands import OPEN_COMMAND
+
+    # deux hotboxes existent : la courante et une marquée « is submenu »
+    sub = {'general': dict(HOTBOX, name='outils', submenu=True),
+           'shapes': []}
+    main = {'general': dict(HOTBOX, name='principal', width=600,
+                            height=400),
+            'shapes': []}
+    all_hotboxes = [main, sub]
+
+    data = {'general': dict(HOTBOX, name='principal', width=600,
+                            height=400),
+            'shapes': [dict(SQUARE_BUTTON, **{
+                'shape.left': 100.0, 'shape.top': 100.0,
+                'text.content': 'btn'})]}
+    editor = HotboxEditor(
+        data, Standalone(), parent=None, all_hotboxes=all_hotboxes)
+    editor.show()
+    APP.processEvents()
+
+    # la liste ne propose que le sous-menu (pas la hotbox courante)
+    assert editor.submenu_names() == ['outils']
+    combo = editor.attribute_editor.action._submenu
+    values = [combo.itemData(i) for i in range(combo.count())]
+    assert values == ['', 'outils']
+    assert combo.isVisible()
+
+    # avec sélection : la commande show('outils') est générée
+    shape = editor.shape_editor.shapes[0]
+    editor.shape_editor.selection.replace([shape])
+    editor.set_submenu_opener('outils')
+    expected = OPEN_COMMAND.format(application='Standalone', name='outils')
+    assert shape.options['action.left'] is True
+    assert shape.options['action.left.language'] == 'python'
+    assert shape.options['action.left.command'] == expected
+    assert "show('outils')" in shape.options['action.left.command']
+
+    # déclencher via le combo (index 1 = 'outils') fait la même chose,
+    # puis revient sur « none » (choix = déclencheur, pas un état)
+    shape.options['action.left'] = False
+    editor.shape_editor.selection.replace([shape])
+    combo.setCurrentIndex(1)
+    APP.processEvents()
+    assert shape.options['action.left'] is True
+    assert combo.currentIndex() == 0
+
+    editor.close()
+    print('sous-menu fluide (ouvreur de hotbox généré) OK')
+
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -1158,4 +1212,5 @@ if __name__ == '__main__':
     test_color_picker()
     test_studio_library()
     test_thumbnail_cache_and_dedup()
+    test_submenu_opener()
     print('TOUT EST VERT')

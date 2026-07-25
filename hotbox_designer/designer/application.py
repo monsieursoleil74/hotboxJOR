@@ -3,6 +3,7 @@ import json
 from functools import partial
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 from hotbox_designer.reader import HotboxReader
+from hotbox_designer.commands import OPEN_COMMAND
 
 from hotbox_designer.align import align_shapes, arrange_shapes
 from hotbox_designer.templates import SQUARE_BUTTON, TEXT, BACKGROUND
@@ -50,13 +51,15 @@ STYLE_GROUPS = [
 class HotboxEditor(QtWidgets.QWidget):
     hotboxDataModified = QtCore.Signal(object)
 
-    def __init__(self, hotbox_data, application, parent=None):
+    def __init__(self, hotbox_data, application, parent=None,
+                 all_hotboxes=None):
         super(HotboxEditor, self).__init__(parent, QtCore.Qt.Window)
         title = hotbox_data['general'].get('name') or ''
         self.setWindowTitle(
             'Hotbox editor' + (' - ' + title if title else ''))
         self.options = hotbox_data['general']
         self.application = application
+        self.all_hotboxes = all_hotboxes or []
         self.undo_manager = UndoManager(hotbox_data)
         apply_dark_theme(self)
 
@@ -130,6 +133,8 @@ class HotboxEditor(QtWidgets.QWidget):
         self.attribute_editor.imageModified.connect(self.image_modified)
         self.attribute_editor.placeImageToggled.connect(self.place_image_mode)
         self.attribute_editor.centerImageRequested.connect(self.center_image)
+        self.attribute_editor.submenuChosen.connect(self.set_submenu_opener)
+        self.attribute_editor.set_submenus(self.submenu_names())
 
         # librairie intégrée en bas, façon shelf Maya
         from hotbox_designer.buttonlibrary import LibraryShelf
@@ -502,6 +507,39 @@ class HotboxEditor(QtWidgets.QWidget):
         shape = self._selected_image_shape()
         if shape is not None:
             self.shape_editor.center_image(shape)
+
+    def submenu_names(self):
+        """Noms des autres hotboxes marquées « is submenu » (candidates à
+        être ouvertes comme sous-menu depuis un bouton)."""
+        current = self.options.get('name')
+        names = []
+        for hotbox in self.all_hotboxes:
+            general = hotbox.get('general', {})
+            if general.get('submenu') and general.get('name') != current:
+                names.append(general['name'])
+        return sorted(names)
+
+    def set_submenu_opener(self, name):
+        """Transforme le(s) bouton(s) sélectionné(s) en ouvreur du
+        sous-menu `name` : génère la commande python `show('name')` sur le
+        clic gauche, sans avoir à l'écrire à la main."""
+        if not name:
+            return
+        shapes = list(self.shape_editor.selection)
+        if not shapes:
+            from hotbox_designer.dialog import warning
+            return warning(
+                'Sub-menu', 'Select at least one button first')
+        command = OPEN_COMMAND.format(
+            application=self.application.name, name=name)
+        for shape in shapes:
+            shape.options['action.left'] = True
+            shape.options['action.left.language'] = 'python'
+            shape.options['action.left.command'] = command
+            shape.options['action.left.close'] = False
+        self.selection_changed()
+        self.shape_editor.repaint()
+        self.set_data_modified()
 
     def set_selection_move_down(self):
         array = self.shape_editor.shapes

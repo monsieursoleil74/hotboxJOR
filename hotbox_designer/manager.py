@@ -291,7 +291,8 @@ class HotboxManager(QtWidgets.QWidget):
         editor = HotboxEditor(
             hotbox_data,
             self.application,
-            parent=self.application.main_window)
+            parent=self.application.main_window,
+            all_hotboxes=self.personnal_model.hotboxes)
         link = _EditorLink(editor, hotbox_data)
         editor.hotboxDataModified.connect(
             partial(self.hotbox_data_modified, link))
