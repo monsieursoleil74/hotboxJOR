@@ -156,6 +156,10 @@ affiché avec son vrai rendu en vignette.
   juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
   Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.
 - **Supprimer** : clic droit sur un bouton de la shelf → Delete.
+- **Ouvrir le dossier** (JSON brut) : clic droit sur la shelf ou un
+  onglet → « Open library folder » — ouvre l'explorateur à
+  l'emplacement du `button_library.json` (perso ou studio selon
+  l'onglet).
 - **Créer une catégorie** : bouton **＋** en haut à droite de la shelf
   (persistée même vide). **Supprimer une catégorie** : clic droit sur
   son onglet (possible seulement si elle est vide).

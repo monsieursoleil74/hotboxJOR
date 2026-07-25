@@ -20,6 +20,8 @@ hotbox.
 """
 import json
 import os
+import subprocess
+import sys
 
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 from hotbox_designer.interactive import Shape
@@ -163,6 +165,26 @@ def load_extra_categories(path):
 def save_library(path, entries):
     with open(path, 'w') as f:
         json.dump(entries, f, indent=2)
+
+
+def open_folder(path):
+    """Ouvre le dossier contenant `path` dans l'explorateur de fichiers
+    du système (Windows/mac/Linux). Retourne False si impossible."""
+    if not path:
+        return False
+    folder = path if os.path.isdir(path) else os.path.dirname(path)
+    if not folder or not os.path.exists(folder):
+        return False
+    try:
+        if sys.platform.startswith('win'):
+            os.startfile(folder)  # noqa: seulement sous Windows
+        elif sys.platform == 'darwin':
+            subprocess.Popen(['open', folder])
+        else:
+            subprocess.Popen(['xdg-open', folder])
+        return True
+    except OSError:
+        return False
 
 
 # cache des vignettes : les rendus sont coûteux et la shelf se
@@ -389,10 +411,12 @@ class LibraryShelf(QtWidgets.QWidget):
     def _add_tab(self, category, entries, current, readonly=False):
         shelf_list = ShelfList()
         shelf_list.readonly = readonly
+        # menu contextuel sur toutes les listes (l'ouverture de dossier
+        # marche aussi pour le studio ; suppression/envoi = perso seul)
+        shelf_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        shelf_list.customContextMenuRequested.connect(
+            lambda pos, lst=shelf_list: self._menu(lst, pos))
         if not readonly:
-            shelf_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-            shelf_list.customContextMenuRequested.connect(
-                lambda pos, lst=shelf_list: self._menu(lst, pos))
             if not entries:
                 shelf_list.setToolTip(
                     'Empty category — select shapes and use the save '
@@ -457,17 +481,31 @@ class LibraryShelf(QtWidgets.QWidget):
         if index < 0:
             return
         widget = self.tabs.widget(index)
-        if getattr(widget, 'readonly', False):
-            return  # les catégories studio ne se modifient pas d'ici
-        name = self.tabs.tabText(index)
+        readonly = getattr(widget, 'readonly', False)
         menu = QtWidgets.QMenu(self)
-        action = menu.addAction(
-            'Delete category "%s"' % name,
-            lambda: self.delete_category(name))
-        action.setEnabled(widget is not None and widget.count() == 0)
-        if not action.isEnabled():
-            action.setToolTip('Only empty categories can be deleted')
+        if not readonly:
+            name = self.tabs.tabText(index)
+            action = menu.addAction(
+                'Delete category "%s"' % name,
+                lambda: self.delete_category(name))
+            action.setEnabled(widget is not None and widget.count() == 0)
+            if not action.isEnabled():
+                action.setToolTip('Only empty categories can be deleted')
+            menu.addSeparator()
+        menu.addAction(
+            'Open library folder',
+            lambda: self._open_library_folder(readonly))
         menu.exec_(tab_bar.mapToGlobal(position))
+
+    def _open_library_folder(self, readonly):
+        if readonly:
+            target = studio_library_path() or studio_location()
+        else:
+            target = self.path
+        if not open_folder(target):
+            QtWidgets.QMessageBox.warning(
+                self, 'Library folder',
+                'Could not open the folder (not found or not configured).')
 
     def current_category(self):
         # une sauvegarde va toujours dans la librairie PERSO : si
@@ -479,23 +517,27 @@ class LibraryShelf(QtWidgets.QWidget):
         return self.tabs.tabText(self.tabs.currentIndex()) or DEFAULT_CATEGORY
 
     def _menu(self, shelf_list, position):
-        entries = shelf_list.selected_entries()
-        if not entries:
-            return
         menu = QtWidgets.QMenu(self)
-        count = len(entries)
-        # envoyer vers la librairie studio partagée
-        send_label = (
-            'Send "%s" to studio library' % entries[0]['name']
-            if count == 1 else 'Send %d buttons to studio library' % count)
-        send = menu.addAction(
-            self.studio_icon, send_label,
-            lambda: self._send_to_studio(entries))
-        send.setEnabled(studio_write_path() is not None)
-        menu.addSeparator()
-        del_label = ('Delete "%s"' % entries[0]['name']
-                     if count == 1 else 'Delete %d buttons' % count)
-        menu.addAction(del_label, lambda: self._delete(entries))
+        entries = shelf_list.selected_entries()
+        # actions sur les boutons sélectionnés : perso uniquement
+        if entries and not shelf_list.readonly:
+            count = len(entries)
+            send_label = (
+                'Send "%s" to studio library' % entries[0]['name']
+                if count == 1
+                else 'Send %d buttons to studio library' % count)
+            send = menu.addAction(
+                self.studio_icon, send_label,
+                lambda: self._send_to_studio(entries))
+            send.setEnabled(studio_write_path() is not None)
+            del_label = ('Delete "%s"' % entries[0]['name']
+                         if count == 1 else 'Delete %d buttons' % count)
+            menu.addAction(del_label, lambda: self._delete(entries))
+            menu.addSeparator()
+        # toujours disponible : ouvrir le dossier de la librairie
+        menu.addAction(
+            'Open library folder',
+            lambda: self._open_library_folder(shelf_list.readonly))
         menu.exec_(shelf_list.mapToGlobal(position))
 
     def _send_to_studio(self, entries):
