@@ -4,6 +4,22 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Catégories de librairie : créer / renommer / déplacer (perso ET studio)
+
+- On peut désormais **organiser les catégories** de la librairie, y
+  compris côté **studio** (le dossier `HOTBOX_STUDIO_LIBRARY`) :
+  - clic droit sur un onglet → **New category… / New studio category…**,
+    **Rename category…** (ré-étiquette boutons + marqueur), **Delete
+    category** (si vide) ;
+  - clic droit sur un ou plusieurs boutons → **Move to category…**
+    (perso comme studio).
+- Le contenu des boutons studio reste protégé ; seules les catégories et
+  le rangement sont modifiables.
+- Fonctions par chemin dans `buttonlibrary.py` (`categories_in`,
+  `add_category_to`, `rename_category_in`, `delete_empty_category_in`,
+  `set_entries_category_in`), partagées par les deux librairies ;
+  `add_category`/`delete_category` de la shelf s'appuient dessus.
+
 ## 2026-07 — Ordre de superposition simplifié
 
 - Les deux boutons pas-à-pas « Move down » / « Move up » (hérités de

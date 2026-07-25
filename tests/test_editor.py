@@ -1185,6 +1185,52 @@ def test_submenu_opener():
     print('sous-menu fluide (ouvreur de hotbox généré) OK')
 
 
+def test_library_category_ops():
+    """Organiser les catégories d'une librairie : créer, renommer,
+    déplacer des boutons, supprimer une catégorie vide. Même logique
+    pour la librairie perso et la librairie studio (fonctions par
+    chemin)."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+
+    tmp = tempfile.mkdtemp()
+    path = os.path.join(tmp, 'button_library.json')
+
+    def button(name, category=None):
+        entry = {'name': name, 'options': {'text.content': name}}
+        if category is not None:
+            entry['category'] = category
+        return entry
+
+    # départ : « a » en General (implicite), « b » en TAT
+    bl.save_library(path, [button('a'), button('b', 'TAT')])
+    assert bl.categories_in(path) == ['General', 'TAT']
+
+    # créer une catégorie vide (refusée si déjà là)
+    assert bl.add_category_to(path, 'LEAD') is True
+    assert bl.add_category_to(path, 'TAT') is False
+    assert bl.categories_in(path) == ['General', 'LEAD', 'TAT']
+
+    # renommer TAT -> DA : ré-étiquette le bouton « b »
+    assert bl.rename_category_in(path, 'TAT', 'DA') is True
+    cats = bl.categories_in(path)
+    assert 'DA' in cats and 'TAT' not in cats
+    b = [e for e in bl.load_library(path) if e['name'] == 'b'][0]
+    assert b['category'] == 'DA'
+
+    # déplacer « a » (General) vers LEAD
+    a = [e for e in bl.load_library(path) if e['name'] == 'a'][0]
+    assert bl.set_entries_category_in(path, [a], 'LEAD') == 1
+    a2 = [e for e in bl.load_library(path) if e['name'] == 'a'][0]
+    assert a2['category'] == 'LEAD'
+
+    # supprimer une catégorie vide OK, non vide refusé
+    assert bl.add_category_to(path, 'Vide') is True
+    assert bl.delete_empty_category_in(path, 'Vide') is True
+    assert bl.delete_empty_category_in(path, 'DA') is False
+    print('organisation des catégories (créer/renommer/déplacer/vider) OK')
+
+
 def test_hotkey_registry():
     """Registre des raccourcis : on peut noter, relire, mettre à jour et
     RETIRER un raccourci — ce que l'ancien Maya ne permettait pas (pose
@@ -1335,6 +1381,7 @@ if __name__ == '__main__':
     test_studio_library()
     test_thumbnail_cache_and_dedup()
     test_submenu_opener()
+    test_library_category_ops()
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()

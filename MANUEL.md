@@ -156,9 +156,19 @@ affiché avec son vrai rendu en vignette.
   onglet → « Open library folder » — ouvre l'explorateur à
   l'emplacement du `button_library.json` (perso ou studio selon
   l'onglet).
-- **Créer une catégorie** : bouton **＋** en haut à droite de la shelf
-  (persistée même vide). **Supprimer une catégorie** : clic droit sur
-  son onglet (possible seulement si elle est vide).
+- **Organiser les catégories** — clic droit sur un **onglet** :
+  - **New category… / New studio category…** — créer une catégorie
+    (persistée même vide ; le libellé s'adapte selon que l'onglet est
+    perso ou studio). Le bouton **＋** en haut à droite crée toujours
+    une catégorie **perso**.
+  - **Rename category…** — renommer : tous les boutons de la catégorie
+    (et le marqueur de catégorie vide) sont ré-étiquetés.
+  - **Delete category** — supprimer (seulement si elle est vide).
+  - Ces trois actions marchent aussi sur les onglets **studio** (elles
+    écrivent dans le `button_library.json` du dossier studio).
+- **Ranger un bouton dans une autre catégorie** : clic droit sur un ou
+  plusieurs boutons → **Move to category…** (choisir une catégorie
+  existante ou en taper une nouvelle). Fonctionne côté perso ET studio.
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 
@@ -172,9 +182,12 @@ affiché avec son vrai rendu en vignette.
   **`HOTBOX_STUDIO_LIBRARY`** (un `.json`, ou un dossier contenant
   `button_library.json`). À défaut de variable, l'outil regarde
   `C:\Users\ortzj\Desktop\JOR\hotbox`. Les catégories studio
-  apparaissent en tête de la shelf avec le **logo du studio** en icône
-  et ne sont pas modifiables (seul le lead maintient ce fichier) ;
-  leurs boutons se glissent-déposent normalement dans une hotbox.
+  apparaissent en tête de la shelf avec le **logo du studio** en icône ;
+  leurs boutons se glissent-déposent normalement dans une hotbox. Le
+  **contenu** d'un bouton studio reste protégé (pas d'édition ni de
+  suppression depuis la shelf), mais on peut désormais **organiser ses
+  catégories** (créer / renommer / vider) et **déplacer un bouton** d'une
+  catégorie studio à une autre (voir « Organiser les catégories »).
 
   **Logo du studio** : pose un `studio_logo.png` (ou `logo.png`) dans le
   dossier de la librairie studio — il devient l'icône des onglets. On

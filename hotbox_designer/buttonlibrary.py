@@ -167,6 +167,74 @@ def save_library(path, entries):
         json.dump(entries, f, indent=2)
 
 
+def categories_in(path):
+    """Toutes les catégories d'un fichier de librairie (boutons +
+    catégories vides marquées), triées."""
+    categories = {
+        e.get('category') or DEFAULT_CATEGORY for e in load_library(path)}
+    categories.update(load_extra_categories(path))
+    return sorted(categories)
+
+
+def add_category_to(path, name):
+    """Crée une catégorie vide (marqueur) dans `path`. Retourne False si
+    elle existe déjà ou si le nom est vide."""
+    name = (name or '').strip()
+    if not name or name in categories_in(path):
+        return False
+    raw = load_library_raw(path)
+    raw.append({CATEGORY_KEY: name})
+    save_library(path, raw)
+    return True
+
+
+def rename_category_in(path, old, new):
+    """Renomme une catégorie : ré-étiquette tous ses boutons ET son
+    marqueur de catégorie vide. Retourne False si rien à faire."""
+    new = (new or '').strip()
+    if not new or new == old or old not in categories_in(path):
+        return False
+    raw = load_library_raw(path)
+    for entry in raw:
+        if 'options' in entry:
+            if (entry.get('category') or DEFAULT_CATEGORY) == old:
+                entry['category'] = new
+        elif entry.get(CATEGORY_KEY) == old:
+            entry[CATEGORY_KEY] = new
+    save_library(path, raw)
+    return True
+
+
+def delete_empty_category_in(path, name):
+    """Supprime une catégorie VIDE (aucun bouton). Retourne False si elle
+    contient encore des boutons."""
+    has_buttons = any(
+        (e.get('category') or DEFAULT_CATEGORY) == name
+        for e in load_library(path))
+    if has_buttons:
+        return False
+    raw = [e for e in load_library_raw(path) if e.get(CATEGORY_KEY) != name]
+    save_library(path, raw)
+    return True
+
+
+def set_entries_category_in(path, entries, category):
+    """Range des boutons EXISTANTS dans une autre catégorie (déplacement).
+    Retourne le nombre de boutons effectivement déplacés."""
+    category = (category or '').strip() or DEFAULT_CATEGORY
+    raw = load_library_raw(path)
+    changed = 0
+    for entry in raw:
+        if 'options' not in entry or entry not in entries:
+            continue
+        if (entry.get('category') or DEFAULT_CATEGORY) != category:
+            entry['category'] = category
+            changed += 1
+    if changed:
+        save_library(path, raw)
+    return changed
+
+
 def open_folder(path):
     """Ouvre le dossier contenant `path` dans l'explorateur de fichiers
     du système (Windows/mac/Linux). Retourne False si impossible."""
@@ -442,38 +510,82 @@ class LibraryShelf(QtWidgets.QWidget):
         if (readonly, category) == current:
             self.tabs.setCurrentIndex(index)
 
-    def _prompt_category(self):
+    def _prompt_category(self, studio=False):
+        title = 'New studio category' if studio else 'New category'
         name, accepted = QtWidgets.QInputDialog.getText(
-            self, 'New category', 'Category name:')
+            self, title, 'Category name:')
         if not accepted or not name.strip():
             return
-        self.add_category(name.strip())
+        if studio:
+            self.add_studio_category(name.strip())
+        else:
+            self.add_category(name.strip())
+
+    def add_studio_category(self, name):
+        path = studio_write_path()
+        if path is None:
+            return self._warn_no_studio()
+        if add_category_to(path, name):
+            refresh_shelves()
+
+    def _prompt_rename(self, path, old):
+        if path is None:
+            return self._warn_no_studio()
+        new, accepted = QtWidgets.QInputDialog.getText(
+            self, 'Rename category', 'New name:', text=old)
+        if not accepted:
+            return
+        if rename_category_in(path, old, new.strip()):
+            refresh_shelves()
+
+    def _delete_category(self, path, name):
+        if path is None:
+            return self._warn_no_studio()
+        if delete_empty_category_in(path, name):
+            refresh_shelves()
+
+    def _prompt_move(self, path, entries):
+        if path is None:
+            return self._warn_no_studio()
+        existing = categories_in(path) or [DEFAULT_CATEGORY]
+        category, accepted = QtWidgets.QInputDialog.getItem(
+            self, 'Move to category', 'Category:', existing, 0, True)
+        if not accepted or not category.strip():
+            return
+        if set_entries_category_in(path, entries, category.strip()):
+            refresh_shelves()
+
+    def _warn_no_studio(self):
+        QtWidgets.QMessageBox.warning(
+            self, 'Studio library',
+            'Studio library is not configured or not writable.\n'
+            'Set the HOTBOX_STUDIO_LIBRARY location first.')
 
     def add_category(self, name):
-        if name in self.categories():
+        if not add_category_to(self.path, name):
             return
-        raw = load_library_raw(self.path)
-        raw.append({CATEGORY_KEY: name})
-        save_library(self.path, raw)
         refresh_shelves()
-        index = [
-            self.tabs.tabText(i) for i in range(self.tabs.count())
-        ].index(name)
-        self.tabs.setCurrentIndex(index)
+        names = [self.tabs.tabText(i) for i in range(self.tabs.count())]
+        if name in names:
+            self.tabs.setCurrentIndex(names.index(name))
 
     def delete_category(self, name):
         """Supprime une catégorie VIDE (marqueur seulement)."""
-        buttons = [
-            e for e in load_library(self.path)
-            if (e.get('category') or DEFAULT_CATEGORY) == name]
-        if buttons:
-            return False
-        raw = [
-            e for e in load_library_raw(self.path)
-            if e.get(CATEGORY_KEY) != name]
-        save_library(self.path, raw)
-        refresh_shelves()
-        return True
+        deleted = delete_empty_category_in(self.path, name)
+        if deleted:
+            refresh_shelves()
+        return deleted
+
+    def _tab_name(self, index):
+        """Nom de catégorie de l'onglet (préfixe ★ studio retiré)."""
+        text = self.tabs.tabText(index)
+        if text.startswith(STUDIO_PREFIX):
+            text = text[len(STUDIO_PREFIX):]
+        return text
+
+    def _category_target(self, readonly):
+        """Fichier de librairie à modifier selon l'onglet (studio/perso)."""
+        return studio_write_path() if readonly else self.path
 
     def _tab_menu(self, position):
         tab_bar = self.tabs.tabBar()
@@ -482,16 +594,29 @@ class LibraryShelf(QtWidgets.QWidget):
             return
         widget = self.tabs.widget(index)
         readonly = getattr(widget, 'readonly', False)
+        name = self._tab_name(index)
+        target = self._category_target(readonly)
         menu = QtWidgets.QMenu(self)
-        if not readonly:
-            name = self.tabs.tabText(index)
-            action = menu.addAction(
-                'Delete category "%s"' % name,
-                lambda: self.delete_category(name))
-            action.setEnabled(widget is not None and widget.count() == 0)
-            if not action.isEnabled():
-                action.setToolTip('Only empty categories can be deleted')
-            menu.addSeparator()
+
+        new_label = ('New studio category…' if readonly
+                     else 'New category…')
+        new = menu.addAction(
+            new_label, lambda: self._prompt_category(readonly))
+        new.setEnabled(target is not None)
+
+        rename = menu.addAction(
+            'Rename category…', lambda: self._prompt_rename(target, name))
+        rename.setEnabled(target is not None)
+
+        delete = menu.addAction(
+            'Delete category "%s"' % name,
+            lambda: self._delete_category(target, name))
+        empty = widget is not None and widget.count() == 0
+        delete.setEnabled(target is not None and empty)
+        if not empty:
+            delete.setToolTip('Only empty categories can be deleted')
+
+        menu.addSeparator()
         menu.addAction(
             'Open library folder',
             lambda: self._open_library_folder(readonly))
@@ -519,6 +644,15 @@ class LibraryShelf(QtWidgets.QWidget):
     def _menu(self, shelf_list, position):
         menu = QtWidgets.QMenu(self)
         entries = shelf_list.selected_entries()
+        # ranger les boutons dans une autre catégorie : perso ET studio
+        # (déplacement = organiser, ça ne modifie pas le bouton lui-même)
+        if entries:
+            target = self._category_target(shelf_list.readonly)
+            move = menu.addAction(
+                'Move to category…',
+                lambda: self._prompt_move(target, entries))
+            move.setEnabled(target is not None)
+            menu.addSeparator()
         # actions sur les boutons sélectionnés : perso uniquement
         if entries and not shelf_list.readonly:
             count = len(entries)
