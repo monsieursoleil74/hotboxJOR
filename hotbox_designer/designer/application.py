@@ -4,7 +4,7 @@ from functools import partial
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 from hotbox_designer.reader import HotboxReader
 
-from hotbox_designer.align import align_shapes, arrange_shapes, arrange_radial
+from hotbox_designer.align import align_shapes, arrange_shapes
 from hotbox_designer.templates import SQUARE_BUTTON, TEXT, BACKGROUND
 from hotbox_designer.interactive import Shape
 from hotbox_designer.geometry import get_combined_rects
@@ -110,7 +110,6 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.alignRequested.connect(self.align_selection)
         self.menu.arrangeRequested.connect(self.arrange_selection)
         self.menu.testRequested.connect(self.test_hotbox)
-        self.menu.radialRequested.connect(self.arrange_selection_radial)
         self.test_reader = None
 
         set_shortcut("Ctrl+Z", self.shape_editor, self.undo)
@@ -166,38 +165,20 @@ class HotboxEditor(QtWidgets.QWidget):
             return []
 
     def show_context_menu(self, global_pos):
+        # menu clic droit volontairement court : uniquement ce qui n'est
+        # PAS déjà dans la barre d'outils (verrouillage, magnet,
+        # recherche, sauvegarde en librairie, recadrage)
         menu = QtWidgets.QMenu(self)
-        menu.addAction(icon('copy.png'), 'Copy\tCtrl+C', self.copy)
-        menu.addAction(icon('paste.png'), 'Paste\tCtrl+V', self.paste)
-        menu.addAction(
-            icon('copy_settings.png'), 'Copy style\tCtrl+Shift+C',
-            self.copy_style)
-        menu.addAction(
-            icon('paste_settings.png'), 'Paste style...\tCtrl+Shift+V',
-            self.paste_style)
-        menu.addSeparator()
-        menu.addAction(
-            icon('delete.png'), 'Delete\tDel', self.delete_selection)
-        menu.addSeparator()
-        menu.addAction(icon('ontop.png'), 'On top', self.set_selection_on_top)
-        menu.addAction(
-            icon('moveup.png'), 'Move up', self.set_selection_move_up)
-        menu.addAction(
-            icon('movedown.png'), 'Move down', self.set_selection_move_down)
-        menu.addAction(
-            icon('onbottom.png'), 'On bottom', self.set_selection_on_bottom)
-        menu.addSeparator()
-        menu.addAction(
-            icon('picker.png'), 'Button library...', self.open_button_library)
-        menu.addAction(
+        has_selection = bool(self.shape_editor.selection.shapes)
+
+        save = menu.addAction(
             icon('save.png'), 'Save selection to library...',
             self.save_selection_to_library)
+        save.setEnabled(has_selection)
         menu.addSeparator()
-        menu.addAction(
-            'Search and replace...\tCtrl+H', self.open_search_replace)
-        menu.addSeparator()
+
         lock = menu.addAction('Lock selection', self.lock_selection)
-        lock.setEnabled(bool(self.shape_editor.selection.shapes))
+        lock.setEnabled(has_selection)
         locked_count = sum(
             1 for s in self.shape_editor.shapes if s.options.get('lock'))
         unlock = menu.addAction(
@@ -208,9 +189,9 @@ class HotboxEditor(QtWidgets.QWidget):
         magnet.setChecked(self.shape_editor.magnet_enabled)
         magnet.toggled.connect(self.set_magnet_enabled)
         menu.addSeparator()
+
         menu.addAction(
-            icon('fit_zone.png'), 'Fit zone to shapes',
-            self.fit_zone_to_shapes)
+            'Search and replace...\tCtrl+H', self.open_search_replace)
         menu.addAction('Frame view\tF', self.shape_editor.focus_view)
         menu.exec_(global_pos)
 
@@ -560,22 +541,6 @@ class HotboxEditor(QtWidgets.QWidget):
 
     def arrange_selection(self, direction):
         if not arrange_shapes(self.shape_editor.selection, direction):
-            return
-        self.shape_editor.update_selection()
-        self.shape_editor.repaint()
-        self.set_data_modified()
-
-    def arrange_selection_radial(self):
-        """Dispose les boutons sélectionnés en cercle autour du centre
-        de la hotbox (façon marking menu)."""
-        from hotbox_designer.dialog import warning
-        shapes = list(self.shape_editor.selection)
-        if len(shapes) < 2:
-            return warning(
-                'Radial layout', 'Select at least 2 buttons to arrange')
-        center = QtCore.QPointF(
-            self.options['centerx'], self.options['centery'])
-        if not arrange_radial(shapes, center=center):
             return
         self.shape_editor.update_selection()
         self.shape_editor.repaint()

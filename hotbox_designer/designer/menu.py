@@ -13,7 +13,6 @@ class MenuWidget(QtWidgets.QWidget):
     libraryRequested = QtCore.Signal()
     saveToLibraryRequested = QtCore.Signal()
     testRequested = QtCore.Signal()
-    radialRequested = QtCore.Signal()
     undoRequested = QtCore.Signal()
     redoRequested = QtCore.Signal()
     sizeChanged = QtCore.Signal()
@@ -56,10 +55,6 @@ class MenuWidget(QtWidgets.QWidget):
         self.test = QtWidgets.QAction(icon('play.png'), '', self)
         self.test.setToolTip('Test the hotbox (show it like in production)')
         self.test.triggered.connect(self.testRequested.emit)
-        self.radial = QtWidgets.QAction(icon('center.png'), '', self)
-        self.radial.setToolTip(
-            'Arrange selected buttons in a circle (marking menu)')
-        self.radial.triggered.connect(self.radialRequested.emit)
 
         self.undo = QtWidgets.QAction(icon('undo.png'), '', self)
         self.undo.setToolTip('Undo')
@@ -213,7 +208,6 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addSeparator()
         for action in self.align_actions:
             self.toolbar.addAction(action)
-        self.toolbar.addAction(self.radial)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.arrange_h)
         self.toolbar.addAction(self.arrange_v)

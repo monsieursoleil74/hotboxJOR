@@ -92,10 +92,6 @@ Boutons en fin de barre d'outils (à partir de 2 shapes sélectionnées,
   verticaux, bas.
 - Distribuer : horizontalement / verticalement (les centres se
   répartissent régulièrement entre la première et la dernière shape).
-- **Disposition radiale** (icône cible, après les alignements) : les
-  boutons sélectionnés se répartissent **en cercle autour du centre**
-  de la hotbox, façon marking menu (premier bouton en haut, sens
-  horaire). Le rayon s'adapte au nombre et à la taille des boutons.
 
 ## Mode test ▶️
 
@@ -291,10 +287,10 @@ Refondu façon Photoshop :
 
 ## Menu clic droit (récapitulatif)
 
-Copy / Paste / Copy style / Paste style… • Delete • On top / Move up /
-Move down / On bottom • Button library… / Save selection to library… •
-Search and replace… • Lock selection / Unlock all / Magnet snapping •
-Fit zone to shapes / Frame view.
+Volontairement court : il ne reprend PAS ce qui est déjà dans la barre
+d'outils. Seulement — Save selection to library… • Lock selection /
+Unlock all / Magnet snapping • Search and replace… (Ctrl+H) / Frame
+view (F).
 
 ## Barre d'outils, de gauche à droite
 
