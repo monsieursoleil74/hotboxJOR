@@ -4,6 +4,18 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Mode mainteneur studio (catégories officielles protégées)
+
+- Nouvelle variable **`HOTBOX_STUDIO_ADMIN`** : seul le mainteneur
+  (lead) qui la pose peut modifier la librairie studio — création /
+  renommage / suppression de catégories, déplacement de boutons,
+  publication vers le studio. Sans elle (cas des **animateurs**), les
+  onglets studio redeviennent **entièrement en lecture seule** : ils ne
+  font que piocher des boutons. Corrige le fait que l'organisation des
+  catégories, ajoutée juste avant, était ouverte à tous.
+- `is_studio_admin()` + garde `_can_edit()` sur les menus de la shelf ;
+  « Send to studio library » n'apparaît plus que pour le mainteneur.
+
 ## 2026-07 — Catégories de librairie : créer / renommer / déplacer (perso ET studio)
 
 - On peut désormais **organiser les catégories** de la librairie, y
@@ -14,7 +26,7 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   - clic droit sur un ou plusieurs boutons → **Move to category…**
     (perso comme studio).
 - Le contenu des boutons studio reste protégé ; seules les catégories et
-  le rangement sont modifiables.
+  le rangement sont modifiables (réservé au mainteneur, voir ci-dessus).
 - Fonctions par chemin dans `buttonlibrary.py` (`categories_in`,
   `add_category_to`, `rename_category_in`, `delete_empty_category_in`,
   `set_entries_category_in`), partagées par les deux librairies ;

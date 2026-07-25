@@ -37,12 +37,25 @@ SHELF_THUMB_HEIGHT = 36
 # une catégorie vide est persistée par une entrée marqueur
 CATEGORY_KEY = '__category__'
 
-# librairie studio partagée (lecture seule)
+# librairie studio partagée (lecture seule pour les animateurs)
 STUDIO_ENV_VARIABLE = 'HOTBOX_STUDIO_LIBRARY'
 STUDIO_LOGO_ENV_VARIABLE = 'HOTBOX_STUDIO_LOGO'
+# mode « mainteneur studio » : seul lui peut modifier la librairie studio
+# (catégories officielles, publication de boutons). Les animateurs ne
+# posent pas cette variable → studio en lecture seule.
+STUDIO_ADMIN_ENV_VARIABLE = 'HOTBOX_STUDIO_ADMIN'
 DEFAULT_STUDIO_DIR = r'C:\Users\ortzj\Desktop\JOR\hotbox'
 STUDIO_PREFIX = '\u2605 '  # « ★ » : repli si aucun logo trouvé
 STUDIO_LOGO_NAMES = ('studio_logo.png', 'logo.png')
+
+
+def is_studio_admin():
+    """Vrai si la session est en mode mainteneur studio (variable
+    HOTBOX_STUDIO_ADMIN à 1/true/yes/on). C'est ce qui débloque
+    l'édition de la librairie studio ; sans elle, les onglets studio
+    restent en lecture seule pour l'animateur."""
+    value = os.environ.get(STUDIO_ADMIN_ENV_VARIABLE, '')
+    return value.strip().lower() not in ('', '0', 'false', 'no', 'off')
 
 
 def library_path(application):
@@ -587,6 +600,13 @@ class LibraryShelf(QtWidgets.QWidget):
         """Fichier de librairie à modifier selon l'onglet (studio/perso)."""
         return studio_write_path() if readonly else self.path
 
+    def _can_edit(self, readonly):
+        """Les onglets perso sont toujours modifiables ; les onglets
+        studio ne le sont qu'en mode mainteneur (HOTBOX_STUDIO_ADMIN).
+        C'est ce qui garde les catégories officielles intouchables pour
+        les animateurs."""
+        return (not readonly) or is_studio_admin()
+
     def _tab_menu(self, position):
         tab_bar = self.tabs.tabBar()
         index = tab_bar.tabAt(position)
@@ -598,25 +618,26 @@ class LibraryShelf(QtWidgets.QWidget):
         target = self._category_target(readonly)
         menu = QtWidgets.QMenu(self)
 
-        new_label = ('New studio category…' if readonly
-                     else 'New category…')
-        new = menu.addAction(
-            new_label, lambda: self._prompt_category(readonly))
-        new.setEnabled(target is not None)
+        if self._can_edit(readonly):
+            new_label = ('New studio category…' if readonly
+                         else 'New category…')
+            new = menu.addAction(
+                new_label, lambda: self._prompt_category(readonly))
+            new.setEnabled(target is not None)
 
-        rename = menu.addAction(
-            'Rename category…', lambda: self._prompt_rename(target, name))
-        rename.setEnabled(target is not None)
+            rename = menu.addAction(
+                'Rename category…', lambda: self._prompt_rename(target, name))
+            rename.setEnabled(target is not None)
 
-        delete = menu.addAction(
-            'Delete category "%s"' % name,
-            lambda: self._delete_category(target, name))
-        empty = widget is not None and widget.count() == 0
-        delete.setEnabled(target is not None and empty)
-        if not empty:
-            delete.setToolTip('Only empty categories can be deleted')
+            delete = menu.addAction(
+                'Delete category "%s"' % name,
+                lambda: self._delete_category(target, name))
+            empty = widget is not None and widget.count() == 0
+            delete.setEnabled(target is not None and empty)
+            if not empty:
+                delete.setToolTip('Only empty categories can be deleted')
+            menu.addSeparator()
 
-        menu.addSeparator()
         menu.addAction(
             'Open library folder',
             lambda: self._open_library_folder(readonly))
@@ -644,26 +665,28 @@ class LibraryShelf(QtWidgets.QWidget):
     def _menu(self, shelf_list, position):
         menu = QtWidgets.QMenu(self)
         entries = shelf_list.selected_entries()
-        # ranger les boutons dans une autre catégorie : perso ET studio
-        # (déplacement = organiser, ça ne modifie pas le bouton lui-même)
-        if entries:
+        # ranger les boutons dans une autre catégorie : perso toujours,
+        # studio seulement en mode mainteneur (déplacement = organiser,
+        # ça ne modifie pas le bouton lui-même)
+        if entries and self._can_edit(shelf_list.readonly):
             target = self._category_target(shelf_list.readonly)
             move = menu.addAction(
                 'Move to category…',
                 lambda: self._prompt_move(target, entries))
             move.setEnabled(target is not None)
             menu.addSeparator()
-        # actions sur les boutons sélectionnés : perso uniquement
+        # actions sur les boutons perso sélectionnés
         if entries and not shelf_list.readonly:
             count = len(entries)
-            send_label = (
-                'Send "%s" to studio library' % entries[0]['name']
-                if count == 1
-                else 'Send %d buttons to studio library' % count)
-            send = menu.addAction(
-                self.studio_icon, send_label,
-                lambda: self._send_to_studio(entries))
-            send.setEnabled(studio_write_path() is not None)
+            # publier vers le studio : réservé au mainteneur
+            if is_studio_admin() and studio_write_path() is not None:
+                send_label = (
+                    'Send "%s" to studio library' % entries[0]['name']
+                    if count == 1
+                    else 'Send %d buttons to studio library' % count)
+                menu.addAction(
+                    self.studio_icon, send_label,
+                    lambda: self._send_to_studio(entries))
             del_label = ('Delete "%s"' % entries[0]['name']
                          if count == 1 else 'Delete %d buttons' % count)
             menu.addAction(del_label, lambda: self._delete(entries))

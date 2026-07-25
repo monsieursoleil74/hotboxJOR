@@ -183,11 +183,23 @@ affiché avec son vrai rendu en vignette.
   `button_library.json`). À défaut de variable, l'outil regarde
   `C:\Users\ortzj\Desktop\JOR\hotbox`. Les catégories studio
   apparaissent en tête de la shelf avec le **logo du studio** en icône ;
-  leurs boutons se glissent-déposent normalement dans une hotbox. Le
-  **contenu** d'un bouton studio reste protégé (pas d'édition ni de
-  suppression depuis la shelf), mais on peut désormais **organiser ses
-  catégories** (créer / renommer / vider) et **déplacer un bouton** d'une
-  catégorie studio à une autre (voir « Organiser les catégories »).
+  leurs boutons se glissent-déposent normalement dans une hotbox. Pour un
+  **animateur**, tout le contenu studio est en **lecture seule** : ni
+  édition, ni suppression, ni changement de catégorie — il ne fait que
+  piocher des boutons.
+
+### Mode mainteneur studio (`HOTBOX_STUDIO_ADMIN`)
+
+C'est le lead qui construit et entretient les catégories officielles.
+Pour cela il pose la variable d'environnement **`HOTBOX_STUDIO_ADMIN=1`**
+sur SA machine : elle débloque, sur les onglets studio, la création /
+le renommage / la suppression de catégories, le déplacement de boutons
+et la publication (« Send to studio library »). Les animateurs ne
+posent pas cette variable → les onglets studio restent intouchables.
+
+C'est un garde-fou logiciel dans l'interface ; en vrai studio, on
+combine avec un dossier réseau en lecture seule au niveau des droits
+Windows pour les animateurs.
 
   **Logo du studio** : pose un `studio_logo.png` (ou `logo.png`) dans le
   dossier de la librairie studio — il devient l'icône des onglets. On
