@@ -4,6 +4,17 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Trois nouveaux templates embarqués
+
+- **Pie_8_Directions** : marking menu complet à 8 directions (N/NE/E/…)
+  autour d'un centre.
+- **Mini_Shelf_4x3** : panneau titré avec une grille de 12 boutons,
+  façon mini-shelf.
+- **Barre_6_Boutons** : bande compacte de 6 boutons carrés.
+- Style cohérent avec le thème (gris sombre, survol vert accent, coins
+  arrondis), générés depuis les défauts `SQUARE_BUTTON`/`TEXT`/
+  `BACKGROUND` (toutes les clés à jour).
+
 ## 2026-07 — Replace depuis la librairie, pipette couleur, templates utilisateur
 
 - **Replace with library button** (clic droit dans l'éditeur) : le

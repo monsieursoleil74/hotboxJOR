@@ -1411,6 +1411,26 @@ def test_user_templates():
     print('templates utilisateur (save + liste + aperçu) OK')
 
 
+def test_new_builtin_templates():
+    """Les 3 templates ajoutés (Pie 8, Mini shelf, Barre 6) sont listés
+    et s'ouvrent dans l'éditeur sans erreur."""
+    from hotbox_designer.data import load_templates
+
+    templates = load_templates()
+    names = [t['general']['name'] for t in templates]
+    for expected in ('Pie_8_Directions', 'Mini_Shelf_4x3', 'Barre_6_Boutons'):
+        assert expected in names, expected
+        data = templates[names.index(expected)]
+        assert data['shapes'], expected
+        editor = HotboxEditor(
+            copy.deepcopy(data), Standalone(), parent=None)
+        editor.show()
+        APP.processEvents()
+        assert len(editor.shape_editor.shapes) == len(data['shapes'])
+        editor.close()
+    print('nouveaux templates embarqués (pie 8, mini shelf, barre) OK')
+
+
 def test_color_picker_pipette():
     """La pipette du sélecteur de couleurs prélève la couleur sous le
     curseur (screen_color_at simulé hors écran)."""
@@ -1690,6 +1710,7 @@ if __name__ == '__main__':
     test_startup_framing()
     test_replace_from_library()
     test_user_templates()
+    test_new_builtin_templates()
     test_color_picker_pipette()
     test_hotkey_registry()
     test_hotkey_edit_capture()
