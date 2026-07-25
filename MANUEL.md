@@ -146,11 +146,19 @@ affiché avec son vrai rendu en vignette.
 
 - **Sauvegarder** : sélectionne un ou plusieurs boutons → bouton 💾 de
   la barre d'outils (ou clic droit → « Save selection to library… ») →
-  nom + catégorie (libre : Rig, Anim, Selection… — l'onglet courant est
-  proposé par défaut). Toutes les shelves ouvertes se rafraîchissent.
+  nom + **destination** + catégorie. La **destination** (« Library »)
+  permet de choisir **Perso** ou **Studio (TAT)** dès la sauvegarde : on
+  peut donc ranger un bouton directement dans une shelf TAT, sans passer
+  par General puis « Move to ». Le choix n'apparaît que si un
+  emplacement studio est configuré ; les catégories proposées s'adaptent
+  à la destination (l'onglet courant est proposé par défaut). Toutes les
+  shelves ouvertes se rafraîchissent.
 - **Réutiliser** : **glisse-dépose** depuis la shelf vers le canvas
   juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
   Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.
+- **Renommer un bouton** : clic droit sur un bouton de la shelf →
+  **Rename…** (perso comme studio). Le bouton garde son apparence et sa
+  commande, seul son nom change.
 - **Supprimer** : clic droit sur un bouton de la shelf → Delete.
 - **Ouvrir le dossier** (JSON brut) : clic droit sur la shelf ou un
   onglet → « Open library folder » — ouvre l'explorateur à

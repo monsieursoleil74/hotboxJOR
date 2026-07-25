@@ -1238,6 +1238,60 @@ def test_library_category_ops():
     print('organisation des catégories (créer/renommer/déplacer/vider) OK')
 
 
+def test_library_rename_and_save_studio():
+    """Renommer un bouton déjà rangé, et sauvegarder directement dans la
+    librairie studio (sans passer par General + Move to)."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import (
+        LibraryShelf, SaveToLibraryDialog, STUDIO_ENV_VARIABLE,
+        load_studio_library)
+
+    def entry(name, category='General'):
+        return {'name': name, 'category': category,
+                'options': dict(SQUARE_BUTTON, **{'text.content': name})}
+
+    # rename_entry_in sur un fichier perso
+    tmp = tempfile.mkdtemp()
+    path = os.path.join(tmp, 'button_library.json')
+    bl.save_library(path, [entry('old', 'Perso')])
+    assert bl.rename_entry_in(path, entry('old', 'Perso'), 'new') is True
+    assert [e['name'] for e in bl.load_library(path)] == ['new']
+    assert bl.rename_entry_in(path, entry('absent'), 'x') is False
+    assert bl.rename_entry_in(path, entry('new', 'Perso'), '   ') is False
+
+    # sauvegarde directe dans la librairie studio
+    studio_dir = tempfile.mkdtemp()
+    os.environ[STUDIO_ENV_VARIABLE] = studio_dir
+    try:
+        perso = tempfile.mkdtemp()
+        application = Standalone()
+        application.get_data_folder = lambda: perso
+        shelf = LibraryShelf(application)
+        added = shelf.save_entries([entry('DirectTool', 'ANIM')], studio=True)
+        assert added == 1
+        assert any(e['name'] == 'DirectTool' for e in load_studio_library())
+        # rien n'atterrit dans la perso
+        assert all(
+            e['name'] != 'DirectTool' for e in bl.load_library(shelf.path))
+
+        # le dialogue propose studio et bascule les catégories
+        dialog = SaveToLibraryDialog(['Perso'], ['ANIM', 'SHELF'], True, 'btn')
+        assert dialog.is_studio() is False
+        perso_items = [dialog.category.itemText(i)
+                       for i in range(dialog.category.count())]
+        assert perso_items == ['Perso']
+        dialog.destination.setCurrentIndex(1)  # Studio (TAT)
+        assert dialog.is_studio() is True
+        studio_items = [dialog.category.itemText(i)
+                        for i in range(dialog.category.count())]
+        assert studio_items == ['ANIM', 'SHELF']
+        shelf.close()
+    finally:
+        del os.environ[STUDIO_ENV_VARIABLE]
+    print('rename bouton de shelf + save direct studio OK')
+
+
 def test_hotkey_registry():
     """Registre des raccourcis : on peut noter, relire, mettre à jour et
     RETIRER un raccourci — ce que l'ancien Maya ne permettait pas (pose
@@ -1389,6 +1443,7 @@ if __name__ == '__main__':
     test_thumbnail_cache_and_dedup()
     test_submenu_opener()
     test_library_category_ops()
+    test_library_rename_and_save_studio()
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()

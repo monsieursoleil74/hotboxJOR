@@ -203,14 +203,18 @@ class HotboxEditor(QtWidgets.QWidget):
     def save_selection_to_library(self):
         """Range les boutons sélectionnés dans la shelf (nom +
         catégorie), pour les glisser-déposer dans d'autres hotboxes."""
-        from hotbox_designer.buttonlibrary import SaveToLibraryDialog
+        from hotbox_designer.buttonlibrary import (
+            SaveToLibraryDialog, studio_write_path)
         from hotbox_designer.dialog import warning
         shapes = list(self.shape_editor.selection)
         if not shapes:
             return warning('Button library', 'No shape selected')
         default = shapes[0].options.get('text.content') or 'button'
+        studio_available = studio_write_path() is not None
         dialog = SaveToLibraryDialog(
-            self.library_shelf.categories(), default, self)
+            self.library_shelf.categories(),
+            self.library_shelf.studio_categories(),
+            studio_available, default, self)
         dialog.category.setCurrentText(self.library_shelf.current_category())
         if dialog.exec_() == QtWidgets.QDialog.Rejected:
             return
@@ -223,7 +227,7 @@ class HotboxEditor(QtWidgets.QWidget):
                 'name': entry_name,
                 'category': category,
                 'options': dict(shape.options)})
-        self.library_shelf.add_entries(entries)
+        self.library_shelf.save_entries(entries, studio=dialog.is_studio())
         self.library_shelf.show()
 
     def open_search_replace(self):

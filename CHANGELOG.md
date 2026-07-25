@@ -4,6 +4,16 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Renommer un bouton de shelf + sauvegarder direct dans le studio
+
+- **Rename…** sur un bouton de la shelf (clic droit) : on peut renommer
+  un bouton déjà rangé, perso comme studio (`rename_entry_in`).
+- **Save selection to library** propose une **destination** : Perso ou
+  **Studio (TAT)**. On range donc un bouton directement dans une shelf
+  studio à la sauvegarde, sans passer par General + « Move to ». La liste
+  de catégories s'adapte à la destination choisie (`SaveToLibraryDialog`
+  + `LibraryShelf.save_entries` / `studio_categories`).
+
 ## 2026-07 — Fix : les catégories studio vides s'affichent enfin
 
 - Une catégorie studio créée mais pas encore remplie (« New studio

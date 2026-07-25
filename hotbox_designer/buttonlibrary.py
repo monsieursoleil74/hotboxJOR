@@ -235,6 +235,23 @@ def set_entries_category_in(path, entries, category):
     return changed
 
 
+def rename_entry_in(path, entry, new_name):
+    """Renomme un bouton EXISTANT de la librairie. Retourne True si un
+    bouton a été renommé."""
+    new_name = (new_name or '').strip()
+    if not new_name:
+        return False
+    raw = load_library_raw(path)
+    renamed = False
+    for candidate in raw:
+        if 'options' in candidate and candidate == entry:
+            candidate['name'] = new_name
+            renamed = True
+    if renamed:
+        save_library(path, raw)
+    return renamed
+
+
 def open_folder(path):
     """Ouvre le dossier contenant `path` dans l'explorateur de fichiers
     du système (Windows/mac/Linux). Retourne False si impossible."""
@@ -345,23 +362,54 @@ def hotbox_thumbnail(hotbox_data, width=190, height=120):
 
 
 class SaveToLibraryDialog(QtWidgets.QDialog):
-    """Nom + catégorie pour ranger un bouton dans la librairie."""
+    """Nom + destination (perso ou studio) + catégorie pour ranger un
+    bouton dans la librairie. La destination studio n'est proposée que si
+    un emplacement studio est configuré et accessible en écriture — on
+    peut donc envoyer un bouton directement dans une shelf TAT, sans
+    passer par General puis « Move to »."""
 
-    def __init__(self, categories, default_name='', parent=None):
+    def __init__(self, perso_categories, studio_categories=None,
+                 studio_available=False, default_name='', parent=None):
         super(SaveToLibraryDialog, self).__init__(parent)
         self.setWindowTitle('Save button to library')
+        self._perso_categories = sorted(perso_categories) or [DEFAULT_CATEGORY]
+        self._studio_categories = (
+            sorted(studio_categories or []) or [DEFAULT_CATEGORY])
         self.name = QtWidgets.QLineEdit(default_name)
+
+        self.destination = QtWidgets.QComboBox()
+        self.destination.addItem('Perso', 'perso')
+        if studio_available:
+            self.destination.addItem('Studio (TAT)', 'studio')
+        self.destination.currentIndexChanged.connect(self._update_categories)
+
         self.category = QtWidgets.QComboBox()
         self.category.setEditable(True)
-        self.category.addItems(sorted(categories) or [DEFAULT_CATEGORY])
+
         layout = QtWidgets.QFormLayout(self)
         layout.addRow('Name:', self.name)
+        # inutile d'afficher le choix s'il n'y a que « Perso »
+        if studio_available:
+            layout.addRow('Library:', self.destination)
         layout.addRow('Category:', self.category)
         buttons = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         layout.addRow(buttons)
+        self._update_categories()
+
+    def is_studio(self):
+        return self.destination.currentData() == 'studio'
+
+    def _update_categories(self):
+        keep = self.category.currentText()
+        self.category.clear()
+        categories = (self._studio_categories if self.is_studio()
+                      else self._perso_categories)
+        self.category.addItems(categories)
+        if keep:
+            self.category.setCurrentText(keep)
 
 
 class ShelfList(QtWidgets.QListWidget):
@@ -441,6 +489,24 @@ class LibraryShelf(QtWidgets.QWidget):
             for entry in load_library(self.path)}
         categories.update(load_extra_categories(self.path))
         return sorted(categories)
+
+    def studio_categories(self):
+        """Catégories de la librairie studio (avec les vides)."""
+        path = studio_library_path()
+        return categories_in(path) if path else []
+
+    def save_entries(self, entries, studio=False):
+        """Range des boutons dans la librairie perso (défaut) ou
+        directement dans la librairie studio. Retourne le nombre ajouté
+        (ou -1 si le studio n'est pas accessible en écriture)."""
+        if studio:
+            added = export_to_studio(entries)
+            if added < 0:
+                self._warn_no_studio()
+            else:
+                refresh_shelves()
+            return added
+        return self.add_entries(entries)
 
     def refresh(self):
         current = self._current_key()
@@ -550,6 +616,16 @@ class LibraryShelf(QtWidgets.QWidget):
         if delete_empty_category_in(path, name):
             refresh_shelves()
 
+    def _prompt_rename_entry(self, path, entry):
+        if path is None:
+            return self._warn_no_studio()
+        new, accepted = QtWidgets.QInputDialog.getText(
+            self, 'Rename button', 'New name:', text=entry.get('name') or '')
+        if not accepted:
+            return
+        if rename_entry_in(path, entry, new.strip()):
+            refresh_shelves()
+
     def _prompt_move(self, path, entries):
         if path is None:
             return self._warn_no_studio()
@@ -650,10 +726,16 @@ class LibraryShelf(QtWidgets.QWidget):
     def _menu(self, shelf_list, position):
         menu = QtWidgets.QMenu(self)
         entries = shelf_list.selected_entries()
-        # ranger les boutons dans une autre catégorie : perso ET studio
-        # (déplacement = organiser, ça ne modifie pas le bouton lui-même)
         if entries:
             target = self._category_target(shelf_list.readonly)
+            # renommer un bouton déjà rangé (une seule sélection)
+            if len(entries) == 1:
+                rename = menu.addAction(
+                    'Rename…',
+                    lambda: self._prompt_rename_entry(target, entries[0]))
+                rename.setEnabled(target is not None)
+            # ranger les boutons dans une autre catégorie : perso ET studio
+            # (déplacement = organiser, ça ne touche pas le bouton lui-même)
             move = menu.addAction(
                 'Move to category…',
                 lambda: self._prompt_move(target, entries))
