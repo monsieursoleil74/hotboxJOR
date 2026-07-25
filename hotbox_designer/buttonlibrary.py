@@ -436,8 +436,24 @@ class LibraryShelf(QtWidgets.QWidget):
         self.add_button.setText('＋')
         self.add_button.setToolTip('Create a category')
         self.add_button.released.connect(self._prompt_category)
-        self.tabs.setCornerWidget(
-            self.add_button, QtCore.Qt.TopRightCorner)
+        # badge « mainteneur studio » : visible seulement si l'on est
+        # admin, pour savoir d'un coup d'œil qu'on peut éditer le studio
+        self.admin_badge = QtWidgets.QLabel(' ★ STUDIO ADMIN ')
+        self.admin_badge.setToolTip(
+            'Studio maintainer mode (HOTBOX_STUDIO_ADMIN) — you can edit '
+            'the studio library')
+        from hotbox_designer.theme import ACCENT
+        self.admin_badge.setStyleSheet(
+            'QLabel {color: white; background: %s; border-radius: 3px;'
+            'font-weight: bold; font-size: 10px; padding: 1px 4px;}' % ACCENT)
+        self.admin_badge.setVisible(is_studio_admin())
+        corner = QtWidgets.QWidget()
+        corner_layout = QtWidgets.QHBoxLayout(corner)
+        corner_layout.setContentsMargins(0, 0, 4, 0)
+        corner_layout.setSpacing(6)
+        corner_layout.addWidget(self.admin_badge)
+        corner_layout.addWidget(self.add_button)
+        self.tabs.setCornerWidget(corner, QtCore.Qt.TopRightCorner)
         tab_bar = self.tabs.tabBar()
         tab_bar.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         tab_bar.customContextMenuRequested.connect(self._tab_menu)
@@ -502,7 +518,11 @@ class LibraryShelf(QtWidgets.QWidget):
                 shelf_list.setToolTip(
                     'Empty category — select shapes and use the save '
                     'button of the toolbar to fill it')
-        suffix = ' (studio, read-only)' if readonly else ''
+        studio_editable = readonly and is_studio_admin()
+        suffix = ''
+        if readonly:
+            suffix = (' (studio, maintainer)' if studio_editable
+                      else ' (studio, read-only)')
         for entry in sorted(entries, key=lambda e: e.get('name') or ''):
             item = QtWidgets.QListWidgetItem(entry.get('name') or 'button')
             item.setIcon(button_thumbnail(
@@ -515,7 +535,9 @@ class LibraryShelf(QtWidgets.QWidget):
         # onglet studio : logo du studio en icône (repli ★ si pas de logo)
         if readonly and not self.studio_icon.isNull():
             index = self.tabs.addTab(shelf_list, self.studio_icon, category)
-            self.tabs.setTabToolTip(index, 'Studio library (read-only)')
+            self.tabs.setTabToolTip(
+                index, 'Studio library — maintainer mode (editable)'
+                if studio_editable else 'Studio library (read-only)')
         elif readonly:
             index = self.tabs.addTab(shelf_list, STUDIO_PREFIX + category)
         else:

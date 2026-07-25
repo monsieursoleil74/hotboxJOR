@@ -197,6 +197,12 @@ le renommage / la suppression de catégories, le déplacement de boutons
 et la publication (« Send to studio library »). Les animateurs ne
 posent pas cette variable → les onglets studio restent intouchables.
 
+**Comment savoir si je suis en mode mainteneur ?** Quand la variable est
+active, un badge **★ STUDIO ADMIN** (couleur d'accent) s'affiche en haut
+à droite de la shelf, à côté du « ＋ ». L'infobulle d'un onglet studio le
+confirme aussi (« maintainer mode (editable) » au lieu de « read-only »).
+Sans la variable, pas de badge : tu es en mode animateur.
+
 C'est un garde-fou logiciel dans l'interface ; en vrai studio, on
 combine avec un dossier réseau en lecture seule au niveau des droits
 Windows pour les animateurs.

@@ -896,7 +896,20 @@ def test_studio_library():
         assert any(e['name'] == 'MyTool' for e in load_studio_library())
         # ré-export du même bouton = doublon ignoré
         assert export_to_studio([perso_entry]) == 0
+        # sans HOTBOX_STUDIO_ADMIN : pas de badge mainteneur
+        assert shelf.admin_badge.isVisible() is False
         shelf.close()
+
+        # avec HOTBOX_STUDIO_ADMIN : le badge mainteneur apparaît
+        os.environ['HOTBOX_STUDIO_ADMIN'] = '1'
+        try:
+            shelf2 = LibraryShelf(application)
+            shelf2.show()
+            APP.processEvents()
+            assert shelf2.admin_badge.isVisible() is True
+            shelf2.close()
+        finally:
+            del os.environ['HOTBOX_STUDIO_ADMIN']
     finally:
         del os.environ[STUDIO_ENV_VARIABLE]
     print('librairie studio (onglets logo, lecture seule, export) OK')

@@ -15,6 +15,9 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   catégories, ajoutée juste avant, était ouverte à tous.
 - `is_studio_admin()` + garde `_can_edit()` sur les menus de la shelf ;
   « Send to studio library » n'apparaît plus que pour le mainteneur.
+- **Indicateur visible** : badge « ★ STUDIO ADMIN » en haut à droite de
+  la shelf quand le mode mainteneur est actif, + infobulle d'onglet
+  studio adaptée (« maintainer mode » / « read-only »).
 
 ## 2026-07 — Catégories de librairie : créer / renommer / déplacer (perso ET studio)
 
