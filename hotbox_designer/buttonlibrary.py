@@ -9,9 +9,11 @@ Deux niveaux, façon pipeline studio :
   réseau, désignée par la variable d'environnement
   ``HOTBOX_STUDIO_LIBRARY`` (un fichier .json OU un dossier contenant
   ``button_library.json``). À défaut de variable, on cherche le dossier
-  ``DEFAULT_STUDIO_DIR`` ci-dessous. Les boutons studio apparaissent
-  dans la shelf sous un onglet préfixé « ★ » et ne sont pas
-  modifiables — seul le lead maintient ce fichier.
+  ``DEFAULT_STUDIO_DIR`` ci-dessous. Les onglets studio portent le
+  **logo du studio** en icône (``studio_logo.png``/``logo.png`` posé à
+  côté de la librairie, ou variable ``HOTBOX_STUDIO_LOGO`` ; sinon un
+  logo par défaut) et ne sont pas modifiables — seul le lead maintient
+  ce fichier.
 
 Un même bouton se glisse-dépose depuis n'importe quel onglet vers une
 hotbox.
@@ -35,25 +37,55 @@ CATEGORY_KEY = '__category__'
 
 # librairie studio partagée (lecture seule)
 STUDIO_ENV_VARIABLE = 'HOTBOX_STUDIO_LIBRARY'
+STUDIO_LOGO_ENV_VARIABLE = 'HOTBOX_STUDIO_LOGO'
 DEFAULT_STUDIO_DIR = r'C:\Users\ortzj\Desktop\JOR\hotbox'
-STUDIO_PREFIX = '\u2605 '  # « ★ » devant les catégories studio
+STUDIO_PREFIX = '\u2605 '  # « ★ » : repli si aucun logo trouvé
+STUDIO_LOGO_NAMES = ('studio_logo.png', 'logo.png')
 
 
 def library_path(application):
     return os.path.join(application.get_data_folder(), LIBRARY_FILENAME)
 
 
-def studio_library_path():
-    """Chemin du fichier de librairie studio, ou None. On accepte un
-    fichier .json direct ou un dossier contenant button_library.json."""
+def studio_location():
     location = os.environ.get(STUDIO_ENV_VARIABLE) or DEFAULT_STUDIO_DIR
     if not location:
         return None
-    location = os.path.expandvars(os.path.expanduser(location))
+    return os.path.expandvars(os.path.expanduser(location))
+
+
+def studio_library_path():
+    """Chemin du fichier de librairie studio, ou None. On accepte un
+    fichier .json direct ou un dossier contenant button_library.json."""
+    location = studio_location()
+    if not location:
+        return None
     if location.lower().endswith('.json'):
         return location if os.path.exists(location) else None
     candidate = os.path.join(location, LIBRARY_FILENAME)
     return candidate if os.path.exists(candidate) else None
+
+
+def studio_logo_path():
+    """Logo du studio pour les onglets partagés :
+    variable HOTBOX_STUDIO_LOGO, sinon studio_logo.png/logo.png à côté
+    de la librairie studio, sinon le logo par défaut embarqué."""
+    env = os.environ.get(STUDIO_LOGO_ENV_VARIABLE)
+    if env:
+        env = os.path.expandvars(os.path.expanduser(env))
+        if os.path.exists(env):
+            return env
+    location = studio_location()
+    if location:
+        folder = location if os.path.isdir(location) else os.path.dirname(
+            location)
+        for name in STUDIO_LOGO_NAMES:
+            candidate = os.path.join(folder, name)
+            if os.path.exists(candidate):
+                return candidate
+    default = os.path.join(
+        os.path.dirname(__file__), 'resources', 'icons', 'studio_logo.png')
+    return default if os.path.exists(default) else None
 
 
 def load_studio_library():
@@ -231,8 +263,11 @@ class LibraryShelf(QtWidgets.QWidget):
     def __init__(self, application, parent=None):
         super(LibraryShelf, self).__init__(parent)
         self.path = library_path(application)
+        logo = studio_logo_path()
+        self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
         self.tabs = QtWidgets.QTabWidget()
         self.tabs.setDocumentMode(True)
+        self.tabs.setIconSize(QtCore.QSize(20, 16))
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText('＋')
         self.add_button.setToolTip('Create a category')
@@ -257,7 +292,7 @@ class LibraryShelf(QtWidgets.QWidget):
         return sorted(categories)
 
     def refresh(self):
-        current = self.tabs.tabText(self.tabs.currentIndex())
+        current = self._current_key()
         self.tabs.clear()
 
         # 1) onglets studio (partagés, lecture seule) EN PREMIER
@@ -266,9 +301,7 @@ class LibraryShelf(QtWidgets.QWidget):
             category = entry.get('category') or DEFAULT_CATEGORY
             studio.setdefault(category, []).append(entry)
         for category in sorted(studio):
-            self._add_tab(
-                STUDIO_PREFIX + category, studio[category],
-                current, readonly=True)
+            self._add_tab(category, studio[category], current, readonly=True)
 
         # 2) onglets perso (modifiables)
         by_category = {
@@ -281,7 +314,18 @@ class LibraryShelf(QtWidgets.QWidget):
         for category in sorted(by_category):
             self._add_tab(category, by_category[category], current)
 
-    def _add_tab(self, title, entries, current, readonly=False):
+    def _current_key(self):
+        """(readonly, catégorie) de l'onglet courant, pour le restaurer
+        après un refresh (studio et perso peuvent avoir le même nom)."""
+        widget = self.tabs.currentWidget()
+        if widget is None:
+            return None
+        text = self.tabs.tabText(self.tabs.currentIndex())
+        if text.startswith(STUDIO_PREFIX):
+            text = text[len(STUDIO_PREFIX):]
+        return (getattr(widget, 'readonly', False), text)
+
+    def _add_tab(self, category, entries, current, readonly=False):
         shelf_list = ShelfList()
         shelf_list.readonly = readonly
         if not readonly:
@@ -302,8 +346,15 @@ class LibraryShelf(QtWidgets.QWidget):
                 '%s — drag & drop into the hotbox%s' % (
                     entry.get('name') or 'button', suffix))
             shelf_list.addItem(item)
-        index = self.tabs.addTab(shelf_list, title)
-        if title == current:
+        # onglet studio : logo du studio en icône (repli ★ si pas de logo)
+        if readonly and not self.studio_icon.isNull():
+            index = self.tabs.addTab(shelf_list, self.studio_icon, category)
+            self.tabs.setTabToolTip(index, 'Studio library (read-only)')
+        elif readonly:
+            index = self.tabs.addTab(shelf_list, STUDIO_PREFIX + category)
+        else:
+            index = self.tabs.addTab(shelf_list, category)
+        if (readonly, category) == current:
             self.tabs.setCurrentIndex(index)
 
     def _prompt_category(self):
@@ -344,10 +395,10 @@ class LibraryShelf(QtWidgets.QWidget):
         index = tab_bar.tabAt(position)
         if index < 0:
             return
-        name = self.tabs.tabText(index)
-        if name.startswith(STUDIO_PREFIX):
-            return  # les catégories studio ne se modifient pas d'ici
         widget = self.tabs.widget(index)
+        if getattr(widget, 'readonly', False):
+            return  # les catégories studio ne se modifient pas d'ici
+        name = self.tabs.tabText(index)
         menu = QtWidgets.QMenu(self)
         action = menu.addAction(
             'Delete category "%s"' % name,
@@ -359,11 +410,12 @@ class LibraryShelf(QtWidgets.QWidget):
 
     def current_category(self):
         # une sauvegarde va toujours dans la librairie PERSO : si
-        # l'onglet courant est studio (★), on retombe sur General
-        text = self.tabs.tabText(self.tabs.currentIndex())
-        if not text or text.startswith(STUDIO_PREFIX):
+        # l'onglet courant est studio (lecture seule), on retombe sur
+        # General
+        widget = self.tabs.currentWidget()
+        if widget is None or getattr(widget, 'readonly', False):
             return DEFAULT_CATEGORY
-        return text
+        return self.tabs.tabText(self.tabs.currentIndex()) or DEFAULT_CATEGORY
 
     def _menu(self, shelf_list, position):
         entries = shelf_list.selected_entries()

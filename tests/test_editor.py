@@ -834,7 +834,7 @@ def test_studio_library():
     import tempfile
     from hotbox_designer import buttonlibrary as bl
     from hotbox_designer.buttonlibrary import (
-        LibraryShelf, STUDIO_PREFIX, STUDIO_ENV_VARIABLE, load_library)
+        LibraryShelf, STUDIO_ENV_VARIABLE, load_library)
 
     def entry(name, category):
         return {'name': name, 'category': category,
@@ -852,16 +852,17 @@ def test_studio_library():
         shelf = LibraryShelf(application)
         shelf.add_entries([entry('MyTool', 'Perso')])
 
-        names = [shelf.tabs.tabText(i) for i in range(shelf.tabs.count())]
-        # onglets studio (★) en tête, puis perso
-        assert names[0].startswith(STUDIO_PREFIX), names
-        assert any(
-            'Perso' in n and not n.startswith(STUDIO_PREFIX) for n in names)
-        # onglet studio en lecture seule, non supprimable via _tab_menu
-        assert shelf.tabs.widget(0).readonly is True
+        readonly = [shelf.tabs.widget(i).readonly
+                    for i in range(shelf.tabs.count())]
+        # onglets studio (lecture seule) en tête, puis perso
+        assert readonly[0] is True
+        assert readonly[-1] is False
+        # onglet studio affiche le logo (icône non vide) et un nom propre
+        assert not shelf.tabs.tabIcon(0).isNull()
+        assert shelf.tabs.tabText(0) in ('Anim', 'Rig')  # pas de ★
         # sauvegarde depuis un onglet studio retombe sur une cat. perso
         shelf.tabs.setCurrentIndex(0)
-        assert not shelf.current_category().startswith(STUDIO_PREFIX)
+        assert shelf.current_category() == 'General'
         # le studio n'est jamais écrit dans la perso
         assert all(e['name'] != 'IK/FK' for e in load_library(shelf.path))
         shelf.close()

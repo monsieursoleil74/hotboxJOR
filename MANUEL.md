@@ -174,9 +174,14 @@ affiché avec son vrai rendu en vignette.
   **`HOTBOX_STUDIO_LIBRARY`** (un `.json`, ou un dossier contenant
   `button_library.json`). À défaut de variable, l'outil regarde
   `C:\Users\ortzj\Desktop\JOR\hotbox`. Les catégories studio
-  apparaissent en tête de la shelf **préfixées ★** et ne sont pas
-  modifiables (seul le lead maintient ce fichier) ; leurs boutons se
-  glissent-déposent normalement dans une hotbox.
+  apparaissent en tête de la shelf avec le **logo du studio** en icône
+  et ne sont pas modifiables (seul le lead maintient ce fichier) ;
+  leurs boutons se glissent-déposent normalement dans une hotbox.
+
+  **Logo du studio** : pose un `studio_logo.png` (ou `logo.png`) dans le
+  dossier de la librairie studio — il devient l'icône des onglets. On
+  peut aussi pointer un fichier précis via la variable
+  `HOTBOX_STUDIO_LOGO`. Sans rien, un logo par défaut est utilisé.
 
 ### Organiser la librairie studio
 

@@ -9,9 +9,14 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 - Deuxième niveau de librairie **studio, en lecture seule**, désigné
   par la variable d'environnement `HOTBOX_STUDIO_LIBRARY` (fichier .json
   ou dossier ; défaut `C:\Users\ortzj\Desktop\JOR\hotbox`). Ses
-  catégories apparaissent en tête de la shelf préfixées ★, non
-  modifiables (pas de suppression, pas d'écriture) ; les boutons se
-  glissent-déposent normalement. La perso reste locale et modifiable.
+  catégories apparaissent en tête de la shelf, non modifiables ; les
+  boutons se glissent-déposent normalement. La perso reste locale et
+  modifiable.
+- **Logo du studio** sur les onglets partagés (au lieu de l'étoile) :
+  `studio_logo.png`/`logo.png` dans le dossier studio, ou variable
+  `HOTBOX_STUDIO_LOGO`, sinon un logo par défaut embarqué. La
+  distinction studio/perso passe désormais par le flag interne, pas par
+  le nom de l'onglet.
 
 ## 2026-07 — Placement libre de l'image dans un bouton
 
