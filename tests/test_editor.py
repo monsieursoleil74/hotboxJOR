@@ -1315,6 +1315,134 @@ def test_manipulation_ergonomics():
     print('manipulation allégée (bords, curseurs, Maj, Espace, zoom) OK')
 
 
+def test_replace_from_library():
+    """Clic droit → « Replace with library button » : le contenu du
+    bouton vient de la shelf, position et taille sont conservées."""
+    import tempfile
+    from hotbox_designer.templates import HOTBOX as HOTBOX_T
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+
+    shapes = []
+    for left, top, label in [(100, 100, 'a'), (300, 200, 'b')]:
+        options = dict(SQUARE_BUTTON)
+        options.update({'shape.left': float(left), 'shape.top': float(top),
+                        'text.content': label})
+        shapes.append(options)
+    data = {'general': dict(HOTBOX_T, name='t', width=600, height=400),
+            'shapes': shapes}
+    editor = HotboxEditor(data, application, parent=None)
+    editor.show()
+    APP.processEvents()
+
+    # un bouton stylé dans la shelf
+    lib_options = dict(SQUARE_BUTTON)
+    lib_options.update({
+        'text.content': 'LIB', 'bgcolor.normal': '#ff0000',
+        'action.left': True, 'action.left.command': 'print("lib")',
+        'shape.left': 0.0, 'shape.top': 0.0,
+        'shape.width': 500.0, 'shape.height': 500.0})
+    editor.library_shelf.add_entries(
+        [{'name': 'LibBtn', 'category': 'General', 'options': lib_options}])
+    shelf_list = editor.library_shelf.tabs.currentWidget()
+    shelf_list.item(0).setSelected(True)
+    assert len(editor.library_shelf.current_selected_entries()) == 1
+
+    # remplacer les deux boutons sélectionnés
+    area = editor.shape_editor
+    area.selection.replace(list(area.shapes))
+    editor.replace_selection_from_library()
+    for shape, (left, top) in zip(area.shapes, [(100, 100), (300, 200)]):
+        assert shape.options['text.content'] == 'LIB'
+        assert shape.options['bgcolor.normal'] == '#ff0000'
+        assert shape.options['action.left.command'] == 'print("lib")'
+        # géométrie conservée (ni déplacé ni redimensionné)
+        assert shape.options['shape.left'] == float(left)
+        assert shape.options['shape.top'] == float(top)
+        assert shape.options['shape.width'] == SQUARE_BUTTON['shape.width']
+
+    editor.close()
+    print('replace avec un bouton de la librairie OK')
+
+
+def test_user_templates():
+    """Templates utilisateur : save_hotbox_as_template écrit dans le
+    dossier de données, load_templates les liste après les embarqués,
+    et le dialogue de création les propose avec un aperçu."""
+    import tempfile
+    from hotbox_designer.data import (
+        load_templates, save_hotbox_as_template)
+    from hotbox_designer.dialog import CreateHotboxDialog
+    from hotbox_designer.templates import HOTBOX as HOTBOX_T
+
+    tmp = tempfile.mkdtemp()
+    builtin_count = len(load_templates())
+
+    hotbox = {'general': dict(HOTBOX_T, name='MonTemplate', width=400,
+                              height=300),
+              'shapes': [dict(SQUARE_BUTTON, **{'text.content': 'tpl'})]}
+    path = save_hotbox_as_template(tmp, hotbox)
+    assert path is not None and os.path.exists(path)
+    # collision de nom : suffixe numéroté, pas d'écrasement
+    path2 = save_hotbox_as_template(tmp, hotbox)
+    assert path2 != path and os.path.exists(path2)
+
+    templates = load_templates(tmp)
+    assert len(templates) == builtin_count + 2
+    assert templates[-1]['general']['name'] == 'MonTemplate'
+
+    dialog = CreateHotboxDialog([], templates_folder=tmp)
+    dialog.show()
+    APP.processEvents()
+    assert dialog.template_combo.count() == builtin_count + 2
+    # choisir le template utilisateur → aperçu rendu + données copiées
+    dialog.template.setChecked(True)
+    dialog.template_combo.setCurrentIndex(builtin_count)
+    APP.processEvents()
+    assert dialog.preview.pixmap() is not None
+    assert not dialog.preview.pixmap().isNull()
+    dialog.name_edit.setText('nouvelle')
+    created = dialog.hotbox()
+    assert created['general']['name'] == 'nouvelle'
+    assert created['shapes'][0]['text.content'] == 'tpl'
+    dialog.close()
+    print('templates utilisateur (save + liste + aperçu) OK')
+
+
+def test_color_picker_pipette():
+    """La pipette du sélecteur de couleurs prélève la couleur sous le
+    curseur (screen_color_at simulé hors écran)."""
+    from hotbox_designer import colorpicker
+    from hotbox_designer.colorpicker import ColorPickerDialog
+
+    dialog = ColorPickerDialog('#112233')
+    dialog.show()
+    APP.processEvents()
+    assert dialog.pick_screen is not None
+
+    saved = colorpicker.screen_color_at
+    try:
+        colorpicker.screen_color_at = lambda pos: QtGui.QColor('#12ab34')
+        dialog.start_screen_pick()
+        assert dialog._screen_picking is True
+        dialog.mousePressEvent(FakeMouseEvent())
+        assert dialog._screen_picking is False
+        assert dialog.color_name() == '#12ab34'
+    finally:
+        colorpicker.screen_color_at = saved
+
+    # Échap annule la pipette sans changer la couleur
+    dialog.start_screen_pick()
+    dialog.keyPressEvent(QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress, QtCore.Qt.Key_Escape, QtCore.Qt.NoModifier))
+    assert dialog._screen_picking is False
+    assert dialog.color_name() == '#12ab34'
+    dialog.close()
+    print('pipette écran du sélecteur de couleurs OK')
+
+
 def test_startup_framing():
     """Au démarrage la hotbox doit être cadrée même si le layout
     redimensionne le widget après le premier resizeEvent (avant, seul le
@@ -1560,6 +1688,9 @@ if __name__ == '__main__':
     test_library_rename_and_save_studio()
     test_manipulation_ergonomics()
     test_startup_framing()
+    test_replace_from_library()
+    test_user_templates()
+    test_color_picker_pipette()
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()

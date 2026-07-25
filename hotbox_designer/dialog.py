@@ -1,7 +1,7 @@
 import os
 import json
 from functools import partial
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore
+from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 from hotbox_designer.data import (
     get_new_hotbox, get_valid_name, copy_hotbox_data, load_templates,
     ensure_old_data_compatible)
@@ -60,11 +60,13 @@ class CreateHotboxDialog(QtWidgets.QDialog):
     une existante, ou partir d'un template). Les menus ne sont actifs
     que quand leur option est cochée."""
 
-    def __init__(self, hotboxes, parent=None):
+    def __init__(self, hotboxes, parent=None, templates_folder=None):
         super(CreateHotboxDialog, self).__init__(parent)
         self.setWindowTitle("Create new hotbox")
         self.setMinimumWidth(340)
         self.hotboxes = hotboxes
+        # dossier des templates utilisateur (« Save hotbox as template »)
+        self.templates_folder = templates_folder
 
         self.name_edit = QtWidgets.QLineEdit(get_valid_name(hotboxes))
         self.name_edit.selectAll()
@@ -84,7 +86,7 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.template_combo = QtWidgets.QComboBox()
         items = [
             hb['general']['name'] or 'template'
-            for hb in load_templates()]
+            for hb in load_templates(self.templates_folder)]
         self.template_combo.addItems(items)
 
         # les combos ne s'activent qu'avec leur option
@@ -92,6 +94,18 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.template_combo.setEnabled(False)
         self.duplicate.toggled.connect(self.existing.setEnabled)
         self.template.toggled.connect(self.template_combo.setEnabled)
+
+        # aperçu de la source choisie (template ou hotbox dupliquée)
+        self.preview = QtWidgets.QLabel()
+        self.preview.setFixedSize(190, 120)
+        self.preview.setAlignment(QtCore.Qt.AlignCenter)
+        self.preview.setStyleSheet(
+            'QLabel {background: #2b2b2b; border: 1px solid #444444;}')
+        self.template_combo.currentIndexChanged.connect(self.update_preview)
+        self.existing.currentIndexChanged.connect(self.update_preview)
+        self.new.toggled.connect(self.update_preview)
+        self.duplicate.toggled.connect(self.update_preview)
+        self.template.toggled.connect(self.update_preview)
 
         form = QtWidgets.QFormLayout()
         form.addRow('Name:', self.name_edit)
@@ -121,23 +135,39 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.layout.setSpacing(12)
         self.layout.addLayout(form)
         self.layout.addLayout(self.up_layout)
+        self.layout.addWidget(self.preview, 0, QtCore.Qt.AlignHCenter)
         self.layout.addLayout(self.down_layout)
+        self.update_preview()
 
-    def hotbox(self):
+    def _source_data(self):
+        """La hotbox source de l'option cochée, ou None (vide)."""
         checked = self.groupbutton.checkedId()
-        hotbox = None
         if checked == 1:
             name = self.existing.currentText()
             sources = [
                 hb for hb in self.hotboxes
                 if hb['general']['name'] == name]
-            if sources:
-                hotbox = copy_hotbox_data(sources[0])
-        elif checked == 2:
+            return sources[0] if sources else None
+        if checked == 2:
             index = self.template_combo.currentIndex()
-            templates = load_templates()
+            templates = load_templates(self.templates_folder)
             if 0 <= index < len(templates):
-                hotbox = copy_hotbox_data(templates[index])
+                return templates[index]
+        return None
+
+    def update_preview(self, *_):
+        from hotbox_designer.buttonlibrary import hotbox_thumbnail
+        data = self._source_data()
+        if data is None:
+            self.preview.setPixmap(QtGui.QPixmap())
+            self.preview.setText('empty')
+        else:
+            self.preview.setText('')
+            self.preview.setPixmap(hotbox_thumbnail(data))
+
+    def hotbox(self):
+        source = self._source_data()
+        hotbox = copy_hotbox_data(source) if source else None
         if hotbox is None:  # hotbox vide (ou source introuvable)
             hotbox = get_new_hotbox(self.hotboxes)
         # le nom saisi, validé contre les hotboxes EXISTANTES (l'ancien

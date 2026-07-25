@@ -143,6 +143,23 @@ class _Swatch(QtWidgets.QPushButton):
         self.released.connect(lambda: self.picked.emit(self._color))
 
 
+def screen_color_at(global_pos):
+    """Couleur du pixel écran sous `global_pos`, ou None si l'écran est
+    inaccessible (pipette)."""
+    screen = QtGui.QGuiApplication.screenAt(global_pos)
+    if screen is None:
+        screen = QtGui.QGuiApplication.primaryScreen()
+    if screen is None:
+        return None
+    geometry = screen.geometry()
+    pixmap = screen.grabWindow(
+        0, global_pos.x() - geometry.x(), global_pos.y() - geometry.y(), 1, 1)
+    image = pixmap.toImage()
+    if image.isNull():
+        return None
+    return image.pixelColor(0, 0)
+
+
 class ColorPickerDialog(QtWidgets.QDialog):
     def __init__(self, initial='#888888', parent=None):
         super(ColorPickerDialog, self).__init__(parent)
@@ -150,6 +167,7 @@ class ColorPickerDialog(QtWidgets.QDialog):
         self._color = QtGui.QColor(initial if initial else '#888888')
         if not self._color.isValid():
             self._color = QtGui.QColor('#888888')
+        self._screen_picking = False
 
         self.square = _SVSquare()
         self.hue_bar = _HueBar()
@@ -171,9 +189,17 @@ class ColorPickerDialog(QtWidgets.QDialog):
             swatch.picked.connect(self._set_hex)
             presets.addWidget(swatch, i // 8, i % 8)
 
+        # pipette : prélever une couleur n'importe où à l'écran (le
+        # « Pick Screen Color » du dialogue natif)
+        self.pick_screen = QtWidgets.QPushButton('⌖')
+        self.pick_screen.setToolTip('Pick a color anywhere on screen')
+        self.pick_screen.setFixedWidth(30)
+        self.pick_screen.released.connect(self.start_screen_pick)
+
         hexrow = QtWidgets.QHBoxLayout()
         hexrow.setSpacing(8)
         hexrow.addWidget(self.preview, stretch=1)
+        hexrow.addWidget(self.pick_screen)
         hexrow.addWidget(QtWidgets.QLabel('Hex'))
         hexrow.addWidget(self.hexedit)
 
@@ -235,6 +261,45 @@ class ColorPickerDialog(QtWidgets.QDialog):
     def _set_hex(self, color):
         self._color = QtGui.QColor(color)
         self._push_to_widgets()
+
+    # --- pipette écran ---
+    def start_screen_pick(self):
+        """Curseur en croix, la souris est capturée : le prochain clic
+        prélève la couleur sous le curseur (Échap annule). La couleur
+        suit le curseur en direct dans l'aperçu."""
+        self._screen_picking = True
+        self.setMouseTracking(True)
+        self.grabMouse(QtCore.Qt.CrossCursor)
+        self.grabKeyboard()
+
+    def stop_screen_pick(self):
+        self._screen_picking = False
+        self.setMouseTracking(False)
+        self.releaseMouse()
+        self.releaseKeyboard()
+
+    def mouseMoveEvent(self, event):
+        if self._screen_picking:
+            color = screen_color_at(QtGui.QCursor.pos())
+            if color is not None:  # aperçu en direct sous le curseur
+                self._color = color
+                self._update_preview()
+            return
+        super(ColorPickerDialog, self).mouseMoveEvent(event)
+
+    def mousePressEvent(self, event):
+        if self._screen_picking:
+            color = screen_color_at(QtGui.QCursor.pos())
+            self.stop_screen_pick()
+            if color is not None:
+                self._set_hex(color.name())
+            return
+        super(ColorPickerDialog, self).mousePressEvent(event)
+
+    def keyPressEvent(self, event):
+        if self._screen_picking and event.key() == QtCore.Qt.Key_Escape:
+            return self.stop_screen_pick()
+        super(ColorPickerDialog, self).keyPressEvent(event)
 
     def color_name(self):
         return self._color.name()

@@ -15,7 +15,8 @@ from hotbox_designer.dialog import (
     CommandDisplayDialog, HotkeySetter, HotkeyManagerDialog, warning)
 from hotbox_designer.data import (
     get_valid_name, TRIGGERING_TYPES, save_datas, load_hotboxes_datas,
-    hotbox_data_to_html, load_json, ensure_old_data_compatible)
+    hotbox_data_to_html, load_json, ensure_old_data_compatible,
+    save_hotbox_as_template)
 
 
 hotboxes = {}
@@ -113,6 +114,7 @@ class HotboxManager(QtWidgets.QWidget):
         self.toolbar.deleteRequested.connect(self._call_remove)
         self.toolbar.importRequested.connect(self._call_import)
         self.toolbar.exportRequested.connect(self._call_export)
+        self.toolbar.saveTemplateRequested.connect(self._call_save_template)
         self.toolbar.manageHotkeysRequested.connect(self._call_manage_hotkeys)
         setter_enabled = bool(application.available_set_hotkey_modes)
         self.toolbar.hotkeyset.setEnabled(setter_enabled)
@@ -299,9 +301,14 @@ class HotboxManager(QtWidgets.QWidget):
         self.editors.append(link)
         editor.show()
 
+    def user_templates_folder(self):
+        return os.path.join(
+            self.application.get_data_folder(), 'templates')
+
     def _call_create(self):
         hotboxes_ = self.personnal_model.hotboxes + self.shared_model.hotboxes
-        dialog = CreateHotboxDialog(hotboxes_, self)
+        dialog = CreateHotboxDialog(
+            hotboxes_, self, templates_folder=self.user_templates_folder())
         result = dialog.exec_()
         if result == QtWidgets.QDialog.Rejected:
             return
@@ -416,6 +423,22 @@ class HotboxManager(QtWidgets.QWidget):
             return warning('Hotbox designer', 'No hotbox selected')
         export_hotbox(hotbox)
 
+    def _call_save_template(self):
+        """Enregistre la hotbox sélectionnée comme template : elle
+        apparaîtra dans « From template » à la création."""
+        hotbox = self.get_selected_hotbox()
+        if not hotbox:
+            return warning('Hotbox designer', 'No hotbox selected')
+        path = save_hotbox_as_template(self.user_templates_folder(), hotbox)
+        if path is None:
+            return warning(
+                'Hotbox designer', 'Could not write the template file')
+        QtWidgets.QMessageBox.information(
+            self, 'Template',
+            '"%s" saved as template.\nIt is now available in the '
+            '"From template" list when creating a hotbox.'
+            % hotbox['general']['name'])
+
     def _call_import(self):
         hotbox = import_hotbox()
         if not hotbox:
@@ -468,6 +491,7 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
     unlinkRequested = QtCore.Signal()
     importRequested = QtCore.Signal()
     exportRequested = QtCore.Signal()
+    saveTemplateRequested = QtCore.Signal()
     manageHotkeysRequested = QtCore.Signal()
 
     def __init__(self, parent=None):
@@ -494,6 +518,10 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.export = QtWidgets.QAction(icon('manager-export.png'), '', self)
         self.export.setToolTip('Export hotbox')
         self.export.triggered.connect(self.exportRequested.emit)
+        self.savetemplate = QtWidgets.QAction(icon('save.png'), '', self)
+        self.savetemplate.setToolTip(
+            'Save hotbox as template (reusable in "From template")')
+        self.savetemplate.triggered.connect(self.saveTemplateRequested.emit)
         self.hotkeyset = QtWidgets.QAction(icon('touch.png'), '', self)
         self.hotkeyset.setToolTip('Manage hotkeys')
         self.hotkeyset.triggered.connect(self.manageHotkeysRequested.emit)
@@ -507,6 +535,7 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.addSeparator()
         self.addAction(self.import_)
         self.addAction(self.export)
+        self.addAction(self.savetemplate)
         self.addSeparator()
         self.addAction(self.hotkeyset)
 

@@ -175,6 +175,19 @@ class HotboxEditor(QtWidgets.QWidget):
             icon('save.png'), 'Save selection to library...',
             self.save_selection_to_library)
         save.setEnabled(has_selection)
+
+        # remplacer le contenu du/des bouton(s) par un bouton de la
+        # shelf, en gardant position et taille (idéal sur un template)
+        entries = self.library_shelf.current_selected_entries()
+        if len(entries) == 1:
+            label = 'Replace with "%s" (library)' % (
+                entries[0].get('name') or 'button')
+        else:
+            label = 'Replace with library button'
+        replace = menu.addAction(label, self.replace_selection_from_library)
+        replace.setEnabled(has_selection and len(entries) == 1)
+        if not entries:
+            replace.setToolTip('Select a button in the shelf below first')
         menu.addSeparator()
 
         lock = menu.addAction('Lock selection', self.lock_selection)
@@ -229,6 +242,37 @@ class HotboxEditor(QtWidgets.QWidget):
                 'options': dict(shape.options)})
         self.library_shelf.save_entries(entries, studio=dialog.is_studio())
         self.library_shelf.show()
+
+    # ce qui est conservé lors d'un « Replace with library button » :
+    # la géométrie du bouton remplacé (le reste vient de la librairie)
+    REPLACE_KEEP_KEYS = (
+        'shape.left', 'shape.top', 'shape.width', 'shape.height')
+
+    def replace_selection_from_library(self):
+        """Remplace le CONTENU du/des bouton(s) sélectionné(s) par le
+        bouton choisi dans la shelf, en gardant position et taille —
+        pratique pour habiller un template sans replacer chaque bouton."""
+        from copy import deepcopy
+        from hotbox_designer.dialog import warning
+        entries = self.library_shelf.current_selected_entries()
+        shapes = list(self.shape_editor.selection)
+        if len(entries) != 1:
+            return warning(
+                'Replace button',
+                'Select exactly one button in the shelf below')
+        if not shapes:
+            return warning('Replace button', 'No shape selected')
+        source = entries[0]['options']
+        for shape in shapes:
+            kept = {
+                key: shape.options[key] for key in self.REPLACE_KEEP_KEYS}
+            shape.options.clear()
+            shape.options.update(deepcopy(source))
+            shape.options.update(kept)
+            shape.synchronize_image()
+        self.selection_changed()
+        self.shape_editor.repaint()
+        self.set_data_modified()
 
     def open_search_replace(self):
         from hotbox_designer.dialog import SearchReplaceDialog

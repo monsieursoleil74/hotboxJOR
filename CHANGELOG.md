@@ -4,6 +4,22 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Replace depuis la librairie, pipette couleur, templates utilisateur
+
+- **Replace with library button** (clic droit dans l'éditeur) : le
+  contenu du/des bouton(s) sélectionné(s) est remplacé par le bouton
+  choisi dans la shelf, **position et taille conservées** — habiller un
+  template sans replacer chaque bouton.
+- **Pipette écran ⌖** dans le sélecteur de couleurs (le « Pick Screen
+  Color » perdu avec l'abandon du dialogue natif) : aperçu en direct
+  sous le curseur, clic = prélever, Échap = annuler.
+- **Templates utilisateur** : bouton « Save hotbox as template » dans le
+  manager → copie dans `templates/` du dossier de données, listée dans
+  « From template » après les templates embarqués
+  (`data.save_hotbox_as_template` / `load_templates(user_folder)`).
+- **Aperçu dans le dialogue de création** : vignette du template ou de
+  la hotbox à dupliquer (réutilise `hotbox_thumbnail`).
+
 ## 2026-07 — Fix : hotbox cadrée dès l'ouverture de l'éditeur
 
 - La vue n'était cadrée qu'au **premier** `resizeEvent`, qui arrive

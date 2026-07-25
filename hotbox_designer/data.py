@@ -89,15 +89,50 @@ def ensure_old_data_compatible(data):
     return data
 
 
-def load_templates():
+def load_templates(user_folder=None):
+    """Templates embarqués + templates de l'utilisateur (dossier
+    `templates/` du dossier de données, alimenté par « Save hotbox as
+    template » du manager)."""
     path = os.path.join(os.path.dirname(__file__), 'resources', 'templates')
-    files = os.listdir(path)
+    folders = [path]
+    if user_folder and os.path.isdir(user_folder):
+        folders.append(user_folder)
     templates = []
-    for file_ in files:
-        filepath = os.path.join(path, file_)
-        with open(filepath, 'r') as f:
-            templates.append(json.load(f))
+    for folder in folders:
+        for file_ in sorted(os.listdir(folder)):
+            if not file_.lower().endswith('.json'):
+                continue
+            filepath = os.path.join(folder, file_)
+            try:
+                with open(filepath, 'r') as f:
+                    templates.append(json.load(f))
+            except (ValueError, OSError):
+                continue  # un template corrompu ne bloque pas les autres
     return templates
+
+
+def save_hotbox_as_template(user_folder, hotbox):
+    """Écrit la hotbox comme template utilisateur (copie indépendante).
+    Retourne le chemin écrit, ou None si le dossier est inaccessible."""
+    try:
+        if not os.path.exists(user_folder):
+            os.makedirs(user_folder)
+    except OSError:
+        return None
+    name = hotbox['general'].get('name') or 'template'
+    safe = ''.join(c if c.isalnum() or c in '-_ ' else '_' for c in name)
+    safe = safe.strip() or 'template'
+    filepath = os.path.join(user_folder, safe + '.json')
+    index = 1
+    while os.path.exists(filepath):
+        filepath = os.path.join(user_folder, '%s_%d.json' % (safe, index))
+        index += 1
+    try:
+        with open(filepath, 'w') as f:
+            json.dump(copy_hotbox_data(hotbox), f, indent=2)
+    except OSError:
+        return None
+    return filepath
 
 
 def hotbox_data_to_html(data):

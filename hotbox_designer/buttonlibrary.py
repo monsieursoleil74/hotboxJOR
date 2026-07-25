@@ -714,6 +714,14 @@ class LibraryShelf(QtWidgets.QWidget):
                 self, 'Library folder',
                 'Could not open the folder (not found or not configured).')
 
+    def current_selected_entries(self):
+        """Boutons sélectionnés dans l'onglet courant de la shelf (pour
+        « Replace with library button » dans l'éditeur)."""
+        widget = self.tabs.currentWidget()
+        if widget is None:
+            return []
+        return widget.selected_entries()
+
     def current_category(self):
         # une sauvegarde va toujours dans la librairie PERSO : si
         # l'onglet courant est studio (lecture seule), on retombe sur

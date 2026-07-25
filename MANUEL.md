@@ -305,8 +305,12 @@ Refondu façon Photoshop :
 - **Couleurs = pastilles cliquables**, les trois états (Normal / Hover /
   Click) **sur une seule ligne** sous une petite légende ; le code hexa
   est dans l'**infobulle** (survole la pastille). Un clic ouvre le
-  **sélecteur de couleurs natif**. Si la sélection a des couleurs
-  différentes, la pastille affiche « … ».
+  **sélecteur de couleurs** maison (façon Miro) : carré
+  saturation/valeur, teinte, hexa, couleurs prédéfinies, et la
+  **pipette ⌖** pour prélever une couleur n'importe où à l'écran (clic =
+  prélever, Échap = annuler — le « Pick Screen Color » du dialogue
+  natif). Si la sélection a des couleurs différentes, la pastille
+  affiche « … ».
 - **Opacité = curseur 0-100 %** (une pour le fond, une pour la
   bordure) — la valeur est convertie vers la « transparence 0-255 »
   historique du JSON, rien ne change dans le format.
@@ -329,9 +333,27 @@ Refondu façon Photoshop :
 ## Menu clic droit (récapitulatif)
 
 Volontairement court : il ne reprend PAS ce qui est déjà dans la barre
-d'outils. Seulement — Save selection to library… • Lock selection /
-Unlock all / Magnet snapping • Search and replace… (Ctrl+H) / Frame
-view (F).
+d'outils. Seulement — Save selection to library… / **Replace with
+library button** • Lock selection / Unlock all / Magnet snapping •
+Search and replace… (Ctrl+H) / Frame view (F).
+
+**Replace with library button** : sélectionne UN bouton dans la shelf
+du bas, puis clic droit sur un ou plusieurs boutons du canvas →
+Replace. Le contenu (couleurs, texte, image, commandes…) vient de la
+librairie, **la position et la taille sont conservées** — idéal pour
+habiller un template sans replacer chaque bouton à la main.
+
+## Templates
+
+À la création d'une hotbox (« From template »), un **aperçu** du
+template s'affiche dans le dialogue (idem pour « Duplicate existing »).
+
+**Créer ses propres templates** : sélectionne une hotbox dans le
+manager → bouton **Save hotbox as template** (💾 de la barre d'outils du
+manager, à côté d'export). Elle est copiée dans `templates/` du dossier
+de données et apparaît dès lors dans la liste « From template », après
+les templates embarqués. Un template est une copie figée : modifier la
+hotbox d'origine ne le change pas.
 
 ## Barre d'outils, de gauche à droite
 
