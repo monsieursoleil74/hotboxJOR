@@ -12,7 +12,7 @@ Trois fenêtres :
 
 | Fenêtre | Rôle |
 |---|---|
-| **Manager** | Liste des hotboxes : créer, éditer, supprimer, importer/exporter, assigner un hotkey Maya. |
+| **Manager** | Liste des hotboxes : créer, éditer, supprimer, importer/exporter, **gérer les raccourcis** (voir/assigner/effacer). |
 | **Éditeur** | Là où on construit une hotbox. Plusieurs éditeurs peuvent être ouverts en même temps (un par hotbox). |
 | **Reader** | La hotbox en production : ce qui s'affiche sous le curseur dans Maya. Non themé — son apparence, c'est ta hotbox. |
 
@@ -284,6 +284,13 @@ Refondu façon Photoshop :
 - La section **Dimensions a été retirée** (tout se manipule au
   viewport) — son champ « top » écrivait d'ailleurs dans `shape.right`
   (bug de l'original).
+- **Sous-menu fluide** — en haut de la section **Action**, un menu
+  déroulant « Open sub-hotbox » liste les autres hotboxes marquées
+  « is submenu » (dans le manager). En choisir une **génère toute seule**
+  la commande d'ouverture (`show('nom')`) sur le clic gauche du/des
+  bouton(s) sélectionné(s) : plus besoin d'écrire une ligne de Python à
+  la main pour enchaîner deux hotboxes. La liste reste cachée tant
+  qu'aucune hotbox n'est marquée sous-menu.
 
 ## Menu clic droit (récapitulatif)
 
@@ -300,6 +307,27 @@ zone** — édition du **centre** + coordonnées — ajout : bouton / texte /
 background — **librairie** / **enregistrer dans la librairie** — ordre :
 dessous / descendre / monter / dessus — alignements (6) — distributions
 (2).
+
+## Raccourcis clavier (gestionnaire)
+
+Le bouton **touche** de la barre d'outils du manager (⌨) ouvre le
+**gestionnaire de raccourcis** : un tableau qui liste **toutes** les
+hotboxes avec la touche qui leur est assignée.
+
+- **Voir** — chaque ligne montre la hotbox et sa touche (ou « — » si
+  aucune). Avant, on pouvait assigner un raccourci mais jamais le revoir.
+- **Set… / Change…** — ouvre le sélecteur de touche (Ctrl / Alt / Shift +
+  touche + type d'événement) pour (ré)assigner.
+- **Clear** — **retire** le raccourci. Sous Maya, la touche est
+  réellement débranchée (press ET release), pas seulement oubliée.
+
+Sous le capot, un petit fichier `hotbox_hotkey.json` (dossier de
+données du DCC) tient le registre des raccourcis, commun à tous les
+backends — c'est lui qui alimente le tableau. Les raccourcis globaux
+n'existent que dans un DCC (Maya, Nuke…) : hors DCC le tableau
+l'indique et les boutons Set sont désactivés. Si le set de hotkeys Maya
+courant est verrouillé (`Maya_Default`), l'éditeur de hotkeys de Maya
+s'ouvre pour le changer.
 
 ---
 

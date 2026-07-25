@@ -4,6 +4,22 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Sous-menu fluide + refonte des raccourcis
+
+- **Sous-menu fluide** : un bouton peut ouvrir une autre hotbox sans
+  écrire de code. Le panneau Action gagne un menu « Open sub-hotbox »
+  qui liste les hotboxes marquées « is submenu » ; en choisir une génère
+  automatiquement la commande `show('nom')` sur le clic gauche du/des
+  bouton(s) sélectionné(s).
+- **Gestionnaire de raccourcis** : le bouton touche du manager ouvre
+  désormais un tableau listant **toutes** les hotboxes avec leur touche,
+  pour la **voir**, la **(ré)assigner** ou l'**effacer** — avant on ne
+  pouvait qu'assigner, sans jamais revoir ni retirer.
+- **Registre commun** `hotbox_hotkey.json` (dossier de données du DCC) :
+  `AbstractApplication.record_hotkey / load_hotkeys / remove_hotkey`.
+  Maya note désormais ses raccourcis dans ce registre et
+  `Maya.remove_hotkey` débranche vraiment la touche (press + release).
+
 ## 2026-07 — Retrait radiale + menu clic droit allégé
 
 - **Disposition radiale retirée** (align.arrange_radial, bouton de barre

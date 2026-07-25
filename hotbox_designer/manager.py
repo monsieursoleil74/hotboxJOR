@@ -12,7 +12,7 @@ from hotbox_designer.widgets import BoolCombo, Title, CommandButton
 from hotbox_designer.qtutils import icon
 from hotbox_designer.dialog import (
     import_hotbox, export_hotbox, import_hotbox_link, CreateHotboxDialog,
-    CommandDisplayDialog, HotkeySetter, warning)
+    CommandDisplayDialog, HotkeySetter, HotkeyManagerDialog, warning)
 from hotbox_designer.data import (
     get_valid_name, TRIGGERING_TYPES, save_datas, load_hotboxes_datas,
     hotbox_data_to_html, load_json, ensure_old_data_compatible)
@@ -113,7 +113,7 @@ class HotboxManager(QtWidgets.QWidget):
         self.toolbar.deleteRequested.connect(self._call_remove)
         self.toolbar.importRequested.connect(self._call_import)
         self.toolbar.exportRequested.connect(self._call_export)
-        self.toolbar.setHotkeyRequested.connect(self._call_set_hotkey)
+        self.toolbar.manageHotkeysRequested.connect(self._call_manage_hotkeys)
         setter_enabled = bool(application.available_set_hotkey_modes)
         self.toolbar.hotkeyset.setEnabled(setter_enabled)
 
@@ -371,29 +371,44 @@ class HotboxManager(QtWidgets.QWidget):
         self.save_hotboxes()
         clear_loaded_hotboxes()
 
-    def _call_set_hotkey(self):
-        hotbox = self.get_selected_hotbox()
-        if not hotbox:
-            return warning('Hotbox designer', 'No hotbox selected')
+    def _hotbox_names(self):
+        return [h['general']['name'] for h in self.personnal_model.hotboxes]
+
+    def _call_manage_hotkeys(self):
+        """Gestionnaire de raccourcis : liste toutes les hotboxes avec leur
+        touche assignée (lue dans le registre), permet d'assigner ou de
+        retirer chacune — ce qui manquait jusqu'ici (on ne pouvait
+        qu'assigner, jamais voir ni effacer)."""
         modes = self.application.available_set_hotkey_modes
-        dialog = HotkeySetter(modes)
-        result = dialog.exec_()
-        name = hotbox['general']['name']
-        open_cmd = OPEN_COMMAND.format(
-            name=name,
-            application=self.application.name)
-        switch_cmd = SWITCH_COMMAND.format(
-            name=name,
-            application=self.application.name)
-        if result == QtWidgets.QDialog.Rejected:
-            return
+        dialog = HotkeyManagerDialog(
+            self._hotbox_names(),
+            self.application.load_hotkeys,
+            bool(modes),
+            self._assign_hotkey,
+            self._clear_hotkey,
+            parent=self)
+        dialog.exec_()
+
+    def _assign_hotkey(self, name):
+        """Ouvre le sélecteur de touche pour `name` et pose le raccourci.
+        Retourne True si un raccourci a été posé."""
+        modes = self.application.available_set_hotkey_modes
+        dialog = HotkeySetter(modes, parent=self)
+        if dialog.exec_() == QtWidgets.QDialog.Rejected:
+            return False
         self.application.set_hotkey(
             name=name,
             mode=dialog.mode(),
             sequence=dialog.get_key_sequence(),
-            open_cmd=open_cmd,
+            open_cmd=OPEN_COMMAND.format(
+                name=name, application=self.application.name),
             close_cmd=CLOSE_COMMAND.format(name=name),
-            switch_cmd=switch_cmd)
+            switch_cmd=SWITCH_COMMAND.format(
+                name=name, application=self.application.name))
+        return True
+
+    def _clear_hotkey(self, name):
+        self.application.remove_hotkey(name)
 
     def _call_export(self):
         hotbox = self.get_selected_hotbox()
@@ -453,7 +468,7 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
     unlinkRequested = QtCore.Signal()
     importRequested = QtCore.Signal()
     exportRequested = QtCore.Signal()
-    setHotkeyRequested = QtCore.Signal()
+    manageHotkeysRequested = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(HotboxManagerToolbar, self).__init__(parent)
@@ -480,8 +495,8 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.export.setToolTip('Export hotbox')
         self.export.triggered.connect(self.exportRequested.emit)
         self.hotkeyset = QtWidgets.QAction(icon('touch.png'), '', self)
-        self.hotkeyset.setToolTip('Set hotkey')
-        self.hotkeyset.triggered.connect(self.setHotkeyRequested.emit)
+        self.hotkeyset.setToolTip('Manage hotkeys')
+        self.hotkeyset.triggered.connect(self.manageHotkeysRequested.emit)
 
         self.addAction(self.new)
         self.addAction(self.edit)

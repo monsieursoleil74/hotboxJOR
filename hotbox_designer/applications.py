@@ -8,6 +8,7 @@ from hotbox_designer.languages import (
 
 HOTBOXES_FILENAME = 'hotboxes.json'
 SHARED_HOTBOXES_FILENAME = 'shared_hotboxes.json'
+HOTKEYS_FILENAME = 'hotbox_hotkey.json'
 SETMODE_PRESS_RELEASE = 'open on press | close on release'
 SETMODE_SWITCH_ON_PRESS = 'switch on press'
 
@@ -60,6 +61,47 @@ class AbstractApplication(object):
 
     def set_hotkey(self, mode, sequence, open_cmd, close_cmd, switch_cmd):
         raise NotImplementedError
+
+    # --- registre des raccourcis (commun à tous les DCC) -----------------
+    # Historiquement Maya posait ses hotkeys directement dans `cmds.hotkey`
+    # sans aucune trace : impossible de LISTER ou de RETIRER un raccourci
+    # déjà assigné. On tient désormais un petit fichier JSON
+    # `hotbox_hotkey.json` dans le dossier de données, partagé par tous les
+    # backends, qui alimente le gestionnaire de raccourcis.
+
+    def get_hotkey_file(self):
+        return os.path.join(self.get_data_folder(), HOTKEYS_FILENAME)
+
+    def load_hotkeys(self):
+        """Registre `{nom_hotbox: {'sequence': ..., 'mode': ...}}`.
+
+        Tolérant à l'ancien format Nuke/Rumba (`{'sequence', 'command'}`)
+        pour rester lisible par le gestionnaire."""
+        path = self.get_hotkey_file()
+        if not os.path.exists(path):
+            return {}
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+        except (ValueError, OSError):
+            return {}
+        return data if isinstance(data, dict) else {}
+
+    def record_hotkey(self, name, sequence, mode):
+        """Note (ou met à jour) le raccourci d'une hotbox dans le registre."""
+        data = self.load_hotkeys()
+        data[name] = {'sequence': sequence, 'mode': mode}
+        with open(self.get_hotkey_file(), 'w') as f:
+            json.dump(data, f, indent=2)
+
+    def remove_hotkey(self, name):
+        """Retire le raccourci du registre. Les backends qui posent un
+        vrai raccourci DCC (Maya) surchargent pour le débrancher aussi."""
+        data = self.load_hotkeys()
+        if name in data:
+            del data[name]
+            with open(self.get_hotkey_file(), 'w') as f:
+                json.dump(data, f, indent=2)
 
 
 class Standalone(AbstractApplication):
@@ -179,6 +221,31 @@ class Maya(AbstractApplication):
                 ctrlModifier=use_ctrl,
                 shiftModifier=use_shift,
                 name=switch_name)
+        # trace dans le registre pour pouvoir lister/retirer ensuite
+        self.record_hotkey(name, sequence, mode)
+
+    def remove_hotkey(self, name):
+        """Débranche le raccourci Maya (press ET release) puis le retire du
+        registre. Sans effet si le set de hotkeys courant est verrouillé."""
+        from maya import cmds
+        record = self.load_hotkeys().get(name)
+        if record and record.get('sequence'):
+            if cmds.hotkeySet(current=True, query=True) == 'Maya_Default':
+                warning(
+                    'Hotbox designer',
+                    'The current hotkey set is locked, change in the '
+                    'hotkey editor')
+            else:
+                sequence = record['sequence']
+                touch = sequence.split('+')[-1]
+                cmds.hotkey(
+                    keyShortcut=touch,
+                    altModifier='Alt' in sequence,
+                    ctrlModifier='Ctrl' in sequence,
+                    shiftModifier='Shift' in sequence,
+                    name='',
+                    releaseName='')
+        super(Maya, self).remove_hotkey(name)
 
 
 def format_command_for_mel(command):

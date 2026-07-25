@@ -1,6 +1,7 @@
 import os
 import json
-from hotbox_designer.vendor.Qt import QtWidgets
+from functools import partial
+from hotbox_designer.vendor.Qt import QtWidgets, QtCore
 from hotbox_designer.data import (
     get_new_hotbox, get_valid_name, copy_hotbox_data, load_templates,
     ensure_old_data_compatible)
@@ -214,6 +215,101 @@ class HotkeySetter(QtWidgets.QDialog):
 
     def mode(self):
         return self.hotkeytype.currentText()
+
+
+class HotkeyManagerDialog(QtWidgets.QDialog):
+    """Gestionnaire de raccourcis : liste toutes les hotboxes avec la
+    touche qui leur est assignée (lue dans le registre), et permet
+    d'assigner ou d'effacer chacune. Comble le manque : jusqu'ici on
+    pouvait assigner un raccourci mais jamais le revoir ni le retirer."""
+
+    NAME_COL, KEY_COL, ACTION_COL = range(3)
+
+    def __init__(
+            self, names, load_hotkeys, can_set, assign_cb, clear_cb,
+            parent=None):
+        super(HotkeyManagerDialog, self).__init__(parent)
+        self.setWindowTitle('Hotkeys')
+        self.names = list(names)
+        self.load_hotkeys = load_hotkeys
+        self.can_set = can_set
+        self.assign_cb = assign_cb
+        self.clear_cb = clear_cb
+
+        self.table = QtWidgets.QTableWidget(len(self.names), 3, self)
+        self.table.setHorizontalHeaderLabels(['Hotbox', 'Key', ''])
+        self.table.verticalHeader().hide()
+        self.table.setEditTriggers(
+            QtWidgets.QAbstractItemView.NoEditTriggers)
+        self.table.setSelectionMode(
+            QtWidgets.QAbstractItemView.NoSelection)
+        header = self.table.horizontalHeader()
+        header.setStretchLastSection(False)
+        header.setSectionResizeMode(
+            self.NAME_COL, QtWidgets.QHeaderView.Stretch)
+        header.setSectionResizeMode(
+            self.KEY_COL, QtWidgets.QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(
+            self.ACTION_COL, QtWidgets.QHeaderView.ResizeToContents)
+
+        if not self.can_set:
+            self.hint = QtWidgets.QLabel(
+                'Global hotkeys are provided by the host application '
+                '(Maya, Nuke…). Nothing to assign here.')
+            self.hint.setWordWrap(True)
+        else:
+            self.hint = None
+
+        self.close_button = QtWidgets.QPushButton('close')
+        self.close_button.released.connect(self.accept)
+        button_layout = QtWidgets.QHBoxLayout()
+        button_layout.setContentsMargins(0, 0, 0, 0)
+        button_layout.addStretch(1)
+        button_layout.addWidget(self.close_button)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        if self.hint is not None:
+            layout.addWidget(self.hint)
+        layout.addWidget(self.table)
+        layout.addLayout(button_layout)
+        self.resize(420, 320)
+        self.populate()
+
+    def populate(self):
+        hotkeys = self.load_hotkeys() or {}
+        for row, name in enumerate(self.names):
+            name_item = QtWidgets.QTableWidgetItem(name)
+            name_item.setFlags(QtCore.Qt.ItemIsEnabled)
+            self.table.setItem(row, self.NAME_COL, name_item)
+
+            record = hotkeys.get(name) or {}
+            sequence = record.get('sequence') or ''
+            key_item = QtWidgets.QTableWidgetItem(sequence or '—')
+            key_item.setFlags(QtCore.Qt.ItemIsEnabled)
+            self.table.setItem(row, self.KEY_COL, key_item)
+
+            cell = QtWidgets.QWidget()
+            cell_layout = QtWidgets.QHBoxLayout(cell)
+            cell_layout.setContentsMargins(2, 2, 2, 2)
+            cell_layout.setSpacing(4)
+            set_button = QtWidgets.QPushButton(
+                'Set…' if not sequence else 'Change…')
+            set_button.setEnabled(self.can_set)
+            set_button.released.connect(partial(self._assign, name))
+            clear_button = QtWidgets.QPushButton('Clear')
+            clear_button.setEnabled(bool(sequence))
+            clear_button.released.connect(partial(self._clear, name))
+            cell_layout.addWidget(set_button)
+            cell_layout.addWidget(clear_button)
+            self.table.setCellWidget(row, self.ACTION_COL, cell)
+
+    def _assign(self, name):
+        if self.assign_cb(name):
+            self.populate()
+
+    def _clear(self, name):
+        self.clear_cb(name)
+        self.populate()
 
 
 class PasteStyleDialog(QtWidgets.QDialog):

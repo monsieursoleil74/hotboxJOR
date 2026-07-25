@@ -1185,6 +1185,92 @@ def test_submenu_opener():
     print('sous-menu fluide (ouvreur de hotbox généré) OK')
 
 
+def test_hotkey_registry():
+    """Registre des raccourcis : on peut noter, relire, mettre à jour et
+    RETIRER un raccourci — ce que l'ancien Maya ne permettait pas (pose
+    directe dans cmds.hotkey, sans trace)."""
+    import tempfile
+    from hotbox_designer.applications import Standalone
+
+    tmp = tempfile.mkdtemp()
+
+    class TmpApp(Standalone):
+        def get_data_folder(self):
+            return tmp
+
+    app = TmpApp()
+    assert app.load_hotkeys() == {}
+
+    app.record_hotkey('face', 'Ctrl+F', 'switch on press')
+    app.record_hotkey('body', 'Alt+B', 'open on press | close on release')
+    data = app.load_hotkeys()
+    assert set(data) == {'face', 'body'}
+    assert data['face'] == {'sequence': 'Ctrl+F', 'mode': 'switch on press'}
+
+    # ré-assigner met à jour (pas de doublon)
+    app.record_hotkey('face', 'Ctrl+Shift+F', 'switch on press')
+    assert app.load_hotkeys()['face']['sequence'] == 'Ctrl+Shift+F'
+
+    # retrait ciblé, les autres restent
+    app.remove_hotkey('face')
+    remaining = app.load_hotkeys()
+    assert 'face' not in remaining and 'body' in remaining
+    # retirer un inconnu ne casse rien
+    app.remove_hotkey('fantome')
+    assert set(app.load_hotkeys()) == {'body'}
+    print('registre des raccourcis (noter/relire/retirer) OK')
+
+
+def test_hotkey_manager_dialog():
+    """Le gestionnaire de raccourcis liste les hotboxes, affiche leur
+    touche et branche les boutons Set/Clear."""
+    from hotbox_designer.dialog import HotkeyManagerDialog
+
+    store = {'face': {'sequence': 'Ctrl+F', 'mode': 'switch on press'}}
+    calls = {'assign': [], 'clear': []}
+
+    def load():
+        return dict(store)
+
+    def assign(name):
+        calls['assign'].append(name)
+        store[name] = {'sequence': 'Alt+X', 'mode': 'switch on press'}
+        return True
+
+    def clear(name):
+        calls['clear'].append(name)
+        store.pop(name, None)
+
+    dialog = HotkeyManagerDialog(
+        ['face', 'body'], load, True, assign, clear, parent=None)
+    dialog.show()
+    APP.processEvents()
+
+    assert dialog.table.rowCount() == 2
+    assert dialog.table.item(0, dialog.NAME_COL).text() == 'face'
+    assert dialog.table.item(0, dialog.KEY_COL).text() == 'Ctrl+F'
+    assert dialog.table.item(1, dialog.KEY_COL).text() == '—'
+
+    # assigner « body » via son bouton Set
+    cell = dialog.table.cellWidget(1, dialog.ACTION_COL)
+    buttons = cell.findChildren(QtWidgets.QPushButton)
+    buttons[0].click()
+    APP.processEvents()
+    assert calls['assign'] == ['body']
+    assert dialog.table.item(1, dialog.KEY_COL).text() == 'Alt+X'
+
+    # effacer « face » via son bouton Clear
+    cell0 = dialog.table.cellWidget(0, dialog.ACTION_COL)
+    clear_button = cell0.findChildren(QtWidgets.QPushButton)[1]
+    clear_button.click()
+    APP.processEvents()
+    assert calls['clear'] == ['face']
+    assert dialog.table.item(0, dialog.KEY_COL).text() == '—'
+
+    dialog.close()
+    print('gestionnaire de raccourcis (liste + Set/Clear) OK')
+
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -1213,4 +1299,6 @@ if __name__ == '__main__':
     test_studio_library()
     test_thumbnail_cache_and_dedup()
     test_submenu_opener()
+    test_hotkey_registry()
+    test_hotkey_manager_dialog()
     print('TOUT EST VERT')
