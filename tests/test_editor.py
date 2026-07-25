@@ -1238,6 +1238,83 @@ def test_library_category_ops():
     print('organisation des catégories (créer/renommer/déplacer/vider) OK')
 
 
+def test_manipulation_ergonomics():
+    """Manipulation allégée : bords entièrement saisissables, curseurs
+    contextuels, Maj = contrainte d'axe, Espace = pan, zoom +/-."""
+    from hotbox_designer.geometry import Transform
+
+    # contrainte d'axe (Maj) : le déplacement se verrouille sur l'axe
+    # dominant du geste
+    transform = Transform()
+    rect = QtCore.QRectF(0, 0, 10, 10)
+    transform.set_rect(rect)
+    transform.reference_rect = QtCore.QRectF(rect)
+    transform.set_reference_point(QtCore.QPointF(5, 5))
+    transform.move([], QtCore.QPointF(30, 8), constrain=True)
+    assert rect.top() == 0 and near(rect.left(), 25)  # horizontal domine
+    transform = Transform()
+    rect = QtCore.QRectF(0, 0, 10, 10)
+    transform.set_rect(rect)
+    transform.reference_rect = QtCore.QRectF(rect)
+    transform.set_reference_point(QtCore.QPointF(5, 5))
+    transform.move([], QtCore.QPointF(8, 40), constrain=True)
+    assert rect.left() == 0 and near(rect.top(), 35)  # vertical domine
+
+    # TOUT le bord est saisissable (pas seulement les 8 poignées) :
+    # points sur les bords d'un grand rectangle, loin des poignées
+    from hotbox_designer.interactive import Manipulator
+    manip = Manipulator()
+    manip.zoom_factor = 1.0
+    manip.set_rect(QtCore.QRectF(0, 0, 200, 100))
+    assert manip.get_direction(QtCore.QPointF(0, 30)) == 'left'
+    assert manip.get_direction(QtCore.QPointF(60, 100)) == 'bottom'
+    assert manip.get_direction(QtCore.QPointF(3, 4)) == 'top_left'
+    assert manip.get_direction(QtCore.QPointF(100, 50)) is None
+    assert manip.get_direction(QtCore.QPointF(300, 50)) is None
+
+    editor = make_editor([(100, 100, 'btn')])
+    area = editor.shape_editor
+    driver = Driver(area)
+    shape = area.shapes[0]
+    driver.click((shape.rect.center().x(), shape.rect.center().y()))
+    assert list(area.selection) == [shape]
+
+    # curseurs contextuels : ↔ sur un bord, croix dans la sélection
+    sel_rect = area.manipulator.rect
+    left_mid = QtCore.QPointF(sel_rect.left(), sel_rect.center().y())
+    driver.pos = driver.units((left_mid.x(), left_mid.y()))
+    driver.move()
+    assert area.cursor().shape() == QtCore.Qt.SizeHorCursor
+    center = sel_rect.center()
+    driver.pos = driver.units((center.x(), center.y()))
+    driver.move()
+    assert area.cursor().shape() == QtCore.Qt.SizeAllCursor
+
+    # Espace + glisser gauche = pan : la vue bouge, pas la sélection
+    origin_before = QtCore.QPointF(area.viewport_mapper.origin)
+    pos_before = QtCore.QPointF(shape.rect.topLeft())
+    area.keyPressEvent(QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress, QtCore.Qt.Key_Space, QtCore.Qt.NoModifier))
+    driver.drag((150, 120), (250, 180))
+    assert area.viewport_mapper.origin != origin_before
+    assert shape.rect.topLeft() == pos_before
+    area.keyReleaseEvent(QtGui.QKeyEvent(
+        QtCore.QEvent.KeyRelease, QtCore.Qt.Key_Space, QtCore.Qt.NoModifier))
+    assert area.panning is False
+
+    # zoom clavier + / -
+    zoom_before = area.viewport_mapper.zoom
+    area.keyPressEvent(QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress, QtCore.Qt.Key_Plus, QtCore.Qt.NoModifier))
+    assert area.viewport_mapper.zoom > zoom_before
+    area.keyPressEvent(QtGui.QKeyEvent(
+        QtCore.QEvent.KeyPress, QtCore.Qt.Key_Minus, QtCore.Qt.NoModifier))
+    assert near(area.viewport_mapper.zoom, zoom_before, 0.01)
+
+    editor.close()
+    print('manipulation allégée (bords, curseurs, Maj, Espace, zoom) OK')
+
+
 def test_library_rename_and_save_studio():
     """Renommer un bouton déjà rangé, et sauvegarder directement dans la
     librairie studio (sans passer par General + Move to)."""
@@ -1444,6 +1521,7 @@ if __name__ == '__main__':
     test_submenu_opener()
     test_library_category_ops()
     test_library_rename_and_save_studio()
+    test_manipulation_ergonomics()
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()

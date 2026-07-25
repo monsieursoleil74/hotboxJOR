@@ -4,6 +4,18 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Manipulation allégée dans l'éditeur
+
+- **Tout le contour de la sélection est saisissable** pour
+  redimensionner (~8 px écran, coins prioritaires) — plus besoin de
+  viser les 8 petites poignées (`Manipulator.get_direction`).
+- **Curseurs contextuels** : flèches ↔ ↕ ⤡ ⤢ sur bords/coins, croix de
+  déplacement dans la sélection, main pendant le pan.
+- **Maj pendant un déplacement** = contrainte à l'axe dominant
+  (horizontal/vertical, façon Photoshop) — `Transform.move(constrain=)`.
+- **Espace + glisser = pan** (en plus du clic molette), curseur main.
+- **Zoom clavier + / −** autour du centre de la vue.
+
 ## 2026-07 — Renommer un bouton de shelf + sauvegarder direct dans le studio
 
 - **Rename…** sur un bouton de la shelf (clic droit) : on peut renommer

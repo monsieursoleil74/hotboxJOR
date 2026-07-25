@@ -29,6 +29,8 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.focused_once = False
         self.panning = False
         self.pan_reference = None
+        # barre Espace enfoncée = pan au clic gauche (façon Photoshop)
+        self.space_pressed = False
 
         self.selection = Selection()
         self.selection_square = SelectionSquare()
@@ -150,6 +152,7 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.selection_square.handle(cursor)
 
         if self.handeling is False:
+            self.update_cursor_shape(cursor)
             return self.repaint()
 
         self.manipulator_moved = True
@@ -160,7 +163,10 @@ class ShapeEditArea(QtWidgets.QWidget):
         elif self.drag_mode == 'move' and rect is not None:
             # pas de test contains() ici : un geste rapide sortait du
             # rectangle et le déplacement s'arrêtait (bug de l'original)
-            self.transform.move([s.rect for s in self.selection], cursor)
+            # Maj pendant le geste = contrainte à l'axe dominant
+            self.transform.move(
+                [s.rect for s in self.selection], cursor,
+                constrain=self.shit_pressed)
             self.apply_magnet()
             self.manipulator.update_geometries()
         for shape in self.shapes:
@@ -170,9 +176,39 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.selectedShapesChanged.emit()
         self.repaint()
 
+    # curseur affiché selon la zone survolée du manipulateur
+    RESIZE_CURSORS = {
+        'top_left': QtCore.Qt.SizeFDiagCursor,
+        'bottom_right': QtCore.Qt.SizeFDiagCursor,
+        'top_right': QtCore.Qt.SizeBDiagCursor,
+        'bottom_left': QtCore.Qt.SizeBDiagCursor,
+        'left': QtCore.Qt.SizeHorCursor,
+        'right': QtCore.Qt.SizeHorCursor,
+        'top': QtCore.Qt.SizeVerCursor,
+        'bottom': QtCore.Qt.SizeVerCursor}
+
+    def update_cursor_shape(self, cursor):
+        """Feedback visuel : flèches de resize sur les bords, croix de
+        déplacement dans la sélection, rien ailleurs."""
+        if (self.panning or self.space_pressed
+                or self.place_image_shape is not None
+                or self.edit_center_mode):
+            return
+        direction = self.manipulator.get_direction(cursor)
+        if direction:
+            self.setCursor(self.RESIZE_CURSORS[direction])
+        elif (self.manipulator.rect is not None
+                and self.manipulator.rect.contains(cursor)):
+            self.setCursor(QtCore.Qt.SizeAllCursor)
+        else:
+            self.unsetCursor()
+
     def mousePressEvent(self, event):
         self.setFocus(QtCore.Qt.MouseFocusReason)
-        if event.button() == QtCore.Qt.MiddleButton:
+        # clic molette, ou Espace + clic gauche = pan (façon Photoshop)
+        if event.button() == QtCore.Qt.MiddleButton or (
+                event.button() == QtCore.Qt.LeftButton
+                and self.space_pressed):
             self.panning = True
             self.pan_reference = get_cursor(self)
             self.setCursor(QtCore.Qt.ClosedHandCursor)
@@ -238,10 +274,15 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.repaint()
 
     def mouseReleaseEvent(self, event):
-        if self.panning and event.button() == QtCore.Qt.MiddleButton:
+        if self.panning and event.button() in (
+                QtCore.Qt.MiddleButton, QtCore.Qt.LeftButton):
             self.panning = False
             self.pan_reference = None
-            self.unsetCursor()
+            # Espace encore enfoncé : on reste en mode « main »
+            if self.space_pressed:
+                self.setCursor(QtCore.Qt.OpenHandCursor)
+            else:
+                self.unsetCursor()
             return
         if event.button() != QtCore.Qt.LeftButton:
             return
@@ -378,6 +419,18 @@ class ShapeEditArea(QtWidgets.QWidget):
         if event.key() == QtCore.Qt.Key_F:
             return self.focus_view()
 
+        if event.key() == QtCore.Qt.Key_Space and not event.isAutoRepeat():
+            # main levée : le prochain clic gauche déplace la vue
+            self.space_pressed = True
+            if not self.panning:
+                self.setCursor(QtCore.Qt.OpenHandCursor)
+            return
+
+        if event.key() in (QtCore.Qt.Key_Plus, QtCore.Qt.Key_Equal):
+            return self.zoom_keyboard(1.25)
+        if event.key() in (QtCore.Qt.Key_Minus, QtCore.Qt.Key_Underscore):
+            return self.zoom_keyboard(1 / 1.25)
+
         if event.key() in self.NUDGES and self.selection.shapes:
             return self.nudge_selection(*self.NUDGES[event.key()], big=bool(
                 event.modifiers() & QtCore.Qt.ShiftModifier))
@@ -395,7 +448,20 @@ class ShapeEditArea(QtWidgets.QWidget):
 
         self.repaint()
 
+    def zoom_keyboard(self, factor):
+        """+/- : zoom autour du centre de la vue."""
+        center = QtCore.QPointF(self.width() / 2.0, self.height() / 2.0)
+        self.viewport_mapper.zoom_towards(center, factor)
+        self.sync_zoom()
+        self.repaint()
+
     def keyReleaseEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Space and not event.isAutoRepeat():
+            self.space_pressed = False
+            if not self.panning:
+                self.unsetCursor()
+            return
+
         if event.key() == QtCore.Qt.Key_Shift:
             self.transform.square = False
             self.shit_pressed = False

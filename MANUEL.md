@@ -30,7 +30,9 @@ infini, façon dwpicker/Figma.
 | Geste | Action |
 |---|---|
 | **Molette** | Zoom vers le curseur (×0.1 à ×8) |
+| **+ / −** | Zoom au centre de la vue |
 | **Clic molette maintenu** | Pan (déplacer la vue) |
+| **Espace + glisser** | Pan aussi (façon Photoshop — curseur main) |
 | **F** | Recadrer : sur la sélection s'il y en a une, sinon sur la hotbox |
 
 À l'ouverture, la hotbox est cadrée automatiquement. Les poignées du
@@ -66,11 +68,16 @@ Logique particulière :
 | Geste | Action |
 |---|---|
 | **Glisser la sélection** | Déplacer (suit la souris jusqu'au relâchement, même en geste rapide) |
-| **Glisser une poignée** | Redimensionner (Maj = carré) |
+| **Maj pendant le déplacement** | Contrainte à l'**axe dominant** (horizontal ou vertical, façon Photoshop) |
+| **Glisser un bord ou un coin** | Redimensionner — **tout le contour est saisissable** (~8 px), pas seulement les 8 poignées ; Maj = carré |
 | **Alt + glisser la sélection** | **Dupliquer** : les copies partent sous le curseur, les originaux restent |
 | **Flèches** | Déplacer d'1 unité (**Maj** = 10) |
 | **Suppr** | Supprimer la sélection |
 | **Ctrl+Z / Ctrl+Y** | Undo / redo (tout est annulable) |
+
+Le **curseur annonce le geste** : flèches de redimensionnement (↔ ↕ ⤡ ⤢)
+sur les bords et coins, croix de déplacement à l'intérieur de la
+sélection, main quand Espace est enfoncé.
 
 ### Snap magnétique 🧲 (désactivé par défaut)
 

@@ -56,12 +56,45 @@ class Manipulator():
             self._br_corner_rect, self._l_side_rect, self._r_side_rect,
             self._t_side_rect, self._b_side_rect]
 
+    # zone de saisie autour des bords du rectangle de sélection, en
+    # pixels ÉCRAN (convertie en unités selon le zoom)
+    GRAB_TOLERANCE_PX = 8
+
     def get_direction(self, cursor):
         if self.rect is None:
             return None
         for i, rect in enumerate(self.handler_rects()):
             if rect.contains(cursor):
                 return DIRECTIONS[i]
+        # TOUT le bord du rectangle est saisissable, pas seulement les 8
+        # petites poignées : viser un trait est bien plus rapide qu'un
+        # point (coins prioritaires sur les côtés)
+        tolerance = self.GRAB_TOLERANCE_PX / max(self.zoom_factor, 0.001)
+        rect = self.rect
+        outer = rect.adjusted(-tolerance, -tolerance, tolerance, tolerance)
+        if not outer.contains(cursor):
+            return None
+        near_left = abs(cursor.x() - rect.left()) <= tolerance
+        near_right = abs(cursor.x() - rect.right()) <= tolerance
+        near_top = abs(cursor.y() - rect.top()) <= tolerance
+        near_bottom = abs(cursor.y() - rect.bottom()) <= tolerance
+        if near_top and near_left:
+            return 'top_left'
+        if near_bottom and near_left:
+            return 'bottom_left'
+        if near_top and near_right:
+            return 'top_right'
+        if near_bottom and near_right:
+            return 'bottom_right'
+        if near_left:
+            return 'left'
+        if near_right:
+            return 'right'
+        if near_top:
+            return 'top'
+        if near_bottom:
+            return 'bottom'
+        return None
 
     def hovered_rects(self, cursor):
         rects = []

@@ -481,6 +481,7 @@ class Transform():
         self.reference_x = None
         self.reference_y = None
         self.reference_rect = None
+        self.start_topleft = None
 
     def set_rect(self, rect):
         self.rect = rect
@@ -492,6 +493,9 @@ class Transform():
     def set_reference_point(self, cursor):
         self.reference_x = cursor.x() - self.rect.left()
         self.reference_y = cursor.y() - self.rect.top()
+        # position de départ du geste : sert à la contrainte d'axe
+        # (Maj pendant un déplacement)
+        self.start_topleft = QtCore.QPointF(self.rect.topLeft())
 
     def resize(self, rects, cursor):
         if self.snap is not None:
@@ -510,9 +514,18 @@ class Transform():
         self.reference_rect = QtCore.QRectF(
             self.rect.topLeft(), self.rect.bottomRight())
 
-    def move(self, rects, cursor):
+    def move(self, rects, cursor, constrain=False):
         x = cursor.x() - self.reference_x
         y = cursor.y() - self.reference_y
+        # Maj pendant le déplacement : contrainte à l'axe dominant
+        # (horizontal OU vertical, façon Photoshop)
+        if constrain and self.start_topleft is not None:
+            dx = x - self.start_topleft.x()
+            dy = y - self.start_topleft.y()
+            if abs(dx) >= abs(dy):
+                y = self.start_topleft.y()
+            else:
+                x = self.start_topleft.x()
         if self.snap is not None:
             x, y = snap(x, y, self.snap)
         width = self.rect.width()
