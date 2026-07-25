@@ -4,6 +4,13 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Vignettes de librairie propres
+
+- Les boutons **avec image** affichent dans la shelf l'**image seule**,
+  ajustée sur fond transparent (fini le rectangle sombre derrière) ;
+  les boutons sans image gardent leur pastille colorée. Fond de
+  vignette transparent dans tous les cas.
+
 ## 2026-07 — Export studio + retrait du double-clic
 
 - **Publier vers la librairie studio** : clic droit sur des boutons de

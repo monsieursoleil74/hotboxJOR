@@ -182,26 +182,45 @@ def _thumb_cache_key(options, size):
 
 
 def button_thumbnail(options, size=None):
-    """Dessine le bouton lui-même en guise d'icône (mis en cache)."""
+    """Icône du bouton pour la librairie (mise en cache).
+
+    - bouton AVEC image : on affiche l'image seule, ajustée, sur fond
+      transparent (icône propre, pas de rectangle sombre derrière) ;
+    - bouton SANS image : on dessine le bouton (forme + couleurs), fond
+      transparent."""
     thumb_width, thumb_height = size or (THUMB_SIZE * 2, THUMB_SIZE)
     key = _thumb_cache_key(options, (thumb_width, thumb_height))
     cached = _THUMB_CACHE.get(key)
     if cached is not None:
         return cached
-    shape = Shape(dict(options))
-    rect = shape.rect
     pixmap = QtGui.QPixmap(thumb_width, thumb_height)
-    pixmap.fill(QtGui.QColor('#2b2b2b'))
+    pixmap.fill(QtCore.Qt.transparent)
     painter = QtGui.QPainter(pixmap)
     painter.setRenderHint(QtGui.QPainter.Antialiasing)
-    width = rect.width() or 1.0
-    height = rect.height() or 1.0
-    scale = min((thumb_width - 4) / width, (thumb_height - 4) / height)
-    painter.translate(
-        (thumb_width - width * scale) / 2 - rect.left() * scale,
-        (thumb_height - height * scale) / 2 - rect.top() * scale)
-    painter.scale(scale, scale)
-    draw_shape(painter, shape)
+    painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+
+    from hotbox_designer.images import resolve_image_path
+    image_path = resolve_image_path(options.get('image.path') or '')
+    image = QtGui.QPixmap(image_path) if image_path else QtGui.QPixmap()
+    if not image.isNull():
+        # image seule, centrée et ajustée en gardant les proportions
+        scaled = image.scaled(
+            thumb_width - 4, thumb_height - 4,
+            QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
+        painter.drawPixmap(
+            (thumb_width - scaled.width()) // 2,
+            (thumb_height - scaled.height()) // 2, scaled)
+    else:
+        shape = Shape(dict(options))
+        rect = shape.rect
+        width = rect.width() or 1.0
+        height = rect.height() or 1.0
+        scale = min((thumb_width - 4) / width, (thumb_height - 4) / height)
+        painter.translate(
+            (thumb_width - width * scale) / 2 - rect.left() * scale,
+            (thumb_height - height * scale) / 2 - rect.top() * scale)
+        painter.scale(scale, scale)
+        draw_shape(painter, shape)
     painter.end()
     icon = QtGui.QIcon(pixmap)
     if len(_THUMB_CACHE) > 512:  # garde-fou mémoire
