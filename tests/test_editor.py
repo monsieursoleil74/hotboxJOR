@@ -830,6 +830,27 @@ def test_rounded_rect():
     print('coins arrondis (rendu + défauts) OK')
 
 
+def test_color_picker():
+    from hotbox_designer.colorpicker import ColorPickerDialog
+
+    dialog = ColorPickerDialog('#3388ff')
+    assert dialog.color_name().lower() == '#3388ff'
+    # champ hexa -> couleur
+    dialog.hexedit.setText('#e24d4d')
+    dialog._hex_edited()
+    assert dialog.color_name().lower() == '#e24d4d'
+    # preset -> couleur
+    dialog._set_hex('#27ae60')
+    assert dialog.color_name().lower() == '#27ae60'
+    # teinte + carré SV recalculent la couleur
+    dialog.hue_bar.set_hue(0.0)
+    dialog._hue_changed()
+    dialog.square._sat, dialog.square._val = 1.0, 1.0
+    dialog._sv_changed()
+    assert dialog.color_name().lower() == '#ff0000'  # rouge pur
+    print('color picker (hexa, preset, teinte/SV) OK')
+
+
 def test_studio_library():
     import tempfile
     from hotbox_designer import buttonlibrary as bl
@@ -1163,6 +1184,7 @@ if __name__ == '__main__':
     test_command_autosave()
     test_image_placement()
     test_rounded_rect()
+    test_color_picker()
     test_studio_library()
     test_thumbnail_cache_and_dedup()
     print('TOUT EST VERT')

@@ -4,6 +4,13 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Sélecteur de couleurs moderne (façon Miro)
+
+- Le `QColorDialog` natif (vieillot) est remplacé par un picker maison
+  `colorpicker.py` dans le thème sombre : carré saturation/valeur,
+  barre de teinte, champ hexa, aperçu et rangée de couleurs
+  prédéfinies. Branché sur les pastilles `ColorButton`.
+
 ## 2026-07 — Vignettes de librairie propres
 
 - Les boutons **avec image** affichent dans la shelf l'**image seule**,

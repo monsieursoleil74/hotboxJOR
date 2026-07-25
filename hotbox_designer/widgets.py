@@ -197,13 +197,12 @@ class ColorButton(QtWidgets.QPushButton):
             % (self._color, text_color))
 
     def pick_color(self):
-        initial = QtGui.QColor(self._color or '#888888')
-        color = QtWidgets.QColorDialog.getColor(
-            initial, self, 'Choose color')
-        if not color.isValid():
+        from hotbox_designer.colorpicker import ColorPickerDialog
+        name = ColorPickerDialog.get_color(self._color or '#888888', self)
+        if name is None:
             return
-        self.set_color(color.name())
-        self.valueSet.emit(color.name())
+        self.set_color(name)
+        self.valueSet.emit(name)
 
 
 class OpacitySlider(QtWidgets.QWidget):
