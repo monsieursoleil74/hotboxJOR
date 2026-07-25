@@ -316,8 +316,11 @@ hotboxes avec la touche qui leur est assignée.
 
 - **Voir** — chaque ligne montre la hotbox et sa touche (ou « — » si
   aucune). Avant, on pouvait assigner un raccourci mais jamais le revoir.
-- **Set… / Change…** — ouvre le sélecteur de touche (Ctrl / Alt / Shift +
-  touche + type d'événement) pour (ré)assigner.
+- **Set… / Change…** — ouvre le sélecteur de touche : on **tape
+  directement** la combinaison (ex. Maj+Q) dans le champ **Shortcut** et
+  elle s'affiche telle quelle (« Shift+q »). Plus besoin de cocher
+  Ctrl/Alt/Shift : les modificateurs sont lus sur la frappe. Échap
+  efface. On choisit ensuite le type d'événement.
 - **Clear** — **retire** le raccourci. Sous Maya, la touche est
   réellement débranchée (press ET release), pas seulement oubliée.
 

@@ -15,6 +15,10 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   désormais un tableau listant **toutes** les hotboxes avec leur touche,
   pour la **voir**, la **(ré)assigner** ou l'**effacer** — avant on ne
   pouvait qu'assigner, sans jamais revoir ni retirer.
+- **Capture directe du raccourci** : le sélecteur de touche remplace les
+  trois cases Ctrl/Alt/Shift + champ Touch par une seule zone
+  (`HotkeyEdit`) où l'on tape la combinaison — elle s'affiche « Shift+q ».
+  Les modificateurs sont lus sur la frappe, Échap efface.
 - **Registre commun** `hotbox_hotkey.json` (dossier de données du DCC) :
   `AbstractApplication.record_hotkey / load_hotkeys / remove_hotkey`.
   Maya note désormais ses raccourcis dans ce registre et

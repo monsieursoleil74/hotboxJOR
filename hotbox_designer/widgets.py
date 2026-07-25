@@ -132,6 +132,57 @@ class TouchEdit(QtWidgets.QLineEdit):
         self.textEdited.emit(self.text())
 
 
+class HotkeyEdit(QtWidgets.QLineEdit):
+    """Capture d'un raccourci complet : on tape la combinaison (ex.
+    Maj+Q) et elle s'affiche telle quelle (« Shift+q »). Plus besoin de
+    cocher Ctrl/Alt/Shift séparément — les modificateurs sont lus sur la
+    frappe elle-même. Échap efface."""
+    keySet = QtCore.Signal(str)
+
+    _MODIFIER_KEYS = (
+        QtCore.Qt.Key_Control, QtCore.Qt.Key_Shift, QtCore.Qt.Key_Alt,
+        QtCore.Qt.Key_Meta, QtCore.Qt.Key_AltGr)
+
+    def __init__(self, parent=None):
+        super(HotkeyEdit, self).__init__(parent)
+        self.setReadOnly(True)
+        self.setPlaceholderText('type a shortcut…')
+        self._sequence = ''
+
+    def sequence(self):
+        return self._sequence
+
+    def set_sequence(self, sequence):
+        self._sequence = sequence or ''
+        self.setText(self._sequence)
+
+    def keyPressEvent(self, event):
+        key = event.key()
+        if key == QtCore.Qt.Key_Escape:
+            self._sequence = ''
+            self.clear()
+            self.keySet.emit(self._sequence)
+            return
+        # tant qu'on n'a qu'un modificateur enfoncé, on attend la vraie touche
+        if key in self._MODIFIER_KEYS:
+            return
+        touch = QtGui.QKeySequence(key).toString().lower()
+        if not touch:
+            return
+        modifiers = event.modifiers()
+        parts = []
+        if modifiers & QtCore.Qt.ControlModifier:
+            parts.append('Ctrl')
+        if modifiers & QtCore.Qt.AltModifier:
+            parts.append('Alt')
+        if modifiers & QtCore.Qt.ShiftModifier:
+            parts.append('Shift')
+        parts.append(touch)
+        self._sequence = '+'.join(parts)
+        self.setText(self._sequence)
+        self.keySet.emit(self._sequence)
+
+
 class CommandButton(QtWidgets.QWidget):
     released = QtCore.Signal()
     playReleased = QtCore.Signal()

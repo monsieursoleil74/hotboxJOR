@@ -1221,6 +1221,42 @@ def test_hotkey_registry():
     print('registre des raccourcis (noter/relire/retirer) OK')
 
 
+def test_hotkey_edit_capture():
+    """La zone de capture lit les modificateurs sur la frappe : on tape
+    la combinaison, elle s'affiche « Shift+q ». Plus de cases à cocher."""
+    from hotbox_designer.widgets import HotkeyEdit
+
+    edit = HotkeyEdit()
+
+    def press(key, mods=QtCore.Qt.NoModifier):
+        event = QtGui.QKeyEvent(QtCore.QEvent.KeyPress, key, mods)
+        edit.keyPressEvent(event)
+
+    # touche seule
+    press(QtCore.Qt.Key_Q)
+    assert edit.sequence() == 'q'
+
+    # avec Shift → « Shift+q »
+    press(QtCore.Qt.Key_Q, QtCore.Qt.ShiftModifier)
+    assert edit.sequence() == 'Shift+q'
+    assert edit.text() == 'Shift+q'
+
+    # ordre fixe Ctrl, Alt, Shift (compatible avec le parsing Maya)
+    press(QtCore.Qt.Key_F,
+          QtCore.Qt.ControlModifier | QtCore.Qt.ShiftModifier)
+    assert edit.sequence() == 'Ctrl+Shift+f'
+
+    # un modificateur seul est ignoré (on attend la vraie touche)
+    before = edit.sequence()
+    press(QtCore.Qt.Key_Shift, QtCore.Qt.ShiftModifier)
+    assert edit.sequence() == before
+
+    # Échap efface
+    press(QtCore.Qt.Key_Escape)
+    assert edit.sequence() == ''
+    print('capture de raccourci (modificateurs lus à la frappe) OK')
+
+
 def test_hotkey_manager_dialog():
     """Le gestionnaire de raccourcis liste les hotboxes, affiche leur
     touche et branche les boutons Set/Clear."""
@@ -1300,5 +1336,6 @@ if __name__ == '__main__':
     test_thumbnail_cache_and_dedup()
     test_submenu_opener()
     test_hotkey_registry()
+    test_hotkey_edit_capture()
     test_hotkey_manager_dialog()
     print('TOUT EST VERT')

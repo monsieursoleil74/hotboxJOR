@@ -5,7 +5,7 @@ from hotbox_designer.vendor.Qt import QtWidgets, QtCore
 from hotbox_designer.data import (
     get_new_hotbox, get_valid_name, copy_hotbox_data, load_templates,
     ensure_old_data_compatible)
-from hotbox_designer.widgets import TouchEdit, BoolCombo
+from hotbox_designer.widgets import HotkeyEdit
 
 
 def warning(title, message, parent=None):
@@ -171,23 +171,21 @@ class HotkeySetter(QtWidgets.QDialog):
     def __init__(self, modes, parent=None):
         super(HotkeySetter, self).__init__(parent)
         self.setWindowTitle("Set hotkey")
-        self.ctrl = BoolCombo(False)
-        self.alt = BoolCombo(False)
-        self.shift = BoolCombo(False)
-        self.touch = TouchEdit()
+        # une seule zone de capture : on tape la combinaison (ex. Maj+Q)
+        # et elle s'affiche « Shift+q » — fini les cases Ctrl/Alt/Shift
+        self.hotkey = HotkeyEdit()
+        self.hotkey.keySet.connect(self._update_ok_enabled)
         self.hotkeytype = QtWidgets.QComboBox()
         self.hotkeytype.addItems(modes)
 
         self.options_layout = QtWidgets.QFormLayout()
         self.options_layout.setContentsMargins(0, 0, 0, 0)
         self.options_layout.setVerticalSpacing(0)
-        self.options_layout.addRow("Ctrl", self.ctrl)
-        self.options_layout.addRow("Alt", self.alt)
-        self.options_layout.addRow("Shift", self.shift)
-        self.options_layout.addRow("Touch", self.touch)
+        self.options_layout.addRow("Shortcut", self.hotkey)
         self.options_layout.addRow("Hotkey event", self.hotkeytype)
 
         self.ok = QtWidgets.QPushButton("ok")
+        self.ok.setEnabled(False)
         self.ok.released.connect(self.accept)
         self.cancel = QtWidgets.QPushButton("cancel")
         self.cancel.released.connect(self.reject)
@@ -202,16 +200,11 @@ class HotkeySetter(QtWidgets.QDialog):
         self.layout.addLayout(self.options_layout)
         self.layout.addLayout(self.button_layout)
 
+    def _update_ok_enabled(self, sequence):
+        self.ok.setEnabled(bool(sequence))
+
     def get_key_sequence(self):
-        sequence = ''
-        if self.ctrl.state() is True:
-            sequence += "Ctrl+"
-        if self.alt.state() is True:
-            sequence += "Alt+"
-        if self.shift.state() is True:
-            sequence += "Shift+"
-        sequence += self.touch.text()
-        return sequence
+        return self.hotkey.sequence()
 
     def mode(self):
         return self.hotkeytype.currentText()
