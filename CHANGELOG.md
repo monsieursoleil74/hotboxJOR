@@ -4,6 +4,15 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Librairie studio partagée
+
+- Deuxième niveau de librairie **studio, en lecture seule**, désigné
+  par la variable d'environnement `HOTBOX_STUDIO_LIBRARY` (fichier .json
+  ou dossier ; défaut `C:\Users\ortzj\Desktop\JOR\hotbox`). Ses
+  catégories apparaissent en tête de la shelf préfixées ★, non
+  modifiables (pas de suppression, pas d'écriture) ; les boutons se
+  glissent-déposent normalement. La perso reste locale et modifiable.
+
 ## 2026-07 — Placement libre de l'image dans un bouton
 
 - Nouvelles options `image.offsetx/offsety` (défaut 0) : l'image n'est

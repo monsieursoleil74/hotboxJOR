@@ -830,6 +830,46 @@ def test_rounded_rect():
     print('coins arrondis (rendu + défauts) OK')
 
 
+def test_studio_library():
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import (
+        LibraryShelf, STUDIO_PREFIX, STUDIO_ENV_VARIABLE, load_library)
+
+    def entry(name, category):
+        return {'name': name, 'category': category,
+                'options': dict(SQUARE_BUTTON, **{'text.content': name})}
+
+    studio_dir = tempfile.mkdtemp()
+    json.dump(
+        [entry('IK/FK', 'Rig'), entry('Playblast', 'Anim')],
+        open(os.path.join(studio_dir, 'button_library.json'), 'w'))
+    os.environ[STUDIO_ENV_VARIABLE] = studio_dir
+    try:
+        perso = tempfile.mkdtemp()
+        application = Standalone()
+        application.get_data_folder = lambda: perso
+        shelf = LibraryShelf(application)
+        shelf.add_entries([entry('MyTool', 'Perso')])
+
+        names = [shelf.tabs.tabText(i) for i in range(shelf.tabs.count())]
+        # onglets studio (★) en tête, puis perso
+        assert names[0].startswith(STUDIO_PREFIX), names
+        assert any(
+            'Perso' in n and not n.startswith(STUDIO_PREFIX) for n in names)
+        # onglet studio en lecture seule, non supprimable via _tab_menu
+        assert shelf.tabs.widget(0).readonly is True
+        # sauvegarde depuis un onglet studio retombe sur une cat. perso
+        shelf.tabs.setCurrentIndex(0)
+        assert not shelf.current_category().startswith(STUDIO_PREFIX)
+        # le studio n'est jamais écrit dans la perso
+        assert all(e['name'] != 'IK/FK' for e in load_library(shelf.path))
+        shelf.close()
+    finally:
+        del os.environ[STUDIO_ENV_VARIABLE]
+    print('librairie studio partagée (onglets ★, lecture seule) OK')
+
+
 def test_thumbnail_cache_and_dedup():
     import tempfile
     from hotbox_designer import buttonlibrary
@@ -1146,5 +1186,6 @@ if __name__ == '__main__':
     test_inline_text_and_autosave()
     test_image_placement()
     test_rounded_rect()
+    test_studio_library()
     test_thumbnail_cache_and_dedup()
     print('TOUT EST VERT')

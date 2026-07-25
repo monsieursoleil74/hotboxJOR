@@ -164,9 +164,32 @@ affiché avec son vrai rendu en vignette.
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 
-Stockage : `button_library.json` dans le dossier de données
-(préférences Maya ; `~/.hotboxjor` en standalone). **Partage** : copier
-ce fichier à un collègue lui donne la librairie.
+### Où c'est stocké
+
+- **Perso** (modifiable) : `button_library.json` dans le dossier de
+  données — préférences Maya (`Documents\maya\<version>\prefs\`), ou
+  `~/.hotboxjor` en standalone.
+- **Studio** (partagée, lecture seule) : un fichier commun sur le
+  réseau, désigné par la variable d'environnement
+  **`HOTBOX_STUDIO_LIBRARY`** (un `.json`, ou un dossier contenant
+  `button_library.json`). À défaut de variable, l'outil regarde
+  `C:\Users\ortzj\Desktop\JOR\hotbox`. Les catégories studio
+  apparaissent en tête de la shelf **préfixées ★** et ne sont pas
+  modifiables (seul le lead maintient ce fichier) ; leurs boutons se
+  glissent-déposent normalement dans une hotbox.
+
+### Organiser la librairie studio
+
+1. Le lead construit une hotbox, sélectionne les boutons officiels
+   (IK/FK, sélections, playblast…) et les enregistre dans SA librairie
+   perso avec des catégories claires.
+2. Il copie son `button_library.json` dans le dossier partagé
+   (`C:\Users\ortzj\Desktop\JOR\hotbox\button_library.json`).
+3. Chaque animateur voit automatiquement les onglets ★ studio (lecture
+   seule) + ses propres onglets perso. Pour pointer un autre chemin :
+   définir `HOTBOX_STUDIO_LIBRARY` (variable d'environnement Windows,
+   ou dans le `userSetup.py` commun :
+   `os.environ['HOTBOX_STUDIO_LIBRARY'] = r"P:\pipeline\hotbox"`).
 
 ## Import de pickers dwpicker
 
