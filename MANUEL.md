@@ -93,7 +93,7 @@ sélection, main quand Espace est enfoncé.
   (~6 px écran), guides cyan en pointillés. Si la grille est active,
   elle garde la priorité.
 
-### Alignement / distribution / disposition radiale
+### Alignement / distribution
 
 Boutons en fin de barre d'outils (à partir de 2 shapes sélectionnées,
 3 pour la distribution) :

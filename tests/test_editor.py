@@ -23,7 +23,6 @@ APP = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 from hotbox_designer.applications import Standalone
 from hotbox_designer.data import ensure_old_data_compatible
 from hotbox_designer.designer.application import HotboxEditor
-from hotbox_designer.manager import HotboxManager
 from hotbox_designer.reader import HotboxReader
 from hotbox_designer.templates import SQUARE_BUTTON, HOTBOX
 import hotbox_designer.designer.editarea as editarea_mod
@@ -466,9 +465,8 @@ def test_search_replace():
 
 def test_button_library():
     import tempfile
-    from hotbox_designer import buttonlibrary
     from hotbox_designer.buttonlibrary import (
-        load_library, save_library, LibraryShelf, BUTTONS_MIME)
+        load_library, LibraryShelf, BUTTONS_MIME)
 
     editor = make_editor([(100, 100, 'ikfk_switch')])
     area = editor.shape_editor
@@ -518,7 +516,6 @@ def test_button_library():
     assert shelf.delete_category('Rig') is False
     assert shelf.delete_category('FX') is True
     assert 'FX' not in shelf.categories()
-    window = shelf  # compat suite du test
 
     # drop simulé dans l'éditeur : mime JSON -> nouvelle shape sélectionnée
     class FakeMime:
@@ -853,7 +850,6 @@ def test_color_picker():
 
 def test_studio_library():
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
     from hotbox_designer.buttonlibrary import (
         LibraryShelf, STUDIO_ENV_VARIABLE, load_library)
 
@@ -911,7 +907,6 @@ def test_studio_library():
 
 def test_thumbnail_cache_and_dedup():
     import tempfile
-    from hotbox_designer import buttonlibrary
     from hotbox_designer.buttonlibrary import (
         hotbox_thumbnail, button_thumbnail, LibraryShelf, _THUMB_CACHE)
 

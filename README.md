@@ -88,12 +88,23 @@ vieillissant par une expérience façon dwpicker :
   préférences), puis glisse-dépose-le dans n'importe quelle hotbox.
   Partageable entre artistes en copiant le fichier.
 
+Et depuis : **librairie studio partagée** (onglets logo TAT en tête de
+shelf, catégories officielles), **sous-menus fluides** (un bouton ouvre
+une autre hotbox sans code), **gestionnaire de raccourcis** (voir /
+assigner / effacer, capture directe de la combinaison), **replace
+depuis la librairie** (habiller un template sans replacer), **pipette**
+dans le sélecteur de couleurs, **templates avec aperçu** + templates
+utilisateur + 7 templates maison, mode « placer l'image » complet
+(drag, molette, flèches)… Le détail complet est dans
+[`CHANGELOG.md`](CHANGELOG.md), et le mode d'emploi dans
+[`MANUEL.md`](MANUEL.md).
+
 ## Point de départ
 
 Le premier commit de ce dépôt est une copie verbatim du dépôt amont
-(`hotbox_designer/` + `LICENSE` + `README.upstream.md` + `TODO.upstream` +
-`documentation/`). Tout ce qui suit dans l'historique git est propre à ce
-fork.
+(`hotbox_designer/` + `LICENSE` + `README.upstream.md` +
+`documentation/`). Tout ce qui suit dans l'historique git est propre à
+ce fork.
 
 ## Installation dans Maya
 
@@ -146,9 +157,27 @@ Le JSON n'est pas réécrit : seul l'affichage résout le chemin.
 - Les hotboxes vivent dans `hotboxes.json` dans les **préférences
   Maya** (`Documents\maya\<version>\prefs\`), comme l'original : les
   hotboxes créées avec l'ancien outil apparaissent telles quelles.
-- Bouton « Set hotkey » du manager : Maya refuse de modifier le set de
-  raccourcis verrouillé `Maya_Default` — créer d'abord un set perso
-  dans le Hotkey Editor.
+- Bouton **touche** (⌨) du manager : le **gestionnaire de raccourcis**
+  liste toutes les hotboxes avec leur touche — Set/Change pour capturer
+  une combinaison (on la tape, elle s'affiche), Clear pour la retirer.
+  Maya refuse de modifier le set de raccourcis verrouillé
+  `Maya_Default` — créer d'abord un set perso dans le Hotkey Editor.
+
+### Librairie studio (équipe)
+
+Pour partager les boutons officiels avec l'équipe, chaque poste pointe
+la même librairie via une variable d'environnement (ou le
+`userSetup.py` commun) :
+
+```python
+import os
+os.environ['HOTBOX_STUDIO_LIBRARY'] = r"\\serveur\pipeline\hotbox"
+```
+
+Le dossier contient `button_library.json` (+ un `studio_logo.png`
+optionnel pour l'icône des onglets). Les catégories studio apparaissent
+en tête de la shelf de l'éditeur ; voir `MANUEL.md` § « Librairie de
+boutons » pour le fonctionnement complet.
 
 ### Chargement auto au démarrage (optionnel)
 

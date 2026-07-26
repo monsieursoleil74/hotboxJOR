@@ -4,6 +4,21 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Grand nettoyage avant diffusion au studio
+
+- **Code mort retiré** : `TouchEdit` (remplacé par `HotkeyEdit`),
+  `move_up/move_down_array_elements` (boutons d'ordre pas-à-pas
+  supprimés plus tôt).
+- **Tests** : imports et variables inutiles purgés (pyflakes propre sur
+  tout le dépôt hors vendor).
+- **`TODO.upstream` supprimé** (liste de tâches du projet amont,
+  obsolète pour ce fork).
+- **README remis à niveau** : gestionnaire de raccourcis (au lieu de
+  l'ancien « Set hotkey »), récap des nouveautés récentes, nouvelle
+  section « Librairie studio (équipe) » avec la config
+  `HOTBOX_STUDIO_LIBRARY` pour les postes des animateurs.
+- MANUEL : titre « disposition radiale » corrigé (fonction retirée).
+
 ## 2026-07 — Placer l'image : flèches du clavier
 
 - En mode « Place in button », les **flèches** décalent l'image dans le

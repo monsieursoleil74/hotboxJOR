@@ -126,12 +126,6 @@ class Title(QtWidgets.QLabel):
         self.setText(title.upper())
 
 
-class TouchEdit(QtWidgets.QLineEdit):
-    def keyPressEvent(self, event):
-        self.setText(QtGui.QKeySequence(event.key()).toString().lower())
-        self.textEdited.emit(self.text())
-
-
 class HotkeyEdit(QtWidgets.QLineEdit):
     """Capture d'un raccourci complet : on tape la combinaison (ex.
     Maj+Q) et elle s'affiche telle quelle (« Shift+q »). Plus besoin de
