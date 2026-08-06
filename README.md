@@ -166,6 +166,57 @@ qui les enregistre au passage.
 shim Qt.py embarqué). L'original tournait aussi sur des Maya plus
 anciens — vérifier le parc avant bascule.
 
+### Tester le fork AVANT le déploiement (sans toucher l'installation)
+
+Le fork peut être essayé **par-dessus** l'installation studio, dans sa
+session Maya seulement — redémarrer Maya ramène à l'original, rien
+n'est modifié sur le poste ni sur le réseau.
+
+1. **Sauvegarder ses données** (une fois, par prudence — l'outil ne
+   réécrit jamais les fichiers à l'ouverture, mais on va éditer) :
+
+   ```python
+   import os, shutil
+   from maya import cmds
+   prefs = cmds.internalVar(userPrefDir=True)
+   for f in ('hotboxes.json', 'button_library.json',
+             'hotbox_hotkey.json'):
+       src = os.path.join(prefs, f)
+       if os.path.exists(src):
+           shutil.copy(src, src + '.backup')
+   ```
+
+2. **Charger le fork en priorité** (Script Editor, onglet Python).
+   L'original étant souvent déjà chargé par le `userSetup.py`, on purge
+   d'abord ses modules :
+
+   ```python
+   import sys
+   # 1) purger l'original déjà importé dans la session
+   for name in list(sys.modules):
+       if name == 'hotbox_designer' or name.startswith(
+               'hotbox_designer.'):
+           del sys.modules[name]
+   # 2) le fork passe DEVANT sur le sys.path (session seulement)
+   sys.path.insert(0, r"D:\test\hotboxJOR")
+   # 3) config studio locale pour l'essai + lancement admin
+   import os
+   os.environ['HOTBOX_STUDIO_LIBRARY'] = (
+       r"C:\Users\ortzj\Desktop\JOR\hotbox")
+   import hotbox_designer
+   hotbox_designer.launch_manager('maya', studio_admin=True)
+   ```
+
+   Bonus : une fois les modules purgés et le fork en tête de path, même
+   les **hotkeys existants** (posés par l'ancien outil) exécutent le
+   fork à la prochaine pression — on teste donc aussi la chaîne
+   nameCommand → fork en conditions réelles.
+
+3. **Revenir en arrière** : fermer Maya, le rouvrir. L'installation
+   déployée reprend la main (le `sys.path.insert` et la purge ne
+   vivaient que dans la session). Les `.backup` restent disponibles au
+   besoin.
+
 ### Images des boutons (chemins portables)
 
 Les hotboxes stockent des chemins absolus : dans l'original, déplacer

@@ -4,6 +4,13 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Doc : tester le fork avant déploiement
+
+- README : procédure d'essai **par-dessus** l'installation studio, dans
+  la session Maya seulement — sauvegarde des données, purge des modules
+  de l'original déjà chargés, `sys.path.insert` du fork, lancement
+  admin ; redémarrer Maya = retour à l'original, rien n'est modifié.
+
 ## 2026-07 — Doc : migration depuis l'original déjà déployé
 
 - README : nouvelle section « Migration depuis le hotbox_designer
