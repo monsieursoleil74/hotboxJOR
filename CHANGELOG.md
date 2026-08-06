@@ -4,6 +4,14 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Doc : migration depuis l'original déjà déployé
+
+- README : nouvelle section « Migration depuis le hotbox_designer
+  original » — remplacement de dossier (même nom de package, même API),
+  hotboxes et hotkeys existants conservés, nuance sur le registre des
+  raccourcis (les anciens hotkeys s'affichent « — » jusqu'à
+  réassignation), prérequis Maya 2022+.
+
 ## 2026-07 — Deux modes de lancement : animateur / admin studio
 
 - Le rôle se choisit **au lancement** :

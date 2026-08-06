@@ -135,6 +135,37 @@ import hotbox_designer
 hotbox_designer.launch_manager('maya')
 ```
 
+## Migration depuis le hotbox_designer original (déjà déployé)
+
+Si le studio utilise déjà le hotbox_designer de Lionel Brouyère, la
+mise à niveau est un **remplacement de dossier** — le fork garde le
+même nom de package (`hotbox_designer`) et la même API publique
+(`launch_manager` / `initialize` / `show` / `hide` / `switch`) :
+
+- **Remplacer** l'ancien dossier `hotbox_designer` par celui du fork,
+  au même endroit (scripts Maya ou chemin pipeline). Ne PAS faire
+  coexister les deux : un seul `hotbox_designer` sur le `sys.path`.
+- **Les hotboxes existantes marchent telles quelles** : même
+  `hotboxes.json` dans les préférences Maya, jamais réécrit à
+  l'ouverture (les vieux formats sont convertis à la volée en
+  mémoire). Les hotboxes partagées (`shared_hotboxes.json`) aussi.
+- **Les hotkeys déjà posés continuent de fonctionner** : les
+  nameCommands enregistrés dans Maya par l'ancien outil appellent
+  `hotbox_designer.show('nom')` — exactement ce que le fork expose.
+  Rien à refaire côté animateurs.
+- Le `userSetup.py` existant (chargement auto via
+  `initialize(Maya())`) reste valable sans modification.
+
+Seule nuance : le **gestionnaire de raccourcis** du fork tient un
+registre (`hotbox_hotkey.json`) que l'ancien outil n'avait pas — les
+hotkeys posés AVANT la migration fonctionnent mais s'affichent « — »
+dans la liste tant qu'on ne les a pas réassignés une fois (Set…), ce
+qui les enregistre au passage.
+
+**Prérequis** : Maya 2022+ (Python 3 ; PySide2 et PySide6 gérés via le
+shim Qt.py embarqué). L'original tournait aussi sur des Maya plus
+anciens — vérifier le parc avant bascule.
+
 ### Images des boutons (chemins portables)
 
 Les hotboxes stockent des chemins absolus : dans l'original, déplacer
