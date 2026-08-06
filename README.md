@@ -153,8 +153,33 @@ même nom de package (`hotbox_designer`) et la même API publique
   nameCommands enregistrés dans Maya par l'ancien outil appellent
   `hotbox_designer.show('nom')` — exactement ce que le fork expose.
   Rien à refaire côté animateurs.
-- Le `userSetup.py` existant (chargement auto via
-  `initialize(Maya())`) reste valable sans modification.
+- Si un `userSetup.py` charge l'outil au démarrage
+  (`initialize(Maya())`), il reste valable sans modification.
+
+**Cas courant : l'outil est lancé par un bouton de la shelf** (pas de
+userSetup). Deux options de bascule :
+
+- **Option A — remplacement sur place** : remplacer le contenu du
+  dossier `hotbox_designer` à l'endroit que le bouton de shelf référence
+  déjà. Aucun bouton à modifier, bascule invisible.
+- **Option B — nouveau chemin** : déposer le fork ailleurs et mettre à
+  jour le script du bouton de shelf. Bouton recommandé (il porte AUSSI
+  la config de la librairie studio — pas besoin de variable
+  d'environnement système ni de userSetup) :
+
+  ```python
+  # bouton shelf ANIMATEUR
+  import os, sys
+  path = r"\\serveur\pipeline\hotboxJOR"
+  if path not in sys.path:
+      sys.path.insert(0, path)
+  os.environ['HOTBOX_STUDIO_LIBRARY'] = r"\\serveur\pipeline\hotbox"
+  import hotbox_designer
+  hotbox_designer.launch_manager('maya')
+  ```
+
+  Le bouton du lead est identique avec
+  `launch_manager('maya', studio_admin=True)`.
 
 Seule nuance : le **gestionnaire de raccourcis** du fork tient un
 registre (`hotbox_hotkey.json`) que l'ancien outil n'avait pas — les
@@ -187,8 +212,9 @@ n'est modifié sur le poste ni sur le réseau.
    ```
 
 2. **Charger le fork en priorité** (Script Editor, onglet Python).
-   L'original étant souvent déjà chargé par le `userSetup.py`, on purge
-   d'abord ses modules :
+   La purge des modules n'est nécessaire que si l'original a déjà été
+   lancé dans la session (bouton de shelf cliqué, userSetup…) — elle
+   est de toute façon inoffensive, autant la garder :
 
    ```python
    import sys
