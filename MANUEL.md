@@ -20,6 +20,11 @@ Les hotboxes vivent dans `hotboxes.json` dans les préférences Maya
 (`Documents\maya\<version>\prefs\`) — compatibles avec l'original
 hotbox_designer, jamais altérées par une simple ouverture.
 
+Le manager se lance en **deux modes** : animateur (par défaut — la
+librairie studio est une référence en lecture seule) ou **admin studio**
+(`launch_manager('maya', studio_admin=True)` — la librairie officielle
+est éditable). Détail : § « Deux modes de lancement ».
+
 ---
 
 ## L'éditeur — navigation (viewport)
@@ -243,27 +248,28 @@ lecture seule au niveau des droits Windows pour les animateurs.
   peut aussi pointer un fichier précis via la variable
   `HOTBOX_STUDIO_LOGO`. Sans rien, un logo par défaut est utilisé.
 
-### Publier vers la librairie studio (export)
+### Publier vers la librairie studio (mode admin)
 
-Le plus simple : **clic droit sur un ou plusieurs boutons de la
-shelf → « Send to studio library »**. Les boutons sont copiés dans la
-librairie studio (dédupliqués), et les onglets se rafraîchissent — pas
-de fichier à copier à la main. (L'action n'est disponible que si un
-emplacement studio est configuré et accessible en écriture.)
+En **mode admin** : clic droit sur un ou plusieurs boutons de la
+shelf → **« Send to studio library »**, ou directement 💾 avec la
+destination **Studio (TAT)**. Les boutons sont copiés dans la librairie
+studio (dédupliqués) et les onglets se rafraîchissent — pas de fichier
+à copier à la main. En mode animateur, ces actions n'existent pas.
 
 Alternative manuelle : copier son `button_library.json` dans le dossier
 studio.
 
-### Organiser la librairie studio
+### Mettre en place la librairie studio (workflow lead)
 
-1. Le lead construit ses boutons officiels (IK/FK, sélections,
-   playblast…) dans sa librairie perso, catégories claires.
-2. Il les publie : clic droit → « Send to studio library » (ou copie
-   manuelle du `button_library.json` dans le dossier studio).
+1. Lancer le manager en **mode admin**
+   (`launch_manager('maya', studio_admin=True)`).
+2. Créer les catégories officielles (clic droit sur un onglet studio →
+   *New studio category…*) et y ranger les boutons (💾 destination
+   Studio, ou *Send to studio library* depuis la perso).
 3. Chaque animateur voit automatiquement les onglets studio (logo TAT)
-   + ses propres onglets perso. Pour pointer un autre
-   chemin : définir `HOTBOX_STUDIO_LIBRARY` (variable d'environnement
-   Windows, ou dans le `userSetup.py` commun :
+   + ses propres onglets perso. Pour pointer un autre chemin :
+   définir `HOTBOX_STUDIO_LIBRARY` (variable d'environnement Windows,
+   ou dans le `userSetup.py` commun :
    `os.environ['HOTBOX_STUDIO_LIBRARY'] = r"P:\pipeline\hotbox"`).
 
 ## Import de pickers dwpicker
@@ -450,14 +456,19 @@ s'ouvre pour le changer.
   sélectionnée.
 - **Fichiers clés** : `designer/editarea.py` (viewport + interactions),
   `designer/application.py` (fenêtre d'édition, actions),
-  `designer/menu.py` (barre d'outils), `interactive.py` (Shape,
-  manipulateur), `painting.py` (rendu), `geometry.py` (maths),
-  `buttonlibrary.py` (librairie), `images.py` (chemins portables),
-  `theme.py` (thème sombre), `manager.py`, `reader.py`,
-  `applications.py` (backends Maya/standalone…).
+  `designer/attributes.py` (panneau de droite), `designer/menu.py`
+  (barre d'outils), `interactive.py` (Shape, manipulateur),
+  `painting.py` (rendu), `geometry.py` (maths), `buttonlibrary.py`
+  (librairies perso/studio, mode admin, vignettes), `colorpicker.py`
+  (sélecteur de couleurs + pipette), `dialog.py` (dialogues : création,
+  raccourcis…), `data.py` (JSON, templates), `widgets.py` (champs
+  réutilisables), `images.py` (chemins portables), `theme.py` (thème
+  sombre), `manager.py`, `reader.py`, `applications.py` (backends
+  Maya/standalone… + registre des raccourcis).
 
 ## Tests
 
-`QT_QPA_PLATFORM=offscreen python tests/test_editor.py` — 14 familles
-de tests headless (interactions souris simulées pas à pas, format JSON,
-reader, librairie…). Toute nouvelle fonctionnalité ajoute les siens.
+`QT_QPA_PLATFORM=offscreen python tests/test_editor.py` — une
+quarantaine de tests headless (interactions souris simulées pas à pas,
+format JSON, reader, librairies, raccourcis, templates…). Toute
+nouvelle fonctionnalité ajoute les siens.
