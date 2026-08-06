@@ -176,8 +176,24 @@ os.environ['HOTBOX_STUDIO_LIBRARY'] = r"\\serveur\pipeline\hotbox"
 
 Le dossier contient `button_library.json` (+ un `studio_logo.png`
 optionnel pour l'icône des onglets). Les catégories studio apparaissent
-en tête de la shelf de l'éditeur ; voir `MANUEL.md` § « Librairie de
-boutons » pour le fonctionnement complet.
+en tête de la shelf de l'éditeur.
+
+Le rôle se choisit **au lancement** — deux boutons de shelf possibles :
+
+```python
+# animateur : librairie studio en RÉFÉRENCE (lecture seule),
+# librairie perso libre
+import hotbox_designer
+hotbox_designer.launch_manager('maya')
+
+# lead : mode ADMIN — librairie officielle éditable (catégories,
+# envoi/renommage/rangement de boutons), badge « ★ STUDIO ADMIN »
+import hotbox_designer
+hotbox_designer.launch_manager('maya', studio_admin=True)
+```
+
+Voir `MANUEL.md` § « Librairie de boutons » pour le fonctionnement
+complet.
 
 ### Chargement auto au démarrage (optionnel)
 

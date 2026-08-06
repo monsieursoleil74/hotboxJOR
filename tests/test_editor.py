@@ -1567,6 +1567,44 @@ def test_library_rename_and_save_studio():
     print('rename bouton de shelf + save direct studio OK')
 
 
+def test_studio_admin_mode():
+    """Mode admin choisi au lancement : en mode normal la librairie
+    studio est en lecture seule (pas de badge, pas d'édition) ; en mode
+    admin tout s'ouvre (badge visible, onglets studio éditables)."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import LibraryShelf
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+
+    try:
+        # mode normal (animateur)
+        bl.set_studio_admin(False)
+        assert bl.is_studio_admin() is False
+        shelf = LibraryShelf(application)
+        shelf.show()
+        APP.processEvents()
+        assert shelf.admin_badge.isVisible() is False
+        assert shelf._can_edit(readonly=False) is True   # perso : oui
+        assert shelf._can_edit(readonly=True) is False   # studio : non
+        shelf.close()
+
+        # mode admin (lead)
+        bl.set_studio_admin(True)
+        assert bl.is_studio_admin() is True
+        shelf = LibraryShelf(application)
+        shelf.show()
+        APP.processEvents()
+        assert shelf.admin_badge.isVisible() is True
+        assert shelf._can_edit(readonly=True) is True
+        shelf.close()
+    finally:
+        bl.set_studio_admin(False)  # ne pas polluer les autres tests
+    print('mode admin studio (au lancement) OK')
+
+
 def test_hotkey_registry():
     """Registre des raccourcis : on peut noter, relire, mettre à jour et
     RETIRER un raccourci — ce que l'ancien Maya ne permettait pas (pose
@@ -1725,6 +1763,7 @@ if __name__ == '__main__':
     test_user_templates()
     test_new_builtin_templates()
     test_color_picker_pipette()
+    test_studio_admin_mode()
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()

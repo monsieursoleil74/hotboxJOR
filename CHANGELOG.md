@@ -4,6 +4,21 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-07 — Deux modes de lancement : animateur / admin studio
+
+- Le rôle se choisit **au lancement** :
+  `launch_manager('maya')` = animateur (librairie studio en référence,
+  lecture seule, librairie perso libre) ;
+  `launch_manager('maya', studio_admin=True)` = lead (librairie
+  officielle éditable : catégories, envoi/renommage/rangement).
+- En mode admin : badge « ★ STUDIO ADMIN » dans la shelf et titre de
+  fenêtre du manager marqué — on sait qu'on édite l'officiel.
+- En mode animateur : plus de « New studio category », « Send to studio
+  library », Rename/Move sur les onglets studio, ni de destination
+  « Studio » à la sauvegarde.
+- `set_studio_admin()` / `is_studio_admin()` (drapeau de session) +
+  garde `_can_edit()` sur les menus de la shelf.
+
 ## 2026-07 — Grand nettoyage avant diffusion au studio
 
 - **Code mort retiré** : `TouchEdit` (remplacé par `HotkeyEdit`),

@@ -44,6 +44,23 @@ DEFAULT_STUDIO_DIR = r'C:\Users\ortzj\Desktop\JOR\hotbox'
 STUDIO_PREFIX = '\u2605 '  # « ★ » : repli si aucun logo trouvé
 STUDIO_LOGO_NAMES = ('studio_logo.png', 'logo.png')
 
+# mode « admin studio » : choisi AU LANCEMENT —
+# launch_manager('maya', studio_admin=True) pour le lead, lancement
+# normal pour les animateurs. Seul l'admin peut modifier la librairie
+# officielle (catégories, envoi/renommage/rangement de boutons) ; en
+# mode normal elle est une référence en lecture seule, chacun gardant
+# sa librairie perso modifiable.
+_STUDIO_ADMIN = False
+
+
+def set_studio_admin(enabled):
+    global _STUDIO_ADMIN
+    _STUDIO_ADMIN = bool(enabled)
+
+
+def is_studio_admin():
+    return _STUDIO_ADMIN
+
 
 def library_path(application):
     return os.path.join(application.get_data_folder(), LIBRARY_FILENAME)
@@ -471,8 +488,23 @@ class LibraryShelf(QtWidgets.QWidget):
         self.add_button.setText('＋')
         self.add_button.setToolTip('Create a category')
         self.add_button.released.connect(self._prompt_category)
-        self.tabs.setCornerWidget(
-            self.add_button, QtCore.Qt.TopRightCorner)
+        # badge visible seulement quand le manager est lancé en mode
+        # admin studio : on sait d'un coup d'œil qu'on édite l'officiel
+        self.admin_badge = QtWidgets.QLabel(' ★ STUDIO ADMIN ')
+        self.admin_badge.setToolTip(
+            'Studio admin mode — you are editing the OFFICIAL library')
+        from hotbox_designer.theme import ACCENT
+        self.admin_badge.setStyleSheet(
+            'QLabel {color: white; background: %s; border-radius: 3px;'
+            'font-weight: bold; font-size: 10px; padding: 1px 4px;}' % ACCENT)
+        self.admin_badge.setVisible(is_studio_admin())
+        corner = QtWidgets.QWidget()
+        corner_layout = QtWidgets.QHBoxLayout(corner)
+        corner_layout.setContentsMargins(0, 0, 4, 0)
+        corner_layout.setSpacing(6)
+        corner_layout.addWidget(self.admin_badge)
+        corner_layout.addWidget(self.add_button)
+        self.tabs.setCornerWidget(corner, QtCore.Qt.TopRightCorner)
         tab_bar = self.tabs.tabBar()
         tab_bar.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         tab_bar.customContextMenuRequested.connect(self._tab_menu)
@@ -561,7 +593,10 @@ class LibraryShelf(QtWidgets.QWidget):
                 shelf_list.setToolTip(
                     'Empty category — select shapes and use the save '
                     'button of the toolbar to fill it')
-        suffix = ' (studio)' if readonly else ''
+        suffix = ''
+        if readonly:
+            suffix = (' (studio, admin)' if is_studio_admin()
+                      else ' (studio, read-only)')
         for entry in sorted(entries, key=lambda e: e.get('name') or ''):
             item = QtWidgets.QListWidgetItem(entry.get('name') or 'button')
             item.setIcon(button_thumbnail(
@@ -574,7 +609,9 @@ class LibraryShelf(QtWidgets.QWidget):
         # onglet studio : logo du studio en icône (repli ★ si pas de logo)
         if readonly and not self.studio_icon.isNull():
             index = self.tabs.addTab(shelf_list, self.studio_icon, category)
-            self.tabs.setTabToolTip(index, 'Studio library')
+            self.tabs.setTabToolTip(
+                index, 'Studio library — admin mode (editable)'
+                if is_studio_admin() else 'Studio library (read-only)')
         elif readonly:
             index = self.tabs.addTab(shelf_list, STUDIO_PREFIX + category)
         else:
@@ -669,6 +706,13 @@ class LibraryShelf(QtWidgets.QWidget):
         """Fichier de librairie à modifier selon l'onglet (studio/perso)."""
         return studio_write_path() if readonly else self.path
 
+    def _can_edit(self, readonly):
+        """Les onglets perso sont toujours modifiables ; les onglets
+        studio uniquement quand le manager a été lancé en mode admin.
+        C'est ce qui garde la librairie officielle intouchable pour les
+        animateurs."""
+        return (not readonly) or is_studio_admin()
+
     def _tab_menu(self, position):
         tab_bar = self.tabs.tabBar()
         index = tab_bar.tabAt(position)
@@ -680,24 +724,25 @@ class LibraryShelf(QtWidgets.QWidget):
         target = self._category_target(readonly)
         menu = QtWidgets.QMenu(self)
 
-        new_label = ('New studio category…' if readonly
-                     else 'New category…')
-        new = menu.addAction(
-            new_label, lambda: self._prompt_category(readonly))
-        new.setEnabled(target is not None)
+        if self._can_edit(readonly):
+            new_label = ('New studio category…' if readonly
+                         else 'New category…')
+            new = menu.addAction(
+                new_label, lambda: self._prompt_category(readonly))
+            new.setEnabled(target is not None)
 
-        rename = menu.addAction(
-            'Rename category…', lambda: self._prompt_rename(target, name))
-        rename.setEnabled(target is not None)
+            rename = menu.addAction(
+                'Rename category…', lambda: self._prompt_rename(target, name))
+            rename.setEnabled(target is not None)
 
-        delete = menu.addAction(
-            'Delete category "%s"' % name,
-            lambda: self._delete_category(target, name))
-        empty = widget is not None and widget.count() == 0
-        delete.setEnabled(target is not None and empty)
-        if not empty:
-            delete.setToolTip('Only empty categories can be deleted')
-        menu.addSeparator()
+            delete = menu.addAction(
+                'Delete category "%s"' % name,
+                lambda: self._delete_category(target, name))
+            empty = widget is not None and widget.count() == 0
+            delete.setEnabled(target is not None and empty)
+            if not empty:
+                delete.setToolTip('Only empty categories can be deleted')
+            menu.addSeparator()
 
         menu.addAction(
             'Open library folder',
@@ -734,16 +779,14 @@ class LibraryShelf(QtWidgets.QWidget):
     def _menu(self, shelf_list, position):
         menu = QtWidgets.QMenu(self)
         entries = shelf_list.selected_entries()
-        if entries:
+        # renommer / ranger : perso toujours, studio seulement en admin
+        if entries and self._can_edit(shelf_list.readonly):
             target = self._category_target(shelf_list.readonly)
-            # renommer un bouton déjà rangé (une seule sélection)
             if len(entries) == 1:
                 rename = menu.addAction(
                     'Rename…',
                     lambda: self._prompt_rename_entry(target, entries[0]))
                 rename.setEnabled(target is not None)
-            # ranger les boutons dans une autre catégorie : perso ET studio
-            # (déplacement = organiser, ça ne touche pas le bouton lui-même)
             move = menu.addAction(
                 'Move to category…',
                 lambda: self._prompt_move(target, entries))
@@ -752,14 +795,15 @@ class LibraryShelf(QtWidgets.QWidget):
         # actions sur les boutons perso sélectionnés
         if entries and not shelf_list.readonly:
             count = len(entries)
-            send_label = (
-                'Send "%s" to studio library' % entries[0]['name']
-                if count == 1
-                else 'Send %d buttons to studio library' % count)
-            send = menu.addAction(
-                self.studio_icon, send_label,
-                lambda: self._send_to_studio(entries))
-            send.setEnabled(studio_write_path() is not None)
+            # publier vers la librairie officielle : admin seulement
+            if is_studio_admin() and studio_write_path() is not None:
+                send_label = (
+                    'Send "%s" to studio library' % entries[0]['name']
+                    if count == 1
+                    else 'Send %d buttons to studio library' % count)
+                menu.addAction(
+                    self.studio_icon, send_label,
+                    lambda: self._send_to_studio(entries))
             del_label = ('Delete "%s"' % entries[0]['name']
                          if count == 1 else 'Delete %d buttons' % count)
             menu.addAction(del_label, lambda: self._delete(entries))

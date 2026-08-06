@@ -217,13 +217,16 @@ class HotboxEditor(QtWidgets.QWidget):
         """Range les boutons sélectionnés dans la shelf (nom +
         catégorie), pour les glisser-déposer dans d'autres hotboxes."""
         from hotbox_designer.buttonlibrary import (
-            SaveToLibraryDialog, studio_write_path)
+            SaveToLibraryDialog, studio_write_path, is_studio_admin)
         from hotbox_designer.dialog import warning
         shapes = list(self.shape_editor.selection)
         if not shapes:
             return warning('Button library', 'No shape selected')
         default = shapes[0].options.get('text.content') or 'button'
-        studio_available = studio_write_path() is not None
+        # la destination « Studio » n'est proposée qu'en mode admin :
+        # un animateur sauvegarde toujours dans SA librairie
+        studio_available = (
+            studio_write_path() is not None and is_studio_admin())
         dialog = SaveToLibraryDialog(
             self.library_shelf.categories(),
             self.library_shelf.studio_categories(),

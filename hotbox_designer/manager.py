@@ -29,10 +29,20 @@ APPLICATIONS = {
     'standalone': Standalone}
 
 
-def launch_manager(application):
+def launch_manager(application, studio_admin=False):
+    """Ouvre le manager. `studio_admin=True` = mode lead : la librairie
+    studio devient éditable (catégories officielles, envoi de boutons).
+    Sans le paramètre (les animateurs), elle est en lecture seule et
+    chacun travaille dans sa librairie perso."""
+    from hotbox_designer.buttonlibrary import set_studio_admin
     global hotbox_manager
+    set_studio_admin(studio_admin)
     if hotbox_manager is None:
         hotbox_manager = HotboxManager(APPLICATIONS[application]())
+    title = 'Hotbox Designer'
+    if studio_admin:
+        title += '  —  ★ STUDIO ADMIN'
+    hotbox_manager.setWindowTitle(title)
     hotbox_manager.show()
 
 

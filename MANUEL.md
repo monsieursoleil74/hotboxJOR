@@ -159,16 +159,17 @@ affiché avec son vrai rendu en vignette.
   nom + **destination** + catégorie. La **destination** (« Library »)
   permet de choisir **Perso** ou **Studio (TAT)** dès la sauvegarde : on
   peut donc ranger un bouton directement dans une shelf TAT, sans passer
-  par General puis « Move to ». Le choix n'apparaît que si un
-  emplacement studio est configuré ; les catégories proposées s'adaptent
-  à la destination (l'onglet courant est proposé par défaut). Toutes les
-  shelves ouvertes se rafraîchissent.
+  par General puis « Move to ». Le choix Studio n'apparaît qu'en **mode
+  admin** (voir « Deux modes de lancement ») et si un emplacement studio
+  est configuré ; les catégories proposées s'adaptent à la destination
+  (l'onglet courant est proposé par défaut). Toutes les shelves
+  ouvertes se rafraîchissent.
 - **Réutiliser** : **glisse-dépose** depuis la shelf vers le canvas
   juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
   Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.
 - **Renommer un bouton** : clic droit sur un bouton de la shelf →
-  **Rename…** (perso comme studio). Le bouton garde son apparence et sa
-  commande, seul son nom change.
+  **Rename…** (perso toujours ; studio en mode admin). Le bouton garde
+  son apparence et sa commande, seul son nom change.
 - **Supprimer** : clic droit sur un bouton de la shelf → Delete.
 - **Ouvrir le dossier** (JSON brut) : clic droit sur la shelf ou un
   onglet → « Open library folder » — ouvre l'explorateur à
@@ -182,11 +183,13 @@ affiché avec son vrai rendu en vignette.
   - **Rename category…** — renommer : tous les boutons de la catégorie
     (et le marqueur de catégorie vide) sont ré-étiquetés.
   - **Delete category** — supprimer (seulement si elle est vide).
-  - Ces trois actions marchent aussi sur les onglets **studio** (elles
-    écrivent dans le `button_library.json` du dossier studio).
+  - Ces trois actions marchent aussi sur les onglets **studio**, mais
+    uniquement en **mode admin** (elles écrivent dans le
+    `button_library.json` du dossier studio).
 - **Ranger un bouton dans une autre catégorie** : clic droit sur un ou
   plusieurs boutons → **Move to category…** (choisir une catégorie
-  existante ou en taper une nouvelle). Fonctionne côté perso ET studio.
+  existante ou en taper une nouvelle). Perso toujours ; studio en mode
+  admin.
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 
@@ -203,12 +206,37 @@ affiché avec son vrai rendu en vignette.
   studio** (TAT) en icône ; leurs boutons se glissent-déposent
   normalement dans une hotbox.
 
-  Pour l'instant la librairie studio est **pleinement modifiable** :
-  créer une **catégorie officielle** (clic droit sur un onglet studio →
-  *New studio category…*) l'écrit dans le `button_library.json` du
-  dossier studio, avec le logo TAT ; on peut y **envoyer des boutons**
-  (*Send to studio library*), les renommer, les ranger. La restriction
-  d'accès pour les animateurs viendra plus tard.
+### Deux modes de lancement (animateur / admin)
+
+Le rôle se choisit **au lancement du manager** — chacun a son bouton de
+shelf :
+
+```python
+# animateur : la librairie studio est une RÉFÉRENCE en lecture seule
+import hotbox_designer
+hotbox_designer.launch_manager('maya')
+
+# lead : mode ADMIN — la librairie officielle est éditable
+import hotbox_designer
+hotbox_designer.launch_manager('maya', studio_admin=True)
+```
+
+- **Mode animateur** (par défaut) : il pioche les boutons officiels par
+  glisser-déposer et gère librement **sa** librairie perso (catégories,
+  rename, delete). Les onglets studio sont intouchables — pas de
+  création/renommage de catégorie, pas d'envoi vers le studio, pas de
+  destination « Studio » à la sauvegarde.
+- **Mode admin** : tout s'ouvre sur les onglets studio — créer une
+  **catégorie officielle** (*New studio category…*, écrite dans le
+  `button_library.json` du dossier studio avec le logo TAT), **envoyer
+  des boutons** (*Send to studio library*), renommer, ranger. Un badge
+  **★ STUDIO ADMIN** s'affiche en haut à droite de la shelf et dans le
+  titre de la fenêtre du manager — on sait toujours qu'on édite
+  l'officiel.
+
+C'est un garde-fou d'interface (le fichier reste accessible sur le
+réseau) ; pour un verrouillage dur, mettre aussi le dossier studio en
+lecture seule au niveau des droits Windows pour les animateurs.
 
   **Logo du studio** : pose un `studio_logo.png` (ou `logo.png`) dans le
   dossier de la librairie studio — il devient l'icône des onglets. On
