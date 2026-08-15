@@ -12,6 +12,19 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   shelves déjà ouvertes suivent (`refresh_shelves()` au lancement, badge
   resynchronisé dans `LibraryShelf.refresh`).
 
+## 2026-08 — Sélecteur de librairie studio (par projet)
+
+- Bouton **TAT** à côté du « ＋ » de la shelf (mode admin) : menu avec
+  la librairie courante, **Create / open library…** (crée le
+  `button_library.json` dans le dossier choisi s'il manque, puis
+  bascule), la liste des **librairies récentes** pour switcher par
+  projet, et **Use default location** (retour à la variable
+  d'environnement).
+- Choix **persisté** dans `studio_settings.json` (dossier du fork),
+  prioritaire sur `HOTBOX_STUDIO_LIBRARY` ; rechargé au démarrage.
+- Le logo des onglets est relu à chaque refresh : un
+  `studio_logo.png` différent par librairie/projet est possible.
+
 ## 2026-08 — Retrait du mode test (bouton play)
 
 - Le bouton ▶ « Test the hotbox » de la barre d'outils est retiré, jugé

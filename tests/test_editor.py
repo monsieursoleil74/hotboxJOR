@@ -1602,6 +1602,83 @@ def test_studio_admin_mode():
     print('mode admin studio (lancement + bascule en session) OK')
 
 
+def test_studio_library_switch():
+    """Sélecteur de librairie studio (bouton TAT, mode admin) : bascule
+    par projet, création du json manquant, récents mémorisés, retour au
+    défaut, persistance entre sessions."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import LibraryShelf
+
+    prefs = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: prefs
+
+    project_a = tempfile.mkdtemp()
+    project_b = tempfile.mkdtemp()
+
+    def entry(name, category):
+        return {'name': name, 'category': category,
+                'options': dict(SQUARE_BUTTON, **{'text.content': name})}
+
+    bl.save_library(
+        os.path.join(project_a, 'button_library.json'),
+        [entry('a', 'PROJET_A')])
+
+    try:
+        bl.set_studio_admin(True)
+        shelf = LibraryShelf(application)
+        shelf.show()
+        APP.processEvents()
+        assert shelf.library_button.isVisible() is True
+
+        # bascule sur le projet A : la lib studio suit, le choix est
+        # mémorisé (current + recent)
+        shelf._switch_studio_library(project_a)
+        assert bl.studio_location() == project_a
+        assert shelf.studio_categories() == ['PROJET_A']
+        settings = bl.load_studio_settings(application)
+        assert settings['current'] == project_a
+        assert settings['recent'] == [project_a]
+
+        # « créer » le projet B : json absent → créé vide, bascule
+        path_b = os.path.join(project_b, 'button_library.json')
+        assert not os.path.exists(path_b)
+        bl.save_library(path_b, [])  # (le dialogue de dossier fait ça)
+        shelf._switch_studio_library(project_b)
+        assert bl.studio_location() == project_b
+        assert os.path.exists(path_b)
+        recent = bl.load_studio_settings(application)['recent']
+        assert recent == [project_b, project_a]  # plus récent en tête
+
+        # re-bascule A : remonte en tête, pas de doublon
+        shelf._switch_studio_library(project_a)
+        recent = bl.load_studio_settings(application)['recent']
+        assert recent == [project_a, project_b]
+
+        # une NOUVELLE shelf (nouvelle session) retrouve la lib mémorisée
+        bl.set_studio_location(None)
+        shelf2 = LibraryShelf(application)
+        assert bl.studio_location() == project_a
+        shelf2.close()
+
+        # retour au défaut (env/DEFAULT) : override effacé, persisté
+        shelf._switch_studio_library(None)
+        assert bl.get_studio_override() is None
+        assert bl.load_studio_settings(application)['current'] is None
+
+        # en mode animateur le bouton disparaît
+        bl.set_studio_admin(False)
+        bl.refresh_shelves()
+        APP.processEvents()
+        assert shelf.library_button.isVisible() is False
+        shelf.close()
+    finally:
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)  # ne pas polluer les autres tests
+    print('sélecteur de librairie studio (switch/création/récents) OK')
+
+
 def test_fork_folder_migration():
     """Rangement des données : la librairie perso et le registre des
     raccourcis vivent dans le dossier du fork (prefs/hotboxJOR sous
@@ -1811,6 +1888,7 @@ if __name__ == '__main__':
     test_new_builtin_templates()
     test_color_picker_pipette()
     test_studio_admin_mode()
+    test_studio_library_switch()
     test_fork_folder_migration()
     test_hotkey_registry()
     test_hotkey_edit_capture()

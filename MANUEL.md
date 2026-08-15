@@ -226,6 +226,21 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   rename, delete). Les onglets studio sont intouchables — pas de
   création/renommage de catégorie, pas d'envoi vers le studio, pas de
   destination « Studio » à la sauvegarde.
+- **Choisir / changer de librairie studio (par projet)** — en mode
+  admin, un bouton **TAT** apparaît à côté du « ＋ » de la shelf. Son
+  menu affiche la librairie courante et permet :
+  - **Create / open library…** — choisir un dossier ; le
+    `button_library.json` y est créé s'il n'existe pas, et on bascule
+    dessus (premier lancement : c'est ici qu'on crée sa première
+    librairie) ;
+  - la liste des **librairies récentes** (cochée = courante) pour
+    switcher d'un projet à l'autre en un clic ;
+  - **Use default location** — revenir à `HOTBOX_STUDIO_LIBRARY` / au
+    chemin par défaut.
+  Le choix est **mémorisé entre les sessions**
+  (`studio_settings.json` dans `prefs/hotboxJOR/`) et prend le pas sur
+  la variable d'environnement. Le logo des onglets suit la librairie
+  (un `studio_logo.png` par projet est possible).
 - **Changer de mode sans redémarrer Maya** : il suffit de relancer
   l'autre commande dans le Script Editor — le manager, le badge et les
   shelves déjà ouvertes basculent immédiatement.

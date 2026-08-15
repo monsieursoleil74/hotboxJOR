@@ -62,6 +62,51 @@ def is_studio_admin():
     return _STUDIO_ADMIN
 
 
+# emplacement de librairie studio choisi via l'UI (menu du bouton TAT
+# de la shelf, mode admin) : prioritaire sur la variable d'environnement
+# — permet de SWITCHER de librairie selon le projet, sans redémarrer.
+# Persisté dans studio_settings.json du dossier du fork.
+_STUDIO_OVERRIDE = None
+STUDIO_SETTINGS_FILENAME = 'studio_settings.json'
+
+
+def set_studio_location(path):
+    """Fixe (ou efface avec None) l'emplacement de librairie studio de
+    la session ; prend le pas sur HOTBOX_STUDIO_LIBRARY."""
+    global _STUDIO_OVERRIDE
+    _STUDIO_OVERRIDE = path or None
+
+
+def get_studio_override():
+    return _STUDIO_OVERRIDE
+
+
+def studio_settings_path(application):
+    return os.path.join(
+        application.get_fork_folder(), STUDIO_SETTINGS_FILENAME)
+
+
+def load_studio_settings(application):
+    """{'current': chemin ou None, 'recent': [chemins]} — vide sinon."""
+    path = studio_settings_path(application)
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, 'r') as f:
+            data = json.load(f)
+    except (ValueError, OSError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def save_studio_settings(application, settings):
+    try:
+        with open(studio_settings_path(application), 'w') as f:
+            json.dump(settings, f, indent=2)
+    except OSError:
+        pass
+
+
 def library_path(application):
     """Librairie perso : dans le dossier du fork (`prefs/hotboxJOR/`
     sous Maya). Un fichier resté à la racine des prefs (versions
@@ -74,7 +119,10 @@ def library_path(application):
 
 
 def studio_location():
-    location = os.environ.get(STUDIO_ENV_VARIABLE) or DEFAULT_STUDIO_DIR
+    location = (
+        _STUDIO_OVERRIDE
+        or os.environ.get(STUDIO_ENV_VARIABLE)
+        or DEFAULT_STUDIO_DIR)
     if not location:
         return None
     return os.path.expandvars(os.path.expanduser(location))
@@ -528,7 +576,13 @@ class LibraryShelf(QtWidgets.QWidget):
 
     def __init__(self, application, parent=None):
         super(LibraryShelf, self).__init__(parent)
+        self.application = application
         self.path = library_path(application)
+        # librairie studio mémorisée (choisie via le bouton TAT) :
+        # appliquée avant le premier refresh
+        current = load_studio_settings(application).get('current')
+        if current:
+            set_studio_location(current)
         logo = studio_logo_path()
         self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
         self.tabs = QtWidgets.QTabWidget()
@@ -538,6 +592,12 @@ class LibraryShelf(QtWidgets.QWidget):
         self.add_button.setText('＋')
         self.add_button.setToolTip('Create a category')
         self.add_button.released.connect(self._prompt_category)
+        # bouton TAT (admin) : créer / changer de librairie studio
+        self.library_button = QtWidgets.QToolButton()
+        self.library_button.setToolTip(
+            'Studio library — create or switch (per project)')
+        self.library_button.released.connect(self._studio_library_menu)
+        self.library_button.setVisible(is_studio_admin())
         # badge visible seulement quand le manager est lancé en mode
         # admin studio : on sait d'un coup d'œil qu'on édite l'officiel
         self.admin_badge = QtWidgets.QLabel(' STUDIO ADMIN ')
@@ -553,6 +613,7 @@ class LibraryShelf(QtWidgets.QWidget):
         corner_layout.setContentsMargins(0, 0, 4, 0)
         corner_layout.setSpacing(6)
         corner_layout.addWidget(self.admin_badge)
+        corner_layout.addWidget(self.library_button)
         corner_layout.addWidget(self.add_button)
         self.tabs.setCornerWidget(corner, QtCore.Qt.TopRightCorner)
         tab_bar = self.tabs.tabBar()
@@ -593,8 +654,16 @@ class LibraryShelf(QtWidgets.QWidget):
     def refresh(self):
         current = self._current_key()
         # le mode admin peut changer EN COURS DE SESSION (relancer
-        # launch_manager avec/sans studio_admin) : le badge suit
+        # launch_manager avec/sans studio_admin) : badge et bouton
+        # librairie suivent ; le logo aussi (il peut différer par projet)
         self.admin_badge.setVisible(is_studio_admin())
+        self.library_button.setVisible(is_studio_admin())
+        logo = studio_logo_path()
+        self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
+        if not self.studio_icon.isNull():
+            self.library_button.setIcon(self.studio_icon)
+        else:
+            self.library_button.setText(STUDIO_PREFIX.strip())
         self.tabs.clear()
 
         # 1) onglets studio (partagés) EN PREMIER — on affiche AUSSI les
@@ -732,6 +801,67 @@ class LibraryShelf(QtWidgets.QWidget):
             self, 'Studio library',
             'Studio library is not configured or not writable.\n'
             'Set the HOTBOX_STUDIO_LIBRARY location first.')
+
+    # --- choix de la librairie studio (bouton TAT, mode admin) --------
+    def _studio_library_menu(self):
+        """Librairie courante, création/ouverture, et bascule rapide
+        entre les librairies récentes (une par projet, typiquement)."""
+        menu = QtWidgets.QMenu(self)
+        location = studio_location()
+        header = menu.addAction(
+            'Library: %s' % (location or '(none)'))
+        header.setEnabled(False)
+        menu.addSeparator()
+        menu.addAction(
+            'Create / open library…', self._choose_studio_library)
+        recent = load_studio_settings(self.application).get('recent') or []
+        if recent:
+            menu.addSeparator()
+            normalized = os.path.normpath(location) if location else ''
+            for path in recent:
+                action = menu.addAction(
+                    path, lambda p=path: self._switch_studio_library(p))
+                action.setCheckable(True)
+                action.setChecked(os.path.normpath(path) == normalized)
+        if get_studio_override():
+            menu.addSeparator()
+            menu.addAction(
+                'Use default location (env variable)',
+                lambda: self._switch_studio_library(None))
+        menu.exec_(QtGui.QCursor.pos())
+
+    def _choose_studio_library(self):
+        """Choisit un DOSSIER de librairie studio ; le
+        button_library.json y est créé s'il n'existe pas encore."""
+        folder = QtWidgets.QFileDialog.getExistingDirectory(
+            self, 'Choose the studio library folder',
+            studio_location() or '')
+        if not folder:
+            return
+        path = os.path.join(folder, LIBRARY_FILENAME)
+        if not os.path.exists(path):
+            try:
+                save_library(path, [])
+            except OSError:
+                return QtWidgets.QMessageBox.warning(
+                    self, 'Studio library',
+                    'Could not create %s (folder not writable).' % path)
+        self._switch_studio_library(folder)
+
+    def _switch_studio_library(self, folder):
+        """Bascule la session sur cette librairie (None = revenir à la
+        variable d'environnement / au défaut) et mémorise le choix."""
+        set_studio_location(folder)
+        settings = load_studio_settings(self.application)
+        settings['current'] = folder
+        if folder:
+            normalized = os.path.normpath(folder)
+            recent = [
+                p for p in settings.get('recent') or []
+                if os.path.normpath(p) != normalized]
+            settings['recent'] = ([folder] + recent)[:8]
+        save_studio_settings(self.application, settings)
+        refresh_shelves()
 
     def add_category(self, name):
         if not add_category_to(self.path, name):
