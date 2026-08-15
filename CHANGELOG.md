@@ -4,6 +4,12 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Retrait du mode test (bouton play)
+
+- Le bouton ▶ « Test the hotbox » de la barre d'outils est retiré, jugé
+  inutile à l'usage : signal, action, méthode `test_hotbox`, classe
+  `_TestReader` et test associé supprimés.
+
 ## 2026-08 — Données rangées dans prefs/hotboxJOR + panneau d'attributs élargi
 
 - **Rangement** : la librairie de boutons perso, le registre des

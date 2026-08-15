@@ -108,15 +108,6 @@ Boutons en fin de barre d'outils (à partir de 2 shapes sélectionnées,
 - Distribuer : horizontalement / verticalement (les centres se
   répartissent régulièrement entre la première et la dernière shape).
 
-## Mode test ▶️
-
-Bouton **play** (tout à gauche de la barre d'outils) : affiche la
-hotbox **exactement comme en production** (le reader), à l'endroit du
-curseur. On teste le survol, les clics gauche/droite, les couleurs
-d'état et les sous-menus sans quitter l'éditeur. Échap ferme ; la
-fenêtre de test se ferme aussi avec l'éditeur. (Dans Maya, les
-commandes des boutons s'exécutent réellement — c'est un vrai test.)
-
 ## Copier / coller
 
 | Raccourci | Action |

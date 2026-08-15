@@ -1036,32 +1036,6 @@ def test_command_autosave():
     print('auto-save commande OK')
 
 
-def test_test_mode():
-    editor = make_editor([(i * 20.0, 0.0, 'b%d' % i) for i in range(8)])
-    area = editor.shape_editor
-
-    # mode test : ouvre un reader avec les mêmes shapes, CENTRÉ sur
-    # l'éditeur (pas sous le curseur/bouton play)
-    editor.resize(800, 600)
-    editor.move(100, 100)
-    APP.processEvents()
-    editor.test_hotbox()
-    reader = editor.test_reader
-    assert reader is not None
-    assert len(reader.shapes) == len(area.shapes)
-    # le centre du reader tombe près du centre de l'éditeur
-    editor_center = editor.mapToGlobal(
-        QtCore.QPoint(editor.width() // 2, editor.height() // 2))
-    reader_center = reader.mapToGlobal(
-        QtCore.QPoint(reader.width() // 2, reader.height() // 2))
-    assert abs(reader_center.x() - editor_center.x()) < 5
-    assert abs(reader_center.y() - editor_center.y()) < 5
-    # fermé avec l'éditeur
-    editor.close()
-    assert editor.test_reader is None
-    print('mode test (centré) OK')
-
-
 def test_dwpicker_import():
     from hotbox_designer.dwpickerimport import (
         is_dwpicker_data, convert_dwpicker_to_hotbox)
@@ -1807,7 +1781,6 @@ if __name__ == '__main__':
     test_dwpicker_import()
     test_checkboxes_apply_options()
     test_create_hotbox_dialog()
-    test_test_mode()
     test_command_autosave()
     test_image_placement()
     test_rounded_rect()
