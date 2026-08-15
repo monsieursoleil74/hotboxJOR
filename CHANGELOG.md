@@ -4,6 +4,12 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Dialogue de sauvegarde élargi
+
+- Largeur minimale 340 px et champs étirés : les noms de catégories se
+  lisent en entier (« ANIMATION » n'est plus tronqué en « ATION ») et le
+  menu déroulant des catégories est repérable.
+
 ## 2026-08 — Mode admin : plus d'onglets perso dans la shelf
 
 - En mode admin, la shelf n'affiche que les onglets de la **librairie

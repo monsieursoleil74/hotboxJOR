@@ -488,7 +488,16 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
         self.category = QtWidgets.QComboBox()
         self.category.setEditable(True)
 
+        # assez large pour lire les noms de catégories en entier et
+        # repérer le menu déroulant (avant : « ANIMATION » → « ATION »)
+        self.setMinimumWidth(340)
+        self.name.setMinimumWidth(220)
+        self.destination.setMinimumWidth(220)
+        self.category.setMinimumWidth(220)
+
         layout = QtWidgets.QFormLayout(self)
+        layout.setFieldGrowthPolicy(
+            QtWidgets.QFormLayout.AllNonFixedFieldsGrow)
         layout.addRow('Name:', self.name)
         # inutile d'afficher le choix s'il n'y a que « Perso »
         if studio_available:
