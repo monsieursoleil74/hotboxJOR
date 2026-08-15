@@ -42,7 +42,7 @@ def launch_manager(application, studio_admin=False):
         hotbox_manager = HotboxManager(APPLICATIONS[application]())
     title = 'Hotbox Designer'
     if studio_admin:
-        title += '  —  ★ STUDIO ADMIN'
+        title += '  —  STUDIO ADMIN'
     hotbox_manager.setWindowTitle(title)
     # changement de mode SANS redémarrer Maya : les shelves déjà
     # ouvertes (badge, infobulles, menus) basculent immédiatement
