@@ -431,10 +431,12 @@ habiller un template sans replacer chaque bouton à la main.
 À la création d'une hotbox (« From template »), un **aperçu** du
 template s'affiche dans le dialogue (idem pour « Duplicate existing »).
 
-Les templates embarqués sont ceux hérités de l'original. Combinés à
-« Replace with library button », ils permettent de monter une hotbox
-rapidement : créer depuis le template, puis remplacer chaque bouton
-par un bouton de la shelf.
+Les templates embarqués sont ceux hérités de l'original, plus le
+template **TAT** (la hotbox de base du studio : grille de boutons
+prête à câbler, icônes et scripts pointant sur la librairie réseau).
+Combinés à « Replace with library button », ils permettent de monter
+une hotbox rapidement : créer depuis le template, puis remplacer
+chaque bouton par un bouton de la shelf.
 
 **Créer ses propres templates** : sélectionne une hotbox dans le
 manager → bouton **Save hotbox as template** (💾 de la barre d'outils du

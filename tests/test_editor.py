@@ -1410,8 +1410,9 @@ def test_user_templates():
 
 
 def test_builtin_templates():
-    """Seuls les templates d'origine restent embarqués (les templates
-    maison ont été retirés — choix utilisateur) et ils se chargent."""
+    """Templates embarqués : ceux d'origine + le template TAT (base
+    studio fournie par l'utilisateur) — les anciens templates maison
+    ont été retirés. Le TAT s'ouvre dans l'éditeur sans erreur."""
     from hotbox_designer.data import load_templates
 
     templates = load_templates()
@@ -1420,7 +1421,16 @@ def test_builtin_templates():
     for removed in ('Pie_8_Directions', 'Mini_Shelf_4x3', 'Barre_6_Boutons',
                     'Manette', 'Nid_Abeille', 'Colonnes_TAT', 'Grille_6x4'):
         assert removed not in names, removed
-    print('templates embarqués (origine uniquement) OK')
+
+    assert 'TAT' in names
+    data = templates[names.index('TAT')]
+    assert len(data['shapes']) == 29
+    editor = HotboxEditor(copy.deepcopy(data), Standalone(), parent=None)
+    editor.show()
+    APP.processEvents()
+    assert len(editor.shape_editor.shapes) == len(data['shapes'])
+    editor.close()
+    print('templates embarqués (origine + TAT) OK')
 
 
 def test_color_picker_pipette():

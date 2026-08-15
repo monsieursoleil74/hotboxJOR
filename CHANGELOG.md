@@ -16,6 +16,8 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   Mini_Shelf_4x3, Barre_6_Boutons, Manette, Nid_Abeille, Colonnes_TAT,
   Grille_6x4. Restent les templates d'origine et les templates
   utilisateur (« Save hotbox as template »).
+- **Template TAT embarqué** : la hotbox de base du studio (29 boutons,
+  fournie par l'utilisateur) livrée comme template « From template ».
 
 ## 2026-08 — Robustesse avant déploiement (atomique, refresh auto, CI)
 
