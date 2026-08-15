@@ -4,6 +4,25 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Polish UI (panneau d'attributs, dialogues) + fix badge anim
+
+- **Correctif : le badge STUDIO ADMIN s'affichait dans l'éditeur en
+  mode animateur** (sur certaines versions de Qt, masquer l'action
+  d'un widget de toolbar ne masque pas le widget). Le badge est
+  désormais masqué des deux côtés (action + widget) et **suit la
+  bascule de mode en cours de session** dans les éditeurs déjà
+  ouverts.
+- **Panneau d'attributs de l'éditeur retravaillé** : en-têtes de
+  section repliables avec chevron ▾/▸, capitales espacées et tiret
+  d'accent vert (grisé quand la section est repliée), sous-titres
+  soulignés d'un filet, marges et espacements uniformisés — la colonne
+  respire au lieu d'être tassée.
+- **Dialogues au thème sombre garanti** (création de hotbox,
+  raccourcis, commande) même hors parent themé ; création de hotbox :
+  aperçu plus grand (240×150, coins arrondis), boutons OK par défaut ;
+  gestionnaire de raccourcis : lignes plus hautes, alternance de
+  fonds, sans grille.
+
 ## 2026-08 — Badge admin dans l'éditeur, aperçu rogné, ménage templates
 
 - **Badge « STUDIO ADMIN »** à droite de la barre d'outils de

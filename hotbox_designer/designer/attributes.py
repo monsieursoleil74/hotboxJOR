@@ -124,8 +124,8 @@ class ShapeSettings(QtWidgets.QWidget):
         corners_layout.addStretch(1)
 
         self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(2)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(4)
+        self.layout.setContentsMargins(8, 6, 8, 10)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Shape', self.shape)
         self.corners_label = QtWidgets.QLabel('Corner')
@@ -202,8 +202,8 @@ class ImageSettings(QtWidgets.QWidget):
         self.placement_row.setLayout(placement)
 
         self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(2)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(4)
+        self.layout.setContentsMargins(8, 6, 8, 10)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Path', self.path)
         self.layout.addRow('Fit to shape', self.fit)
@@ -304,7 +304,7 @@ class AppearenceSettings(QtWidgets.QWidget):
 
         self.layout = QtWidgets.QFormLayout(self)
         self.layout.setSpacing(6)
-        self.layout.setContentsMargins(0, 0, 0, 4)
+        self.layout.setContentsMargins(8, 6, 8, 10)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow(Title('Background'))
         self.layout.addRow('', legend_row())
@@ -399,8 +399,8 @@ class ActionSettings(QtWidgets.QWidget):
         self._rcommand.committed.connect(partial(self.save_command, 'right'))
 
         self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(4)
+        self.layout.setContentsMargins(8, 6, 8, 10)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow(Title('Open sub-hotbox'))
         self.layout.addRow('Sub-menu', self._submenu)
@@ -544,8 +544,8 @@ class TextSettings(QtWidgets.QWidget):
         self.valignement.currentIndexChanged.connect(self.valign_changed)
 
         self.layout = QtWidgets.QFormLayout(self)
-        self.layout.setSpacing(0)
-        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(4)
+        self.layout.setContentsMargins(8, 6, 8, 10)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Content', self.text)
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))

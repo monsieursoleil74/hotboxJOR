@@ -1616,7 +1616,18 @@ def test_studio_admin_mode():
         assert menu.admin_badge_action.isVisible() is True
         bl.set_studio_admin(False)
         menu = MenuWidget()
+        # ceinture et bretelles : l'action ET le widget sont masqués
+        # (sur certaines versions de Qt, masquer seulement l'action
+        # laissait le badge visible en mode animateur)
         assert menu.admin_badge_action.isVisible() is False
+        assert menu.admin_badge.isHidden() is True
+        # bascule EN SESSION : le badge suit sans reconstruire l'éditeur
+        bl.set_studio_admin(True)
+        menu.update_admin_badge()
+        assert menu.admin_badge_action.isVisible() is True
+        bl.set_studio_admin(False)
+        menu.update_admin_badge()
+        assert menu.admin_badge.isHidden() is True
 
         # bandeau du manager : plus de texte « HOTBOX DESIGNER » (le
         # nom du tool vit dans le titre de fenêtre), badge admin

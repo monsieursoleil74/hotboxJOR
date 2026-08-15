@@ -62,8 +62,10 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 
     def __init__(self, hotboxes, parent=None, templates_folder=None):
         super(CreateHotboxDialog, self).__init__(parent)
+        from hotbox_designer.theme import apply_dark_theme
+        apply_dark_theme(self)  # même look, parenté ou non
         self.setWindowTitle("Create new hotbox")
-        self.setMinimumWidth(340)
+        self.setMinimumWidth(400)
         self.hotboxes = hotboxes
         # dossier des templates utilisateur (« Save hotbox as template »)
         self.templates_folder = templates_folder
@@ -97,10 +99,11 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 
         # aperçu de la source choisie (template ou hotbox dupliquée)
         self.preview = QtWidgets.QLabel()
-        self.preview.setFixedSize(190, 120)
+        self.preview.setFixedSize(240, 150)
         self.preview.setAlignment(QtCore.Qt.AlignCenter)
         self.preview.setStyleSheet(
-            'QLabel {background: #2b2b2b; border: 1px solid #444444;}')
+            'QLabel {background: #2b2b2b; border: 1px solid #242424;'
+            'border-radius: 4px; color: #8c8c8c;}')
         self.template_combo.currentIndexChanged.connect(self.update_preview)
         self.existing.currentIndexChanged.connect(self.update_preview)
         self.new.toggled.connect(self.update_preview)
@@ -160,10 +163,10 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         data = self._source_data()
         if data is None:
             self.preview.setPixmap(QtGui.QPixmap())
-            self.preview.setText('empty')
+            self.preview.setText('empty hotbox')
         else:
             self.preview.setText('')
-            self.preview.setPixmap(hotbox_thumbnail(data))
+            self.preview.setPixmap(hotbox_thumbnail(data, 240, 150))
 
     def hotbox(self):
         source = self._source_data()
@@ -180,11 +183,14 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 class CommandDisplayDialog(QtWidgets.QDialog):
     def __init__(self, command, parent=None):
         super(CommandDisplayDialog, self).__init__(parent)
+        from hotbox_designer.theme import apply_dark_theme
+        apply_dark_theme(self)
         self.setWindowTitle("Command")
         self.text = QtWidgets.QTextEdit()
         self.text.setReadOnly(True)
         self.text.setPlainText(command)
-        self.ok = QtWidgets.QPushButton('ok')
+        self.ok = QtWidgets.QPushButton('OK')
+        self.ok.setDefault(True)
         self.ok.released.connect(self.accept)
 
         self.button_layout = QtWidgets.QHBoxLayout()
@@ -200,6 +206,8 @@ class CommandDisplayDialog(QtWidgets.QDialog):
 class HotkeySetter(QtWidgets.QDialog):
     def __init__(self, modes, parent=None):
         super(HotkeySetter, self).__init__(parent)
+        from hotbox_designer.theme import apply_dark_theme
+        apply_dark_theme(self)
         self.setWindowTitle("Set hotkey")
         # une seule zone de capture : on tape la combinaison (ex. Maj+Q)
         # et elle s'affiche « Shift+q » — fini les cases Ctrl/Alt/Shift
@@ -210,14 +218,15 @@ class HotkeySetter(QtWidgets.QDialog):
 
         self.options_layout = QtWidgets.QFormLayout()
         self.options_layout.setContentsMargins(0, 0, 0, 0)
-        self.options_layout.setVerticalSpacing(0)
+        self.options_layout.setVerticalSpacing(6)
         self.options_layout.addRow("Shortcut", self.hotkey)
         self.options_layout.addRow("Hotkey event", self.hotkeytype)
 
-        self.ok = QtWidgets.QPushButton("ok")
+        self.ok = QtWidgets.QPushButton("OK")
+        self.ok.setDefault(True)
         self.ok.setEnabled(False)
         self.ok.released.connect(self.accept)
-        self.cancel = QtWidgets.QPushButton("cancel")
+        self.cancel = QtWidgets.QPushButton("Cancel")
         self.cancel.released.connect(self.reject)
 
         self.button_layout = QtWidgets.QHBoxLayout()
@@ -252,6 +261,8 @@ class HotkeyManagerDialog(QtWidgets.QDialog):
             self, names, load_hotkeys, can_set, assign_cb, clear_cb,
             parent=None):
         super(HotkeyManagerDialog, self).__init__(parent)
+        from hotbox_designer.theme import apply_dark_theme
+        apply_dark_theme(self)
         self.setWindowTitle('Hotkeys')
         self.names = list(names)
         self.load_hotkeys = load_hotkeys
@@ -262,6 +273,9 @@ class HotkeyManagerDialog(QtWidgets.QDialog):
         self.table = QtWidgets.QTableWidget(len(self.names), 3, self)
         self.table.setHorizontalHeaderLabels(['Hotbox', 'Key', ''])
         self.table.verticalHeader().hide()
+        self.table.verticalHeader().setDefaultSectionSize(30)
+        self.table.setAlternatingRowColors(True)
+        self.table.setShowGrid(False)
         self.table.setEditTriggers(
             QtWidgets.QAbstractItemView.NoEditTriggers)
         self.table.setSelectionMode(

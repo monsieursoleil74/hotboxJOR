@@ -1551,10 +1551,15 @@ def register_shelf(shelf):
 
 
 def refresh_shelves():
-    """Toutes les shelves ouvertes (un éditeur chacune) se resynchronisent."""
+    """Toutes les shelves ouvertes (un éditeur chacune) se resynchronisent.
+    Le badge STUDIO ADMIN de l'éditeur qui les héberge suit aussi la
+    bascule de mode (sans redémarrer Maya)."""
     for shelf in list(_shelves):
         try:
             shelf.refresh()
+            menu = getattr(shelf.window(), 'menu', None)
+            if menu is not None and hasattr(menu, 'update_admin_badge'):
+                menu.update_admin_badge()
         except RuntimeError:  # widget C++ détruit
             _shelves.remove(shelf)
 

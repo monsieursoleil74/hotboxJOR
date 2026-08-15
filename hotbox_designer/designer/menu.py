@@ -198,7 +198,6 @@ class MenuWidget(QtWidgets.QWidget):
 
         # badge « STUDIO ADMIN » calé à droite : rappel visuel du mode
         # de lancement — les animateurs ne le voient jamais
-        from hotbox_designer.buttonlibrary import is_studio_admin
         from hotbox_designer.theme import ACCENT
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
@@ -209,13 +208,22 @@ class MenuWidget(QtWidgets.QWidget):
             'QLabel {color: white; background: %s; border-radius: 3px;'
             'font-weight: bold; font-size: 10px; padding: 2px 8px;'
             'margin-right: 4px;}' % ACCENT)
-        # la visibilité d'un widget de toolbar se pilote par son action
         self.admin_badge_action = self.toolbar.addWidget(self.admin_badge)
-        self.admin_badge_action.setVisible(is_studio_admin())
+        self.update_admin_badge()
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 10, 0)
         self.layout.addWidget(self.toolbar)
+
+    def update_admin_badge(self):
+        """Visibilité du badge selon le mode courant. Ceinture ET
+        bretelles (action + widget) : sous certaines versions de Qt,
+        masquer seulement l'action d'un widget de toolbar ne masque pas
+        le widget — le badge restait visible en mode animateur."""
+        from hotbox_designer.buttonlibrary import is_studio_admin
+        visible = is_studio_admin()
+        self.admin_badge_action.setVisible(visible)
+        self.admin_badge.setVisible(visible)
 
     def size_changed(self, *_):
         self.sizeChanged.emit()

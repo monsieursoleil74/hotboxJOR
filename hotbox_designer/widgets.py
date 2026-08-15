@@ -2,11 +2,15 @@ from hotbox_designer.vendor.Qt import QtGui, QtCore, QtWidgets
 from hotbox_designer.qtutils import icon
 
 
+# en-tête de section repliable : capitales espacées + tiret d'accent à
+# gauche, chevron discret — même vocabulaire que les titres du manager
 TOGGLER_STYLESHEET = (
     'QPushButton {background: #333333; color: #cfcfcf; text-align: left;'
-    'font-weight: bold; padding: 5px 8px; border: none;'
-    'border-top: 1px solid #444444;}'
-    'QPushButton:hover {background: #3a3a3a;}')
+    'font-weight: bold; font-size: 11px; letter-spacing: 1px;'
+    'padding: 6px 8px 6px 10px; border: none;'
+    'border-top: 1px solid #242424; border-left: 3px solid #6d8c5e;}'
+    'QPushButton:hover {background: #3a3a3a;}'
+    'QPushButton:!checked {border-left-color: #4a4a4a; color: #9a9a9a;}')
 
 
 class BoolCombo(QtWidgets.QComboBox):
@@ -66,19 +70,20 @@ class WidgetToggler(QtWidgets.QPushButton):
     def __init__(self, label, widget, parent=None):
         super(WidgetToggler, self).__init__(parent)
         self.setStyleSheet(TOGGLER_STYLESHEET)
-        self.setText(' v ' + label)
+        self._label = label.upper()
         self.widget = widget
         self.setCheckable(True)
         self.setChecked(True)
+        self._update_text()
         self.toggled.connect(self._call_toggled)
 
+    def _update_text(self):
+        arrow = '▾' if self.isChecked() else '▸'  # ▾ / ▸
+        self.setText('%s  %s' % (arrow, self._label))
+
     def _call_toggled(self, state):
-        if state is True:
-            self.widget.show()
-            self.setText(self.text().replace('>', 'v'))
-        else:
-            self.widget.hide()
-            self.setText(self.text().replace('v', '>'))
+        self.widget.setVisible(state)
+        self._update_text()
 
 
 class FloatEdit(QtWidgets.QLineEdit):
@@ -117,12 +122,15 @@ class FloatEdit(QtWidgets.QLineEdit):
 class Title(QtWidgets.QLabel):
     def __init__(self, title, parent=None):
         super(Title, self).__init__(parent)
-        self.setFixedHeight(22)
-        # petit intitulé neutre en capitales espacées (pas d'accent
-        # coloré : réservé aux états actifs)
+        self.setFixedHeight(26)
+        # petit intitulé neutre en capitales espacées, souligné d'un
+        # filet discret qui structure la colonne (pas d'accent coloré :
+        # réservé aux états actifs)
         self.setStyleSheet(
             'color: #909090; font-weight: bold; font-size: 10px;'
-            'letter-spacing: 2px; background: transparent; padding-left: 2px;')
+            'letter-spacing: 2px; background: transparent;'
+            'padding-left: 2px; padding-top: 6px;'
+            'border-bottom: 1px solid #484848;')
         self.setText(title.upper())
 
 
