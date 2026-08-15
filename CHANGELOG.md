@@ -18,6 +18,10 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 - **Vignettes de la liste du manager : essayées puis retirées** (choix
   utilisateur) — le panneau Preview de droite fait déjà le travail, la
   liste reste en texte simple.
+- **Raccourcis visibles dans les listes du manager** : la touche
+  assignée s'affiche en grisé à droite du nom de chaque hotbox
+  (Personal et Shared), mise à jour dès qu'on assigne/efface — plus
+  besoin d'ouvrir le gestionnaire juste pour vérifier.
 - **Correctif : les boutons OK/Cancel du sélecteur de couleurs
   prenaient la couleur choisie** (le style de la pastille ruisselait
   sur le dialogue enfant). Style ciblé sur la pastille seule ; et plus

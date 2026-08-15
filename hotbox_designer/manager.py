@@ -1,7 +1,7 @@
 
 import os
 from functools import partial
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore
+from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 
 from hotbox_designer.commands import OPEN_COMMAND, CLOSE_COMMAND, SWITCH_COMMAND
 from hotbox_designer.reader import HotboxReader
@@ -171,6 +171,10 @@ class HotboxManager(QtWidgets.QWidget):
         self.tabwidget.addTab(self.shared, "Shared")
         self.tabwidget.currentChanged.connect(self.tab_index_changed)
 
+        # les raccourcis assignés s'affichent directement dans les
+        # listes (2e colonne) — plus besoin d'ouvrir le dialogue
+        self._refresh_hotkeys_display()
+
         self.header = _ManagerHeader()
 
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -188,6 +192,12 @@ class HotboxManager(QtWidgets.QWidget):
         if row is None:
             return
         return model.hotboxes[row]
+
+    def _refresh_hotkeys_display(self):
+        """Recharge le registre des raccourcis dans les deux listes."""
+        hotkeys = self.application.load_hotkeys()
+        self.personnal_model.set_hotkeys(hotkeys)
+        self.shared_model.set_hotkeys(hotkeys)
 
     def save_hotboxes(self, *_):
         save_datas(self.application.local_file, self.personnal_model.hotboxes)
@@ -406,10 +416,12 @@ class HotboxManager(QtWidgets.QWidget):
             close_cmd=CLOSE_COMMAND.format(name=name),
             switch_cmd=SWITCH_COMMAND.format(
                 name=name, application=self.application.name))
+        self._refresh_hotkeys_display()
         return True
 
     def _clear_hotkey(self, name):
         self.application.remove_hotkey(name)
+        self._refresh_hotkeys_display()
 
     def _call_export(self):
         hotbox = self.get_selected_hotbox()
@@ -552,7 +564,6 @@ class HotboxTableView(QtWidgets.QTableView):
         vheader.hide()
         vheader.setSectionResizeMode(QtWidgets.QHeaderView.ResizeToContents)
         hheader = self.horizontalHeader()
-        hheader.setStretchLastSection(True)
         hheader.hide()
         self.setAlternatingRowColors(True)
         self.setWordWrap(True)
@@ -572,6 +583,10 @@ class HotboxTableView(QtWidgets.QTableView):
 
     def set_model(self, model):
         self.setModel(model)
+        hheader = self.horizontalHeader()
+        hheader.setSectionResizeMode(0, QtWidgets.QHeaderView.Stretch)
+        hheader.setSectionResizeMode(
+            1, QtWidgets.QHeaderView.ResizeToContents)
         self.selection_model = self.selectionModel()
         self.selection_model.selectionChanged.connect(self.selection_changed)
 
@@ -583,14 +598,36 @@ class HotboxTableView(QtWidgets.QTableView):
         return rows[0]
 
 
+HOTKEY_COLUMN_ROLE_COLOR = '#8c8c8c'
+
+
+def _hotkey_column_data(hotkeys, name, role):
+    """Rendu de la colonne raccourci des listes du manager : la
+    séquence assignée, en grisé, alignée à droite."""
+    if role == QtCore.Qt.DisplayRole:
+        record = hotkeys.get(name) or {}
+        return record.get('sequence') or ''
+    if role == QtCore.Qt.ForegroundRole:
+        return QtGui.QBrush(QtGui.QColor(HOTKEY_COLUMN_ROLE_COLOR))
+    if role == QtCore.Qt.TextAlignmentRole:
+        return int(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+
+
 class HotboxPersonalTableModel(QtCore.QAbstractTableModel):
 
     def __init__(self, hotboxes, parent=None):
         super(HotboxPersonalTableModel, self).__init__(parent=parent)
         self.hotboxes = hotboxes
+        self.hotkeys = {}
+
+    def set_hotkeys(self, hotkeys):
+        """Registre {nom: {'sequence', …}} affiché en 2e colonne."""
+        self.layoutAboutToBeChanged.emit()
+        self.hotkeys = hotkeys or {}
+        self.layoutChanged.emit()
 
     def columnCount(self, _):
-        return 1
+        return 2
 
     def rowCount(self, _):
         return len(self.hotboxes)
@@ -603,6 +640,9 @@ class HotboxPersonalTableModel(QtCore.QAbstractTableModel):
     def data(self, index, role):
         row, col = index.row(), index.column()
         hotbox = self.hotboxes[row]
+        if col == 1:
+            return _hotkey_column_data(
+                self.hotkeys, hotbox['general']['name'], role)
         if role == QtCore.Qt.DisplayRole and col == 0:
             return hotbox['general']['name']
 
@@ -613,9 +653,15 @@ class HotboxSharedTableModel(QtCore.QAbstractTableModel):
         super(HotboxSharedTableModel, self).__init__(parent=parent)
         self.hotboxes_links = hotboxes_links
         self.hotboxes = [load_json(l) for l in hotboxes_links]
+        self.hotkeys = {}
+
+    def set_hotkeys(self, hotkeys):
+        self.layoutAboutToBeChanged.emit()
+        self.hotkeys = hotkeys or {}
+        self.layoutChanged.emit()
 
     def columnCount(self, _):
-        return 1
+        return 2
 
     def rowCount(self, _):
         return len(self.hotboxes_links)
@@ -634,6 +680,10 @@ class HotboxSharedTableModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role):
         row, col = index.row(), index.column()
+        if col == 1:
+            hotbox = self.hotboxes[row]
+            name = hotbox['general']['name'] if hotbox else ''
+            return _hotkey_column_data(self.hotkeys, name, role)
         if role == QtCore.Qt.DisplayRole and col == 0:
             return self.hotboxes_links[row]
 

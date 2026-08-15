@@ -1409,6 +1409,23 @@ def test_user_templates():
     print('templates utilisateur (save + liste + aperçu) OK')
 
 
+def test_hotkey_column():
+    """Les listes du manager affichent le raccourci assigné en 2e
+    colonne (grisé, aligné à droite) — visible sans ouvrir le dialogue."""
+    from hotbox_designer.manager import HotboxPersonalTableModel
+    from hotbox_designer.vendor.Qt import QtCore as QC
+
+    hotbox = {'general': dict(HOTBOX, name='ma_hotbox'), 'shapes': []}
+    model = HotboxPersonalTableModel([hotbox])
+    assert model.columnCount(None) == 2
+    index = model.index(0, 1)
+    assert model.data(index, QC.Qt.DisplayRole) == ''  # rien d'assigné
+    model.set_hotkeys({'ma_hotbox': {'sequence': 'Shift+Q', 'mode': 'x'}})
+    assert model.data(index, QC.Qt.DisplayRole) == 'Shift+Q'
+    assert model.data(model.index(0, 0), QC.Qt.DisplayRole) == 'ma_hotbox'
+    print('colonne raccourci dans les listes du manager OK')
+
+
 def test_state_preview():
     """L'aperçu d'états en haut du panneau d'attributs suit la
     sélection et les réglages en direct (normal / survol / clic)."""
@@ -2320,6 +2337,7 @@ if __name__ == '__main__':
     test_startup_framing()
     test_replace_from_library()
     test_user_templates()
+    test_hotkey_column()
     test_state_preview()
     test_builtin_templates()
     test_color_picker_pipette()

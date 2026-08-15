@@ -465,6 +465,10 @@ tout au fond / tout devant — alignements (6) — distributions
 
 ## Raccourcis clavier (gestionnaire)
 
+Le raccourci assigné à chaque hotbox s'affiche **directement dans les
+listes du manager** (en grisé, à droite du nom, onglets Personal et
+Shared) — plus besoin d'ouvrir le gestionnaire juste pour vérifier.
+
 Le bouton **touche** de la barre d'outils du manager (⌨) ouvre le
 **gestionnaire de raccourcis** : un tableau qui liste **toutes** les
 hotboxes avec la touche qui leur est assignée.
