@@ -40,10 +40,9 @@ def launch_manager(application, studio_admin=False):
     set_studio_admin(studio_admin)
     if hotbox_manager is None:
         hotbox_manager = HotboxManager(APPLICATIONS[application]())
-    title = 'Hotbox Designer'
-    if studio_admin:
-        title += '  —  STUDIO ADMIN'
-    hotbox_manager.setWindowTitle(title)
+    # pas de texte de titre en mode normal (le bandeau Maya suffit) ;
+    # en admin, seul le marqueur STUDIO ADMIN reste
+    hotbox_manager.setWindowTitle('STUDIO ADMIN' if studio_admin else '')
     # changement de mode SANS redémarrer Maya : les shelves déjà
     # ouvertes (badge, infobulles, menus) basculent immédiatement
     refresh_shelves()
@@ -103,7 +102,6 @@ class HotboxManager(QtWidgets.QWidget):
     def __init__(self, application):
         parent = application.main_window
         super(HotboxManager, self).__init__(parent, QtCore.Qt.Tool)
-        self.setWindowTitle('Hotbox Designer')
         from hotbox_designer.theme import apply_dark_theme
         apply_dark_theme(self)
         self.application = application
