@@ -1687,6 +1687,11 @@ def test_studio_library_switch():
         assert bl.studio_library_label() == 'ringo.json'
         assert os.path.exists(os.path.join(project_c, 'studio_logo.png'))
         assert 'ringo.json' in shelf.library_badge.text()
+        # librairie toute neuve : un onglet General vide reste affiché
+        # (sinon zéro onglet → Qt cache aussi le coin badge/dossier/＋)
+        assert shelf.tabs.count() == 1
+        assert shelf._tab_name(0) == 'General'
+        assert shelf.tabs.widget(0).readonly is True
 
         # en mode ANIMATEUR : le bouton reste visible (il choisit sur
         # quelle librairie il est), mais pas de création possible

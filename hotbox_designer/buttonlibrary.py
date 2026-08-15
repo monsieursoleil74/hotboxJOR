@@ -731,6 +731,12 @@ class LibraryShelf(QtWidgets.QWidget):
             studio.setdefault(category, []).append(entry)
         for category in sorted(studio):
             self._add_tab(category, studio[category], current, readonly=True)
+        # librairie toute neuve (aucune catégorie) en admin : un onglet
+        # « General » vide garde la shelf vivante — sans AUCUN onglet,
+        # Qt cache aussi le coin (badge / dossier / ＋) et tout semble
+        # avoir disparu
+        if is_studio_admin() and not studio and studio_location():
+            self._add_tab(DEFAULT_CATEGORY, [], current, readonly=True)
 
         # 2) onglets perso (modifiables) — CACHÉS en mode admin : on y
         # gère l'OFFICIEL, le perso appartient au mode animateur (c'est

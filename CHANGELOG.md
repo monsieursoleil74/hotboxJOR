@@ -4,6 +4,14 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Fix : librairie neuve = shelf vide (tout semblait disparu)
+
+- Créer/ouvrir une librairie **sans aucune catégorie** laissait la shelf
+  à zéro onglet — et Qt cache alors aussi le coin (badge / dossier / ＋),
+  donnant l'impression d'avoir tout perdu. En admin, une librairie vide
+  affiche désormais un onglet **General** vide : la shelf reste vivante,
+  et le premier 💾 y range naturellement les boutons.
+
 ## 2026-08 — Sauvegarde : catégorie proposée = l'onglet courant
 
 - Le dialogue 💾 pré-remplit la catégorie avec **l'onglet où l'on est**
