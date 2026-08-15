@@ -6,6 +6,12 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Grille de templates, vignettes du manager, pastilles sobres
 
+- **Zones de travail des templates d'origine recadrées** sur leurs
+  boutons (marge 30 px, même logique que « fit zone to shapes ») :
+  leurs vignettes ne montrent plus des boutons minuscules perdus dans
+  le vide. La position des boutons par rapport au centre (le curseur)
+  est conservée — comportement identique à l'ouverture.
+
 - **Grille de templates à la création** : fini le menu déroulant
   aveugle — chaque template en vignette + nom, tous visibles d'un
   coup, clic = sélectionner, double-clic = créer directement.
