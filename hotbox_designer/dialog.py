@@ -57,18 +57,21 @@ def export_hotbox(hotbox):
 
 class CreateHotboxDialog(QtWidgets.QDialog):
     """Création d'une hotbox : nom + source (vide par défaut, dupliquer
-    une existante, ou partir d'un template). Les menus ne sont actifs
-    que quand leur option est cochée."""
+    une existante, ou partir d'un template). Les templates s'affichent
+    en GRILLE de vignettes cliquables — tout est visible d'un coup,
+    double-clic = créer directement."""
 
     def __init__(self, hotboxes, parent=None, templates_folder=None):
         super(CreateHotboxDialog, self).__init__(parent)
         from hotbox_designer.theme import apply_dark_theme
         apply_dark_theme(self)  # même look, parenté ou non
         self.setWindowTitle("Create new hotbox")
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(470)
         self.hotboxes = hotboxes
         # dossier des templates utilisateur (« Save hotbox as template »)
         self.templates_folder = templates_folder
+        # chargés une fois pour toutes (grille + création)
+        self._templates = load_templates(self.templates_folder)
 
         self.name_edit = QtWidgets.QLineEdit(get_valid_name(hotboxes))
         self.name_edit.selectAll()
@@ -85,17 +88,44 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 
         self.existing = QtWidgets.QComboBox()
         self.existing.addItems([hb['general']['name'] for hb in self.hotboxes])
-        self.template_combo = QtWidgets.QComboBox()
-        items = [
-            hb['general']['name'] or 'template'
-            for hb in load_templates(self.templates_folder)]
-        self.template_combo.addItems(items)
 
-        # les combos ne s'activent qu'avec leur option
+        # grille de templates : chaque template en vignette + nom,
+        # tous visibles d'un coup (fini le menu déroulant aveugle)
+        from hotbox_designer.buttonlibrary import hotbox_thumbnail
+        self.template_grid = QtWidgets.QListWidget()
+        self.template_grid.setViewMode(QtWidgets.QListView.IconMode)
+        self.template_grid.setResizeMode(QtWidgets.QListView.Adjust)
+        self.template_grid.setMovement(QtWidgets.QListView.Static)
+        self.template_grid.setIconSize(QtCore.QSize(108, 66))
+        self.template_grid.setGridSize(QtCore.QSize(122, 96))
+        self.template_grid.setUniformItemSizes(True)
+        self.template_grid.setWrapping(True)
+        self.template_grid.setWordWrap(True)
+        self.template_grid.setFixedHeight(212)
+        self.template_grid.setSelectionMode(
+            QtWidgets.QAbstractItemView.SingleSelection)
+        self.template_grid.setStyleSheet(
+            'QListWidget {background: #2b2b2b; border: 1px solid #242424;'
+            'border-radius: 4px;}'
+            'QListWidget::item {color: #c8c8c8; border-radius: 3px;'
+            'padding: 2px;}'
+            'QListWidget::item:selected {background: #4a5f3d;}')
+        for template in self._templates:
+            item = QtWidgets.QListWidgetItem(
+                QtGui.QIcon(hotbox_thumbnail(template, 108, 66)),
+                template['general']['name'] or 'template')
+            self.template_grid.addItem(item)
+        if self._templates:
+            self.template_grid.setCurrentRow(0)
+        # double-clic sur une vignette = choisir ce template ET créer
+        self.template_grid.itemDoubleClicked.connect(
+            self._create_from_template)
+
+        # les sélecteurs ne s'activent qu'avec leur option
         self.existing.setEnabled(False)
-        self.template_combo.setEnabled(False)
+        self.template_grid.setEnabled(False)
         self.duplicate.toggled.connect(self.existing.setEnabled)
-        self.template.toggled.connect(self.template_combo.setEnabled)
+        self.template.toggled.connect(self.template_grid.setEnabled)
 
         # aperçu de la source choisie (template ou hotbox dupliquée)
         self.preview = QtWidgets.QLabel()
@@ -104,7 +134,7 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.preview.setStyleSheet(
             'QLabel {background: #2b2b2b; border: 1px solid #242424;'
             'border-radius: 4px; color: #8c8c8c;}')
-        self.template_combo.currentIndexChanged.connect(self.update_preview)
+        self.template_grid.currentRowChanged.connect(self.update_preview)
         self.existing.currentIndexChanged.connect(self.update_preview)
         self.new.toggled.connect(self.update_preview)
         self.duplicate.toggled.connect(self.update_preview)
@@ -119,8 +149,7 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.up_layout.addWidget(self.new, 0, 0)
         self.up_layout.addWidget(self.duplicate, 1, 0)
         self.up_layout.addWidget(self.existing, 1, 1)
-        self.up_layout.addWidget(self.template, 2, 0)
-        self.up_layout.addWidget(self.template_combo, 2, 1)
+        self.up_layout.addWidget(self.template, 2, 0, 1, 2)
 
         self.ok = QtWidgets.QPushButton('Create')
         self.ok.setDefault(True)
@@ -138,9 +167,14 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.layout.setSpacing(12)
         self.layout.addLayout(form)
         self.layout.addLayout(self.up_layout)
+        self.layout.addWidget(self.template_grid)
         self.layout.addWidget(self.preview, 0, QtCore.Qt.AlignHCenter)
         self.layout.addLayout(self.down_layout)
         self.update_preview()
+
+    def _create_from_template(self, _):
+        self.template.setChecked(True)
+        self.accept()
 
     def _source_data(self):
         """La hotbox source de l'option cochée, ou None (vide)."""
@@ -152,10 +186,9 @@ class CreateHotboxDialog(QtWidgets.QDialog):
                 if hb['general']['name'] == name]
             return sources[0] if sources else None
         if checked == 2:
-            index = self.template_combo.currentIndex()
-            templates = load_templates(self.templates_folder)
-            if 0 <= index < len(templates):
-                return templates[index]
+            index = self.template_grid.currentRow()
+            if 0 <= index < len(self._templates):
+                return self._templates[index]
         return None
 
     def update_preview(self, *_):

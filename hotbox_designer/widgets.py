@@ -202,13 +202,19 @@ class CommandButton(QtWidgets.QWidget):
         self.layout.addWidget(self.playbutton)
 
 class ColorButton(QtWidgets.QPushButton):
-    """Pastille de couleur façon Photoshop : le bouton EST la couleur
-    (code hexa affiché en contraste), un clic ouvre le sélecteur de
-    couleurs natif. set_color(None) = valeurs multiples ('...')."""
+    """Pastille de couleur façon Photoshop : le bouton EST la couleur,
+    le code hexa vit dans l'infobulle, un clic ouvre le sélecteur de
+    couleurs. set_color(None) = valeurs multiples ('...').
+
+    Le style est CIBLÉ sur la pastille (sélecteur #colorSwatch) : un
+    sélecteur QPushButton générique ruisselait sur les enfants — le
+    dialogue de couleurs, parenté à la pastille, voyait ses boutons
+    OK/Cancel peints de la couleur choisie."""
     valueSet = QtCore.Signal(str)
 
     def __init__(self, parent=None, show_text=True, label=''):
         super(ColorButton, self).__init__(parent)
+        self.setObjectName('colorSwatch')
         self._color = '#888888'
         self._show_text = show_text
         self._label = label
@@ -229,25 +235,22 @@ class ColorButton(QtWidgets.QPushButton):
             self.setText('...')
             self.setToolTip(self._label)
             self.setStyleSheet(
-                'QPushButton {background: #4a4a4a; color: #bbbbbb;'
-                'border: 1px solid #5a5a5a; border-radius: 3px;}')
+                'QPushButton#colorSwatch {background: #4a4a4a;'
+                'color: #bbbbbb; border: 1px solid #5a5a5a;'
+                'border-radius: 3px;}')
             return
-        qcolor = QtGui.QColor(self._color)
-        # texte noir ou blanc selon la luminosité de la couleur
-        luminance = (
-            0.299 * qcolor.red() + 0.587 * qcolor.green() +
-            0.114 * qcolor.blue())
-        text_color = '#000000' if luminance > 130 else '#ffffff'
+        # sobre : pas de texte teinté selon la couleur — le code hexa
+        # est dans l'infobulle
         self.setText(self._color.upper() if self._show_text else '')
         tooltip = self._color.upper()
         if self._label:
             tooltip = '%s — %s' % (self._label, tooltip)
         self.setToolTip(tooltip)
         self.setStyleSheet(
-            'QPushButton {background: %s; color: %s;'
+            'QPushButton#colorSwatch {background: %s; color: #ffffff;'
             'border: 1px solid #222222; border-radius: 3px;}'
-            'QPushButton:hover {border-color: #3388ff;}'
-            % (self._color, text_color))
+            'QPushButton#colorSwatch:hover {border-color: #ffffff;}'
+            % self._color)
 
     def pick_color(self):
         from hotbox_designer.colorpicker import ColorPickerDialog

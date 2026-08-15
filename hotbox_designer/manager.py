@@ -1,7 +1,7 @@
 
 import os
 from functools import partial
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore
+from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 
 from hotbox_designer.commands import OPEN_COMMAND, CLOSE_COMMAND, SWITCH_COMMAND
 from hotbox_designer.reader import HotboxReader
@@ -559,11 +559,13 @@ class HotboxTableView(QtWidgets.QTableView):
         self.setShowGrid(False)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-        vheader.setDefaultSectionSize(34)  # lignes plus hautes et aérées
+        # lignes hautes : chaque hotbox montre sa mini-vignette
+        vheader.setDefaultSectionSize(52)
+        self.setIconSize(QtCore.QSize(76, 44))
         self.setStyleSheet(
             'QTableView {border: none; background: #313131;'
             'alternate-background-color: #353535;}'
-            'QTableView::item {padding: 6px 10px; border: none;}'
+            'QTableView::item {padding: 4px 10px; border: none;}'
             'QTableView::item:selected {background: #6d8c5e;'
             'color: #ffffff;}')
 
@@ -583,11 +585,28 @@ class HotboxTableView(QtWidgets.QTableView):
         return rows[0]
 
 
+def _hotbox_row_icon(cache, hotbox):
+    """Mini-vignette d'une hotbox pour la liste du manager, mise en
+    cache par identité du dict (invalidée dès que la hotbox est
+    remplacée après édition)."""
+    if not hotbox:
+        return None
+    key = id(hotbox)
+    if key not in cache:
+        from hotbox_designer.buttonlibrary import hotbox_thumbnail
+        try:
+            cache[key] = QtGui.QIcon(hotbox_thumbnail(hotbox, 76, 44))
+        except Exception:  # une hotbox partagée malformée ne casse pas la liste
+            cache[key] = QtGui.QIcon()
+    return cache[key]
+
+
 class HotboxPersonalTableModel(QtCore.QAbstractTableModel):
 
     def __init__(self, hotboxes, parent=None):
         super(HotboxPersonalTableModel, self).__init__(parent=parent)
         self.hotboxes = hotboxes
+        self._thumbs = {}
 
     def columnCount(self, _):
         return 1
@@ -598,14 +617,16 @@ class HotboxPersonalTableModel(QtCore.QAbstractTableModel):
     def set_hotbox(self, row, hotbox):
         self.layoutAboutToBeChanged.emit()
         self.hotboxes[row] = hotbox
+        self._thumbs.clear()
         self.layoutChanged.emit()
 
     def data(self, index, role):
         row, col = index.row(), index.column()
         hotbox = self.hotboxes[row]
-        if role == QtCore.Qt.DisplayRole:
-            if col == 0:
-                return hotbox['general']['name']
+        if role == QtCore.Qt.DisplayRole and col == 0:
+            return hotbox['general']['name']
+        if role == QtCore.Qt.DecorationRole and col == 0:
+            return _hotbox_row_icon(self._thumbs, hotbox)
 
 
 class HotboxSharedTableModel(QtCore.QAbstractTableModel):
@@ -614,6 +635,7 @@ class HotboxSharedTableModel(QtCore.QAbstractTableModel):
         super(HotboxSharedTableModel, self).__init__(parent=parent)
         self.hotboxes_links = hotboxes_links
         self.hotboxes = [load_json(l) for l in hotboxes_links]
+        self._thumbs = {}
 
     def columnCount(self, _):
         return 1
@@ -635,10 +657,10 @@ class HotboxSharedTableModel(QtCore.QAbstractTableModel):
 
     def data(self, index, role):
         row, col = index.row(), index.column()
-        hotbox = self.hotboxes_links[row]
-        if role == QtCore.Qt.DisplayRole:
-            if col == 0:
-                return hotbox
+        if role == QtCore.Qt.DisplayRole and col == 0:
+            return self.hotboxes_links[row]
+        if role == QtCore.Qt.DecorationRole and col == 0:
+            return _hotbox_row_icon(self._thumbs, self.hotboxes[row])
 
 
 class HotboxGeneralInfosWidget(QtWidgets.QWidget):

@@ -4,6 +4,20 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Grille de templates, vignettes du manager, pastilles sobres
+
+- **Grille de templates à la création** : fini le menu déroulant
+  aveugle — chaque template en vignette + nom, tous visibles d'un
+  coup, clic = sélectionner, double-clic = créer directement.
+- **Vignettes dans la liste du manager** : chaque hotbox (Personal et
+  Shared) montre son mini-rendu à côté du nom — on reconnaît ses
+  hotboxes d'un coup d'œil.
+- **Correctif : les boutons OK/Cancel du sélecteur de couleurs
+  prenaient la couleur choisie** (le style de la pastille ruisselait
+  sur le dialogue enfant). Style ciblé sur la pastille seule ; et plus
+  de texte teinté selon la couleur — sobre, le code hexa vit dans
+  l'infobulle (pastille du texte alignée sur celles de l'apparence).
+
 ## 2026-08 — Aperçu d'états en direct + template TAT mis à jour
 
 - **Aperçu d'états dans le panneau d'attributs** (section PREVIEW en

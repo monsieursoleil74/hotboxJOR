@@ -762,7 +762,7 @@ def test_create_hotbox_dialog():
     # par défaut : hotbox vide, menus grisés
     assert dialog.new.isChecked()
     assert not dialog.existing.isEnabled()
-    assert not dialog.template_combo.isEnabled()
+    assert not dialog.template_grid.isEnabled()
     hotbox = dialog.hotbox()
     assert hotbox['shapes'] == []
     names = [hb['general']['name'] for hb in existing]
@@ -770,13 +770,13 @@ def test_create_hotbox_dialog():
 
     # les menus s'activent avec leur option
     dialog.template.setChecked(True)
-    assert dialog.template_combo.isEnabled()
+    assert dialog.template_grid.isEnabled()
     assert not dialog.existing.isEnabled()
 
     # template : shapes copiées, nom UNIQUE même si une hotbox porte
     # déjà le nom du template (l'ancien code validait contre les
     # templates -> doublon garanti)
-    dialog.template_combo.setCurrentIndex(0)
+    dialog.template_grid.setCurrentRow(0)
     dialog.name_edit.setText(load_templates()[0]['general']['name'])
     hotbox = dialog.hotbox()
     assert len(hotbox['shapes']) == len(load_templates()[0]['shapes'])
@@ -1394,10 +1394,10 @@ def test_user_templates():
     dialog = CreateHotboxDialog([], templates_folder=tmp)
     dialog.show()
     APP.processEvents()
-    assert dialog.template_combo.count() == builtin_count + 2
+    assert dialog.template_grid.count() == builtin_count + 2
     # choisir le template utilisateur → aperçu rendu + données copiées
     dialog.template.setChecked(True)
-    dialog.template_combo.setCurrentIndex(builtin_count)
+    dialog.template_grid.setCurrentRow(builtin_count)
     APP.processEvents()
     assert dialog.preview.pixmap() is not None
     assert not dialog.preview.pixmap().isNull()

@@ -619,7 +619,9 @@ class TextSettings(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'text.italic')
         self.italic.valueSet.connect(method)
 
-        self.color = ColorButton()
+        # pastille sans texte, comme les couleurs d'apparence (sobre :
+        # le code hexa vit dans l'infobulle)
+        self.color = ColorButton(show_text=False, label='Text color')
         self.color.valueSet.connect(partial(self.optionSet.emit, 'text.color'))
 
         self.halignement = QtWidgets.QComboBox()

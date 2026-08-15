@@ -434,8 +434,11 @@ habiller un template sans replacer chaque bouton à la main.
 
 ## Templates
 
-À la création d'une hotbox (« From template »), un **aperçu** du
-template s'affiche dans le dialogue (idem pour « Duplicate existing »).
+À la création d'une hotbox, les templates s'affichent en **grille de
+vignettes cliquables** : tous visibles d'un coup (embarqués puis
+persos), clic = sélectionner (le grand aperçu se met à jour),
+**double-clic = créer directement**. « Duplicate existing » garde son
+menu et son aperçu.
 
 Les templates embarqués sont ceux hérités de l'original, plus le
 template **TAT** (la hotbox de base du studio : grille de boutons
