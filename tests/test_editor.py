@@ -1614,6 +1614,57 @@ def test_studio_admin_mode():
     print('mode admin studio (au lancement) OK')
 
 
+def test_fork_folder_migration():
+    """Rangement des données : la librairie perso et le registre des
+    raccourcis vivent dans le dossier du fork (prefs/hotboxJOR sous
+    Maya) ; les fichiers restés à la racine des prefs sont migrés
+    automatiquement, hotboxes.json reste où il est."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+
+    root = tempfile.mkdtemp()
+    fork = os.path.join(root, 'hotboxJOR')
+
+    class MayaLike(Standalone):
+        def get_data_folder(self):
+            return root
+
+        def get_fork_folder(self):
+            if not os.path.exists(fork):
+                os.makedirs(fork)
+            return fork
+
+    app = MayaLike()
+
+    # un button_library.json « historique » à la racine des prefs
+    legacy = os.path.join(root, 'button_library.json')
+    bl.save_library(legacy, [
+        {'name': 'old', 'category': 'TAT',
+         'options': dict(SQUARE_BUTTON)}])
+    path = bl.library_path(app)
+    assert path == os.path.join(fork, 'button_library.json')
+    assert not os.path.exists(legacy)          # déplacé...
+    assert os.path.exists(path)                # ...vers hotboxJOR/
+    assert [e['name'] for e in bl.load_library(path)] == ['old']
+
+    # registre des raccourcis : pareil
+    legacy_keys = os.path.join(root, 'hotbox_hotkey.json')
+    with open(legacy_keys, 'w') as f:
+        json.dump({'face': {'sequence': 'Ctrl+F', 'mode': 'x'}}, f)
+    assert app.get_hotkey_file() == os.path.join(
+        fork, 'hotbox_hotkey.json')
+    assert not os.path.exists(legacy_keys)
+    assert app.load_hotkeys()['face']['sequence'] == 'Ctrl+F'
+
+    # Standalone (dossier déjà dédié) : aucun déplacement, mêmes chemins
+    solo_root = tempfile.mkdtemp()
+    solo = Standalone()
+    solo.get_data_folder = lambda: solo_root
+    assert bl.library_path(solo) == os.path.join(
+        solo_root, 'button_library.json')
+    print('rangement des données (prefs/hotboxJOR + migration) OK')
+
+
 def test_hotkey_registry():
     """Registre des raccourcis : on peut noter, relire, mettre à jour et
     RETIRER un raccourci — ce que l'ancien Maya ne permettait pas (pose
@@ -1773,6 +1824,7 @@ if __name__ == '__main__':
     test_new_builtin_templates()
     test_color_picker_pipette()
     test_studio_admin_mode()
+    test_fork_folder_migration()
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()

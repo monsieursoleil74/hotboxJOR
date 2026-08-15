@@ -265,6 +265,10 @@ Le JSON n'est pas réécrit : seul l'affichage résout le chemin.
 - Les hotboxes vivent dans `hotboxes.json` dans les **préférences
   Maya** (`Documents\maya\<version>\prefs\`), comme l'original : les
   hotboxes créées avec l'ancien outil apparaissent telles quelles.
+- Les données **propres au fork** (librairie de boutons perso, registre
+  des raccourcis, templates utilisateur) sont rangées dans le
+  sous-dossier `prefs\hotboxJOR\` — migration automatique des fichiers
+  d'anciennes versions restés à la racine.
 - Bouton **touche** (⌨) du manager : le **gestionnaire de raccourcis**
   liste toutes les hotboxes avec leur touche — Set/Change pour capturer
   une combinaison (on la tape, elle s'affiche), Clear pour la retirer.

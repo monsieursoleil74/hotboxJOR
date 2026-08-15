@@ -63,7 +63,14 @@ def is_studio_admin():
 
 
 def library_path(application):
-    return os.path.join(application.get_data_folder(), LIBRARY_FILENAME)
+    """Librairie perso : dans le dossier du fork (`prefs/hotboxJOR/`
+    sous Maya). Un fichier resté à la racine des prefs (versions
+    antérieures) est déplacé une fois pour toutes."""
+    from hotbox_designer.applications import migrate_legacy_file
+    path = os.path.join(application.get_fork_folder(), LIBRARY_FILENAME)
+    migrate_legacy_file(
+        os.path.join(application.get_data_folder(), LIBRARY_FILENAME), path)
+    return path
 
 
 def studio_location():

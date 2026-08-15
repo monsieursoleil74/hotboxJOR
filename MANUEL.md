@@ -200,9 +200,13 @@ affiché avec son vrai rendu en vignette.
 
 ### Où c'est stocké
 
-- **Perso** (modifiable) : `button_library.json` dans le dossier de
-  données — préférences Maya (`Documents\maya\<version>\prefs\`), ou
-  `~/.hotboxjor` en standalone.
+- **Perso** (modifiable) : `button_library.json` dans le **dossier du
+  fork** — `Documents\maya\<version>\prefs\hotboxJOR\` sous Maya
+  (`~/.hotboxjor` en standalone). Le registre des raccourcis et les
+  templates utilisateur y vivent aussi ; un fichier resté à la racine
+  des prefs (anciennes versions) est déplacé automatiquement au premier
+  lancement. `hotboxes.json`, lui, reste à la racine des prefs — c'est
+  l'emplacement de l'original (compatibilité et retour arrière).
 - **Studio** (partagée, catégories officielles) : un fichier commun,
   désigné par la variable d'environnement **`HOTBOX_STUDIO_LIBRARY`**
   (un `.json`, ou un dossier contenant `button_library.json`). À défaut

@@ -8,7 +8,7 @@ from hotbox_designer.widgets import (
 from hotbox_designer.designer.highlighter import get_highlighter
 
 
-LEFT_CELL_WIDTH = 80
+LEFT_CELL_WIDTH = 95
 SHAPE_TYPES = 'square', 'rounded_rect', 'round'
 SHAPE_LABELS = {
     'square': 'square', 'rounded_rect': 'rounded', 'round': 'round'}
@@ -75,8 +75,9 @@ class AttributeEditor(QtWidgets.QWidget):
         self.main_layout.addWidget(self.scroll_area)
 
         # largeur fixe (la largeur auto gonflait avec les nouveaux
-        # widgets — on garde le gabarit d'origine)
-        self.setFixedWidth(290)
+        # widgets) — élargie : à 290 les libellés étaient tronqués
+        # (« Has comma… ») et tout était tassé
+        self.setFixedWidth(330)
         self.scroll_area.setHorizontalScrollBarPolicy(
             QtCore.Qt.ScrollBarAlwaysOff)
         self.scroll_area.setWidgetResizable(True)

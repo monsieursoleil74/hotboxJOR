@@ -312,8 +312,27 @@ class HotboxManager(QtWidgets.QWidget):
         editor.show()
 
     def user_templates_folder(self):
-        return os.path.join(
+        """Templates utilisateur : dans le dossier du fork. Les .json
+        d'un ancien dossier `templates/` à la racine des prefs sont
+        rapatriés fichier par fichier (on ne déplace pas le dossier en
+        bloc : un `templates/` à la racine des prefs pourrait appartenir
+        à un autre outil)."""
+        from hotbox_designer.applications import migrate_legacy_file
+        folder = os.path.join(
+            self.application.get_fork_folder(), 'templates')
+        legacy = os.path.join(
             self.application.get_data_folder(), 'templates')
+        if legacy != folder and os.path.isdir(legacy):
+            for name in os.listdir(legacy):
+                if name.lower().endswith('.json'):
+                    migrate_legacy_file(
+                        os.path.join(legacy, name),
+                        os.path.join(folder, name))
+            try:
+                os.rmdir(legacy)  # seulement s'il est vide
+            except OSError:
+                pass
+        return folder
 
     def _call_create(self):
         hotboxes_ = self.personnal_model.hotboxes + self.shared_model.hotboxes

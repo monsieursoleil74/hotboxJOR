@@ -1,5 +1,6 @@
 import os
 import json
+import shutil
 from hotbox_designer.vendor.Qt import QtWidgets
 from hotbox_designer.dialog import warning
 from hotbox_designer.languages import (
@@ -9,12 +10,36 @@ from hotbox_designer.languages import (
 HOTBOXES_FILENAME = 'hotboxes.json'
 SHARED_HOTBOXES_FILENAME = 'shared_hotboxes.json'
 HOTKEYS_FILENAME = 'hotbox_hotkey.json'
+# sous-dossier des données PROPRES au fork (librairie de boutons,
+# registre des raccourcis, templates utilisateur) — pour ne pas
+# encombrer la racine des prefs Maya. hotboxes.json, lui, RESTE à la
+# racine : c'est le format/emplacement de l'original (compatibilité et
+# retour arrière garantis).
+FORK_FOLDER_NAME = 'hotboxJOR'
 SETMODE_PRESS_RELEASE = 'open on press | close on release'
 SETMODE_SWITCH_ON_PRESS = 'switch on press'
 
 
 def execute(command):
     exec(command)
+
+
+def migrate_legacy_file(legacy_path, new_path):
+    """Déplace une bonne fois un fichier de l'ancien emplacement (racine
+    des prefs) vers le dossier hotboxJOR/. Sans effet si la destination
+    existe déjà, si la source n'existe pas, ou si les chemins sont
+    identiques."""
+    if legacy_path == new_path or os.path.exists(new_path):
+        return
+    if not os.path.exists(legacy_path):
+        return
+    try:
+        folder = os.path.dirname(new_path)
+        if folder and not os.path.exists(folder):
+            os.makedirs(folder)
+        shutil.move(legacy_path, new_path)
+    except OSError:
+        pass  # au pire on continue de lire l'ancien emplacement
 
 
 class AbstractApplication(object):
@@ -36,6 +61,12 @@ class AbstractApplication(object):
     @staticmethod
     def get_data_folder():
         raise NotImplementedError
+
+    def get_fork_folder(self):
+        """Dossier des données propres au fork. Par défaut le dossier de
+        données lui-même (Standalone : ~/.hotboxjor est déjà dédié) ;
+        Maya le range dans `prefs/hotboxJOR/`."""
+        return self.get_data_folder()
 
     @staticmethod
     def get_reader_parent():
@@ -70,7 +101,12 @@ class AbstractApplication(object):
     # backends, qui alimente le gestionnaire de raccourcis.
 
     def get_hotkey_file(self):
-        return os.path.join(self.get_data_folder(), HOTKEYS_FILENAME)
+        path = os.path.join(self.get_fork_folder(), HOTKEYS_FILENAME)
+        # les registres écrits à la racine des prefs (versions
+        # antérieures) sont rapatriés une fois pour toutes
+        migrate_legacy_file(
+            os.path.join(self.get_data_folder(), HOTKEYS_FILENAME), path)
+        return path
 
     def load_hotkeys(self):
         """Registre `{nom_hotbox: {'sequence': ..., 'mode': ...}}`.
@@ -142,6 +178,17 @@ class Maya(AbstractApplication):
     def get_data_folder():
         from maya import cmds
         return cmds.internalVar(userPrefDir=True)
+
+    def get_fork_folder(self):
+        """Les données du fork vivent dans `prefs/hotboxJOR/` au lieu
+        d'encombrer la racine des prefs Maya."""
+        folder = os.path.join(self.get_data_folder(), FORK_FOLDER_NAME)
+        if not os.path.exists(folder):
+            try:
+                os.makedirs(folder)
+            except OSError:
+                return self.get_data_folder()  # repli : racine des prefs
+        return folder
 
     @staticmethod
     def get_main_window():

@@ -4,6 +4,21 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Données rangées dans prefs/hotboxJOR + panneau d'attributs élargi
+
+- **Rangement** : la librairie de boutons perso, le registre des
+  raccourcis et les templates utilisateur vivent désormais dans
+  `prefs\hotboxJOR\` au lieu d'encombrer la racine des prefs Maya.
+  **Migration automatique** au premier lancement des fichiers restés à
+  la racine (`button_library.json`, `hotbox_hotkey.json`, `templates/`
+  — .json déplacés un à un). `hotboxes.json` reste à la racine :
+  emplacement de l'original, compatibilité et rollback préservés.
+  (`AbstractApplication.get_fork_folder`, surchargé par Maya ;
+  Standalone garde ~/.hotboxjor tel quel.)
+- **Panneau d'attributs élargi** (290 → 330 px, colonne de libellés
+  80 → 95) : « Has command », « Close Hotbox », « Fit to shape » ne
+  sont plus tronqués, les champs respirent.
+
 ## 2026-08 — Fix catégories du dialogue de sauvegarde + sélection visible dans la shelf
 
 - **Fix** : en basculant la destination sur « Studio (TAT) » dans le
