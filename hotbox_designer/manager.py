@@ -135,12 +135,6 @@ class HotboxManager(QtWidgets.QWidget):
         self.edit = HotboxGeneralSettingWidget()
         self.edit.optionSet.connect(self._call_option_set)
         self.edit.setEnabled(False)
-        self.edit.open_command.released.connect(self._call_open_command)
-        method = self._call_play_open_command
-        self.edit.open_command.playReleased.connect(method)
-        self.edit.close_command.released.connect(self._call_close_command)
-        method = self._call_play_close_command
-        self.edit.close_command.playReleased.connect(method)
         self.edit.switch_command.released.connect(self._call_switch_command)
         method = self._call_play_switch_command
         self.edit.switch_command.playReleased.connect(method)
@@ -161,12 +155,6 @@ class HotboxManager(QtWidgets.QWidget):
 
         self.infos = HotboxGeneralInfosWidget()
         self.infos.setEnabled(False)
-        self.infos.open_command.released.connect(self._call_open_command)
-        method = self._call_play_open_command
-        self.infos.open_command.playReleased.connect(method)
-        self.infos.close_command.released.connect(self._call_close_command)
-        method = self._call_play_close_command
-        self.infos.close_command.playReleased.connect(method)
         self.infos.switch_command.released.connect(self._call_switch_command)
         method = self._call_play_switch_command
         self.infos.switch_command.playReleased.connect(method)
@@ -246,32 +234,6 @@ class HotboxManager(QtWidgets.QWidget):
             self.infos.setEnabled(True)
         else:
             self.infos.setEnabled(False)
-
-    def _get_open_command(self):
-        hotbox = self.get_selected_hotbox()
-        if not hotbox:
-            return warning('Hotbox designer', 'No hotbox selected')
-        return OPEN_COMMAND.format(
-            application=self.application.name,
-            name=hotbox['general']['name'])
-
-    def _call_open_command(self):
-        CommandDisplayDialog(self._get_open_command(), self).exec_()
-
-    def _call_play_open_command(self):
-        exec(self._get_open_command())
-
-    def _get_close_command(self):
-        hotbox = self.get_selected_hotbox()
-        if not hotbox:
-            return warning('Hotbox designer', 'No hotbox selected')
-        return CLOSE_COMMAND.format(name=hotbox['general']['name'])
-
-    def _call_close_command(self):
-        CommandDisplayDialog(self._get_close_command(), self).exec_()
-
-    def _call_play_close_command(self):
-        exec(self._get_close_command())
 
     def _get_switch_command(self):
         hotbox = self.get_selected_hotbox()
@@ -684,8 +646,9 @@ class HotboxGeneralInfosWidget(QtWidgets.QWidget):
         super(HotboxGeneralInfosWidget, self).__init__(parent)
         self.setFixedWidth(200)
         self.label = QtWidgets.QLabel()
-        self.open_command = CommandButton('show')
-        self.close_command = CommandButton('hide')
+        # seule la commande switch reste exposée : un clic ouvre, un
+        # re-clic ferme — c'est elle qu'on colle sur un bouton de shelf.
+        # show/hide sont câblés automatiquement par les raccourcis.
         self.switch_command = CommandButton('switch')
 
         self.layout = QtWidgets.QVBoxLayout(self)
@@ -698,8 +661,6 @@ class HotboxGeneralInfosWidget(QtWidgets.QWidget):
         self.layout.addStretch(1)
         self.layout.addWidget(Title('Commands'))
         self.layout.addSpacing(8)
-        self.layout.addWidget(self.open_command)
-        self.layout.addWidget(self.close_command)
         self.layout.addWidget(self.switch_command)
 
     def set_hotbox_data(self, hotbox_data):
@@ -732,8 +693,6 @@ class HotboxGeneralSettingWidget(QtWidgets.QWidget):
         method = partial(self.optionSet.emit, 'leaveclose')
         self.leaveclose.valueSet.connect(method)
 
-        self.open_command = CommandButton('show')
-        self.close_command = CommandButton('hide')
         self.switch_command = CommandButton('switch')
 
         self.layout = QtWidgets.QFormLayout(self)
@@ -755,8 +714,6 @@ class HotboxGeneralSettingWidget(QtWidgets.QWidget):
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
         self.layout.addRow(Title('Commands'))
         self.layout.addItem(QtWidgets.QSpacerItem(0, 8))
-        self.layout.addRow(self.open_command)
-        self.layout.addRow(self.close_command)
         self.layout.addRow(self.switch_command)
 
     def set_preview(self, hotbox_data):

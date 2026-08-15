@@ -23,6 +23,10 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   utilisateur (« Save hotbox as template »).
 - **Template TAT embarqué** : la hotbox de base du studio (29 boutons,
   fournie par l'utilisateur) livrée comme template « From template ».
+- **Commandes show/hide retirées du manager** : seule `switch` reste
+  exposée (c'est elle qu'on colle sur un bouton de shelf — un clic
+  ouvre, un re-clic ferme). show/hide sont câblées automatiquement par
+  le gestionnaire de raccourcis, plus besoin de les copier à la main.
 
 ## 2026-08 — Robustesse avant déploiement (atomique, refresh auto, CI)
 
