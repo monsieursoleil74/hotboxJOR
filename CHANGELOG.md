@@ -4,6 +4,15 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Le sélecteur de librairie studio ouvert aux animateurs
+
+- Le bouton **TAT** de la shelf est désormais visible en mode
+  **animateur** aussi : chacun choisit sur quelle librairie studio il
+  est (par projet), via **Open library…** et les récents. La création
+  d'une librairie reste réservée à l'admin (un animateur qui ouvre un
+  dossier sans `button_library.json` est prévenu, rien n'est créé), et
+  la lecture seule s'applique toujours hors mode admin.
+
 ## 2026-08 — Bascule de mode sans redémarrer Maya
 
 - Relancer `launch_manager('maya')` ou

@@ -226,13 +226,16 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   rename, delete). Les onglets studio sont intouchables — pas de
   création/renommage de catégorie, pas d'envoi vers le studio, pas de
   destination « Studio » à la sauvegarde.
-- **Choisir / changer de librairie studio (par projet)** — en mode
-  admin, un bouton **TAT** apparaît à côté du « ＋ » de la shelf. Son
-  menu affiche la librairie courante et permet :
-  - **Create / open library…** — choisir un dossier ; le
-    `button_library.json` y est créé s'il n'existe pas, et on bascule
-    dessus (premier lancement : c'est ici qu'on crée sa première
-    librairie) ;
+- **Choisir / changer de librairie studio (par projet)** — un bouton
+  **TAT** à côté du « ＋ » de la shelf, pour **tout le monde** :
+  l'animateur choisit lui aussi sur quelle librairie il est (elle reste
+  en lecture seule pour lui). Le menu affiche la librairie courante et
+  permet :
+  - **Create / open library…** (admin) ou **Open library…**
+    (animateur) — choisir un dossier ; l'admin peut y créer le
+    `button_library.json` s'il n'existe pas (premier lancement : c'est
+    ici qu'on crée sa première librairie), l'animateur ne peut ouvrir
+    qu'une librairie existante ;
   - la liste des **librairies récentes** (cochée = courante) pour
     switcher d'un projet à l'autre en un clic ;
   - **Use default location** — revenir à `HOTBOX_STUDIO_LIBRARY` / au

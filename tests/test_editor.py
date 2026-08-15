@@ -1667,11 +1667,33 @@ def test_studio_library_switch():
         assert bl.get_studio_override() is None
         assert bl.load_studio_settings(application)['current'] is None
 
-        # en mode animateur le bouton disparaît
+        # l'admin crée le json manquant via l'ouverture d'un dossier
+        project_c = tempfile.mkdtemp()
+        assert shelf._open_studio_folder(project_c) is True
+        assert os.path.exists(
+            os.path.join(project_c, 'button_library.json'))
+
+        # en mode ANIMATEUR : le bouton reste visible (il choisit sur
+        # quelle librairie il est), mais pas de création possible
         bl.set_studio_admin(False)
         bl.refresh_shelves()
         APP.processEvents()
-        assert shelf.library_button.isVisible() is False
+        assert shelf.library_button.isVisible() is True
+        project_d = tempfile.mkdtemp()  # pas de button_library.json
+        warned = []
+        saved_warning = QtWidgets.QMessageBox.warning
+        QtWidgets.QMessageBox.warning = (
+            lambda *a, **k: warned.append(a) or 0)
+        try:
+            assert shelf._open_studio_folder(project_d) is False
+        finally:
+            QtWidgets.QMessageBox.warning = saved_warning
+        assert warned  # prévenu, pas de création
+        assert not os.path.exists(
+            os.path.join(project_d, 'button_library.json'))
+        # ouvrir une librairie EXISTANTE marche pour lui
+        assert shelf._open_studio_folder(project_a) is True
+        assert bl.studio_location() == project_a
         shelf.close()
     finally:
         bl.set_studio_admin(False)

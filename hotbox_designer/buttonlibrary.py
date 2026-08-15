@@ -592,12 +592,14 @@ class LibraryShelf(QtWidgets.QWidget):
         self.add_button.setText('＋')
         self.add_button.setToolTip('Create a category')
         self.add_button.released.connect(self._prompt_category)
-        # bouton TAT (admin) : créer / changer de librairie studio
+        # bouton TAT : changer de librairie studio (par projet).
+        # Visible pour TOUT LE MONDE — l'animateur choisit sur quelle
+        # librairie il est (ouvrir/switcher), seul l'admin peut en CRÉER
         self.library_button = QtWidgets.QToolButton()
         self.library_button.setToolTip(
-            'Studio library — create or switch (per project)')
+            'Studio library — switch per project '
+            '(read-only outside admin mode)')
         self.library_button.released.connect(self._studio_library_menu)
-        self.library_button.setVisible(is_studio_admin())
         # badge visible seulement quand le manager est lancé en mode
         # admin studio : on sait d'un coup d'œil qu'on édite l'officiel
         self.admin_badge = QtWidgets.QLabel(' STUDIO ADMIN ')
@@ -657,7 +659,6 @@ class LibraryShelf(QtWidgets.QWidget):
         # launch_manager avec/sans studio_admin) : badge et bouton
         # librairie suivent ; le logo aussi (il peut différer par projet)
         self.admin_badge.setVisible(is_studio_admin())
-        self.library_button.setVisible(is_studio_admin())
         logo = studio_logo_path()
         self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
         if not self.studio_icon.isNull():
@@ -812,8 +813,11 @@ class LibraryShelf(QtWidgets.QWidget):
             'Library: %s' % (location or '(none)'))
         header.setEnabled(False)
         menu.addSeparator()
-        menu.addAction(
-            'Create / open library…', self._choose_studio_library)
+        # l'animateur peut OUVRIR une librairie existante ; la création
+        # est réservée à l'admin
+        label = ('Create / open library…' if is_studio_admin()
+                 else 'Open library…')
+        menu.addAction(label, self._choose_studio_library)
         recent = load_studio_settings(self.application).get('recent') or []
         if recent:
             menu.addSeparator()
@@ -831,22 +835,36 @@ class LibraryShelf(QtWidgets.QWidget):
         menu.exec_(QtGui.QCursor.pos())
 
     def _choose_studio_library(self):
-        """Choisit un DOSSIER de librairie studio ; le
-        button_library.json y est créé s'il n'existe pas encore."""
+        """Choisit un DOSSIER de librairie studio puis bascule."""
+        title = ('Choose the studio library folder' if is_studio_admin()
+                 else 'Open a studio library folder')
         folder = QtWidgets.QFileDialog.getExistingDirectory(
-            self, 'Choose the studio library folder',
-            studio_location() or '')
-        if not folder:
-            return
+            self, title, studio_location() or '')
+        if folder:
+            self._open_studio_folder(folder)
+
+    def _open_studio_folder(self, folder):
+        """Valide le dossier puis bascule dessus. Si le
+        button_library.json manque : l'admin le crée, l'animateur est
+        prévenu (il ne peut qu'ouvrir une librairie existante).
+        Retourne True si la bascule a eu lieu."""
         path = os.path.join(folder, LIBRARY_FILENAME)
         if not os.path.exists(path):
+            if not is_studio_admin():
+                QtWidgets.QMessageBox.warning(
+                    self, 'Studio library',
+                    'No studio library (%s) in this folder.'
+                    % LIBRARY_FILENAME)
+                return False
             try:
                 save_library(path, [])
             except OSError:
-                return QtWidgets.QMessageBox.warning(
+                QtWidgets.QMessageBox.warning(
                     self, 'Studio library',
                     'Could not create %s (folder not writable).' % path)
+                return False
         self._switch_studio_library(folder)
+        return True
 
     def _switch_studio_library(self, folder):
         """Bascule la session sur cette librairie (None = revenir à la
