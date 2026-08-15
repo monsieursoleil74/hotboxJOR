@@ -5,15 +5,15 @@ Deux niveaux, façon pipeline studio :
 - **Perso** : ``button_library.json`` dans le dossier de données
   (préférences Maya ; ``~/.hotboxjor`` en standalone). Modifiable par
   l'artiste.
-- **Studio** (optionnel, LECTURE SEULE) : une librairie partagée sur le
-  réseau, désignée par la variable d'environnement
+- **Studio** (optionnel, LECTURE SEULE hors mode admin) : une librairie
+  partagée, choisie via l'UI (badge/bouton dossier de la shelf, choix
+  persisté) ou désignée par la variable d'environnement
   ``HOTBOX_STUDIO_LIBRARY`` (un fichier .json OU un dossier contenant
-  ``button_library.json``). À défaut de variable, on cherche le dossier
-  ``DEFAULT_STUDIO_DIR`` ci-dessous. Les onglets studio portent le
-  **logo du studio** en icône (``studio_logo.png``/``logo.png`` posé à
-  côté de la librairie, ou variable ``HOTBOX_STUDIO_LOGO`` ; sinon un
-  logo par défaut) et ne sont pas modifiables — seul le lead maintient
-  ce fichier.
+  ``button_library.json``). AUCUNE librairie par défaut : au premier
+  lancement il n'y en a pas, on en crée/ouvre une explicitement. Les
+  onglets studio portent le **logo du studio** en icône
+  (``studio_logo.png``/``logo.png`` posé à côté de la librairie, ou
+  variable ``HOTBOX_STUDIO_LOGO`` ; sinon un logo par défaut).
 
 Un même bouton se glisse-dépose depuis n'importe quel onglet vers une
 hotbox.
@@ -42,7 +42,6 @@ CATEGORY_KEY = '__category__'
 # librairie studio partagée
 STUDIO_ENV_VARIABLE = 'HOTBOX_STUDIO_LIBRARY'
 STUDIO_LOGO_ENV_VARIABLE = 'HOTBOX_STUDIO_LOGO'
-DEFAULT_STUDIO_DIR = r'C:\Users\ortzj\Desktop\JOR\hotbox'
 STUDIO_PREFIX = '\u2605 '  # « ★ » : repli si aucun logo trouvé
 STUDIO_LOGO_NAMES = ('studio_logo.png', 'logo.png')
 
@@ -121,10 +120,9 @@ def library_path(application):
 
 
 def studio_location():
-    location = (
-        _STUDIO_OVERRIDE
-        or os.environ.get(STUDIO_ENV_VARIABLE)
-        or DEFAULT_STUDIO_DIR)
+    # AUCUN défaut : sans choix via l'UI ni variable d'environnement,
+    # il n'y a tout simplement pas de librairie studio
+    location = _STUDIO_OVERRIDE or os.environ.get(STUDIO_ENV_VARIABLE)
     if not location:
         return None
     return os.path.expandvars(os.path.expanduser(location))
@@ -614,10 +612,10 @@ class LibraryShelf(QtWidgets.QWidget):
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText('＋')
         # ＋ suit le mode : admin → catégorie DANS la librairie studio
-        # courante (onglet logo TAT) ; animateur → catégorie perso,
-        # façon shelf Maya
-        self.add_button.released.connect(
-            lambda: self._prompt_category(is_studio_admin()))
+        # courante (onglet logo TAT) ; animateur — ou admin SANS
+        # librairie chargée — → catégorie perso, façon shelf Maya
+        self.add_button.released.connect(lambda: self._prompt_category(
+            is_studio_admin() and studio_location() is not None))
         # bouton dossier : créer (admin) / ouvrir une librairie — à part
         # entière, pas caché dans un menu
         self.open_library_button = QtWidgets.QToolButton()
@@ -698,7 +696,7 @@ class LibraryShelf(QtWidgets.QWidget):
         # SESSION : badge, boutons et logo suivent (le logo peut
         # différer par projet)
         self._update_library_badge()
-        if is_studio_admin():
+        if is_studio_admin() and studio_location():
             self.add_button.setToolTip(
                 'Create a category in %s' % studio_library_label())
         else:
@@ -1038,10 +1036,14 @@ class LibraryShelf(QtWidgets.QWidget):
                 delete.setToolTip('Only empty categories can be deleted')
             menu.addSeparator()
 
-        menu.addAction(
-            'Open library folder',
-            lambda: self._open_library_folder(readonly))
-        menu.exec_(tab_bar.mapToGlobal(position))
+        # ouvrir le dossier : perso toujours ; studio en mode admin
+        # seulement (le fichier du lead ne regarde pas l'animateur)
+        if self._can_edit(readonly):
+            menu.addAction(
+                'Open library folder',
+                lambda: self._open_library_folder(readonly))
+        if not menu.isEmpty():
+            menu.exec_(tab_bar.mapToGlobal(position))
 
     def _open_library_folder(self, readonly):
         if readonly:
@@ -1102,11 +1104,14 @@ class LibraryShelf(QtWidgets.QWidget):
                          if count == 1 else 'Delete %d buttons' % count)
             menu.addAction(del_label, lambda: self._delete(entries))
             menu.addSeparator()
-        # toujours disponible : ouvrir le dossier de la librairie
-        menu.addAction(
-            'Open library folder',
-            lambda: self._open_library_folder(shelf_list.readonly))
-        menu.exec_(shelf_list.mapToGlobal(position))
+        # ouvrir le dossier : perso toujours ; studio en mode admin
+        # seulement
+        if self._can_edit(shelf_list.readonly):
+            menu.addAction(
+                'Open library folder',
+                lambda: self._open_library_folder(shelf_list.readonly))
+        if not menu.isEmpty():
+            menu.exec_(shelf_list.mapToGlobal(position))
 
     def _send_to_studio(self, entries):
         added = export_to_studio(entries)

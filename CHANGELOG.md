@@ -4,6 +4,19 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Zéro librairie par défaut + clic droit épuré pour l'animateur
+
+- **Plus de librairie par défaut** (le chemin de dev codé en dur est
+  retiré) : au premier lancement il n'y a AUCUNE librairie studio — on
+  en crée/ouvre une explicitement, et seules les librairies réellement
+  chargées apparaissent dans la liste. Plus de résidus. La variable
+  `HOTBOX_STUDIO_LIBRARY` reste supportée (déploiement studio).
+- En mode admin **sans librairie chargée**, le ＋ crée une catégorie
+  perso (au lieu d'un avertissement).
+- **« Open library folder » masqué sur les onglets studio hors mode
+  admin** — le fichier du lead ne regarde pas l'animateur (l'action
+  reste sur les onglets perso).
+
 ## 2026-08 — Ménage dans la liste des librairies
 
 - Sous-menu **Remove from list** dans le menu du badge : retirer une

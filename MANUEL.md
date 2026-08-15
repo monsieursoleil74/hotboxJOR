@@ -169,8 +169,8 @@ affiché avec son vrai rendu en vignette.
 - **Supprimer** : clic droit sur un bouton de la shelf → Delete.
 - **Ouvrir le dossier** (JSON brut) : clic droit sur la shelf ou un
   onglet → « Open library folder » — ouvre l'explorateur à
-  l'emplacement du `button_library.json` (perso ou studio selon
-  l'onglet).
+  l'emplacement du `.json` (perso ou studio selon l'onglet). Sur les
+  onglets **studio**, l'action n'apparaît qu'en **mode admin**.
 - **Organiser les catégories** — clic droit sur un **onglet** :
   - **New category… / New studio category…** — créer une catégorie
     (persistée même vide ; le libellé s'adapte selon que l'onglet est
@@ -246,10 +246,14 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
     ou ouvre une librairie existante (animateur : ouverture seulement).
     À la création, le **logo courant est copié** à côté du nouveau
     fichier — la nouvelle librairie garde l'identité TAT.
-  Le choix est **mémorisé entre les sessions**
+  **Aucune librairie par défaut** : au tout premier lancement il n'y en
+  a pas (pas de badge, pas d'onglets studio) — on en crée/ouvre une
+  explicitement, et seules celles qu'on a réellement chargées vivent
+  dans la liste. Le choix est **mémorisé entre les sessions**
   (`studio_settings.json` dans `prefs/hotboxJOR/`) et prend le pas sur
-  la variable d'environnement. Un `studio_logo.png` différent par
-  projet est possible.
+  la variable d'environnement (`HOTBOX_STUDIO_LIBRARY`, réservée au
+  déploiement studio). Un `studio_logo.png` différent par projet est
+  possible.
 - **Changer de mode sans redémarrer Maya** : il suffit de relancer
   l'autre commande dans le Script Editor — le manager, le badge et les
   shelves déjà ouvertes basculent immédiatement.

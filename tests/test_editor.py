@@ -1631,20 +1631,19 @@ def test_studio_library_switch():
         shelf = LibraryShelf(application)
         shelf.show()
         APP.processEvents()
-        assert shelf.library_badge.isVisible() is True
+        # ZÉRO librairie au départ : rien de configuré, badge caché
+        assert bl.studio_location() is None
+        assert shelf.library_badge.isVisible() is False
 
         # bascule sur le projet A : la lib studio suit, le choix est
-        # mémorisé (current + recent) — et la librairie QUITTÉE (le
-        # défaut) reste accessible dans les récents (régression : la
-        # première librairie disparaissait après un switch)
-        default_before = bl.studio_location()
+        # mémorisé (current + recent), le badge apparaît
         shelf._switch_studio_library(project_a)
         assert bl.studio_location() == project_a
         assert shelf.studio_categories() == ['PROJET_A']
+        assert shelf.library_badge.isVisible() is True
         settings = bl.load_studio_settings(application)
         assert settings['current'] == project_a
-        assert settings['recent'][0] == project_a
-        assert default_before in settings['recent']
+        assert settings['recent'] == [project_a]
 
         # « créer » le projet B : json absent → créé vide, bascule
         path_b = os.path.join(project_b, 'button_library.json')
