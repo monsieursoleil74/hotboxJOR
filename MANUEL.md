@@ -66,10 +66,8 @@ Logique particulière :
 - Un rectangle de sélection **n'attrape pas une shape qui l'englobe
   entièrement** — un background n'est pris que si on le balaie vraiment.
   Pour sélectionner le fond, clique une zone nue.
-- Une shape **verrouillée** (voir Lock) est transparente à la sélection.
-- **Conseil** : verrouille ton background — comme presser une shape la
-  déplace, un fond verrouillé laisse le rectangle de sélection
-  fonctionner partout.
+- Une shape portant l'option `lock` (données d'anciennes versions) est
+  transparente à la sélection.
 
 ## L'éditeur — manipulation
 
@@ -87,16 +85,11 @@ Le **curseur annonce le geste** : flèches de redimensionnement (↔ ↕ ⤡ ⤢
 sur les bords et coins, croix de déplacement à l'intérieur de la
 sélection, main quand Espace est enfoncé.
 
-### Snap magnétique 🧲 (désactivé par défaut)
+### Snap (désactivé par défaut)
 
-**Aucun snap n'est actif par défaut.** Deux systèmes, au choix :
-
-- La **grille** : bouton aimant rouge de la barre d'outils + pas x/y —
-  comme dans l'original.
-- Le **magnet aux shapes** (opt-in) : clic droit → « Magnet snapping » —
-  bords et centres s'aimantent à ceux des autres shapes et de la zone
-  (~6 px écran), guides cyan en pointillés. Si la grille est active,
-  elle garde la priorité.
+**Aucun snap n'est actif par défaut.** La **grille** s'active par le
+bouton aimant rouge de la barre d'outils (+ pas x/y), comme dans
+l'original.
 
 ### Alignement / distribution
 
@@ -115,13 +108,6 @@ Boutons en fin de barre d'outils (à partir de 2 shapes sélectionnées,
 | **Ctrl+C / Ctrl+V** | Copier/coller des **boutons entiers**. Passe par le presse-papier système (JSON) : fonctionne **entre hotboxes**, entre éditeurs, et même entre deux sessions Maya. Les shapes collées sont sélectionnées. |
 | **Ctrl+Maj+C** | **Copier le style** d'une shape (une seule sélectionnée) |
 | **Ctrl+Maj+V** | **Coller le style** sur la sélection — un dialogue permet de cocher quoi coller : forme (carré/rond), taille, couleurs & bordure, style de texte, contenu du texte, image, **commandes**. Par défaut : forme + couleurs + style de texte. |
-
-## Lock (verrouillage)
-
-Clic droit → **Lock selection** : les shapes sélectionnées deviennent
-insélectionnables et indéplaçables (clé `lock` dans leurs options).
-Usage type : verrouiller le background pour qu'il ne gêne plus jamais.
-Clic droit → **Unlock all (n)** pour tout libérer.
 
 ## Recherche / remplacement — **Ctrl+H**
 
@@ -395,10 +381,9 @@ Refondu façon Photoshop :
 
 ## Menu clic droit (récapitulatif)
 
-Volontairement court : il ne reprend PAS ce qui est déjà dans la barre
-d'outils. Seulement — Save selection to library… / **Replace with
-library button** • Lock selection / Unlock all / Magnet snapping •
-Search and replace… (Ctrl+H) / Frame view (F).
+Réduit à l'essentiel — la librairie : **Save selection to library…** et
+**Replace with library button**. (La recherche reste sur Ctrl+H, le
+recadrage sur F ; lock et magnet ont été retirés.)
 
 **Replace with library button** : sélectionne UN bouton dans la shelf
 du bas, puis clic droit sur un ou plusieurs boutons du canvas →

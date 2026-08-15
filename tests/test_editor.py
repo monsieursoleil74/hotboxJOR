@@ -341,9 +341,11 @@ def test_selection_ignores_background():
     driver.click((520, 380))
     assert area.selection.shapes == [background]
 
-    # background verrouillé : le rectangle de sélection ne prend que
-    # les boutons (et presser le fond ne le déplace pas)
-    editor.lock_selection()
+    # background verrouillé (option posée sur la shape) : le rectangle
+    # de sélection ne prend que les boutons
+    background.options['lock'] = True
+    area.selection.clear()
+    area.update_selection()
     driver.drag((50, 60), (450, 280))
     assert background not in area.selection.shapes
     assert len(area.selection.shapes) == 2
@@ -398,11 +400,7 @@ def test_lock():
     area = editor.shape_editor
     driver = Driver(area)
     locked, button = area.shapes
-    area.selection.replace([locked])
-    area.update_selection()
-    editor.lock_selection()
-    assert locked.options.get('lock') is True
-    assert area.selection.shapes == []
+    locked.options['lock'] = True  # (l'UI lock/unlock a été retirée)
     # le clic passe à travers la shape verrouillée (prend celle au-dessus,
     # ici 'btn' qui est après dans la liste = au-dessus)
     driver.click((160, 112))
@@ -411,10 +409,8 @@ def test_lock():
     area.selection.clear(); area.update_selection()
     driver.drag((50, 60), (350, 200))
     assert locked not in area.selection.shapes
-    editor.unlock_all()
-    assert 'lock' not in locked.options
     editor.close()
-    print('lock/unlock OK')
+    print('lock (option de shape respectée par la sélection) OK')
 
 
 def test_magnet():

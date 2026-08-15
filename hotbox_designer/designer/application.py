@@ -162,9 +162,8 @@ class HotboxEditor(QtWidgets.QWidget):
             return []
 
     def show_context_menu(self, global_pos):
-        # menu clic droit volontairement court : uniquement ce qui n'est
-        # PAS déjà dans la barre d'outils (verrouillage, magnet,
-        # recherche, sauvegarde en librairie, recadrage)
+        # menu clic droit réduit à l'essentiel : la librairie.
+        # (Recherche = Ctrl+H, recadrage = F ; lock et magnet retirés.)
         menu = QtWidgets.QMenu(self)
         has_selection = bool(self.shape_editor.selection.shapes)
 
@@ -185,24 +184,6 @@ class HotboxEditor(QtWidgets.QWidget):
         replace.setEnabled(has_selection and len(entries) == 1)
         if not entries:
             replace.setToolTip('Select a button in the shelf below first')
-        menu.addSeparator()
-
-        lock = menu.addAction('Lock selection', self.lock_selection)
-        lock.setEnabled(has_selection)
-        locked_count = sum(
-            1 for s in self.shape_editor.shapes if s.options.get('lock'))
-        unlock = menu.addAction(
-            'Unlock all (%d)' % locked_count, self.unlock_all)
-        unlock.setEnabled(bool(locked_count))
-        magnet = menu.addAction('Magnet snapping')
-        magnet.setCheckable(True)
-        magnet.setChecked(self.shape_editor.magnet_enabled)
-        magnet.toggled.connect(self.set_magnet_enabled)
-        menu.addSeparator()
-
-        menu.addAction(
-            'Search and replace...\tCtrl+H', self.open_search_replace)
-        menu.addAction('Frame view\tF', self.shape_editor.focus_view)
         menu.exec_(global_pos)
 
     def open_button_library(self):
@@ -305,25 +286,6 @@ class HotboxEditor(QtWidgets.QWidget):
             self.selection_changed()
             self.set_data_modified()
         return count
-
-    def lock_selection(self):
-        """Verrouille la sélection : plus sélectionnable ni déplaçable
-        (idéal pour un background) — déverrouillage par « Unlock all »."""
-        for shape in self.shape_editor.selection:
-            shape.options['lock'] = True
-        self.shape_editor.selection.clear()
-        self.shape_editor.update_selection()
-        self.shape_editor.repaint()
-        self.set_data_modified()
-
-    def unlock_all(self):
-        for shape in self.shape_editor.shapes:
-            shape.options.pop('lock', None)
-        self.shape_editor.repaint()
-        self.set_data_modified()
-
-    def set_magnet_enabled(self, state):
-        self.shape_editor.magnet_enabled = state
 
     def copy_style(self):
         """Copie les options de la shape sélectionnée (une seule)."""

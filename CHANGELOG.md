@@ -4,6 +4,14 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Clic droit de l'éditeur réduit à l'essentiel
+
+- Le menu contextuel ne garde que **Save selection to library…** et
+  **Replace with library button**. Lock/Unlock et Magnet snapping sont
+  **retirés** (UI et méthodes — l'option `lock` d'anciennes données
+  reste respectée par la sélection) ; Search and replace (Ctrl+H) et
+  Frame view (F) restent accessibles au clavier.
+
 ## 2026-08 — Sauvegarde : destination fixée par le mode
 
 - Plus de choix Perso/Studio dans le dialogue 💾 : en **admin** on
