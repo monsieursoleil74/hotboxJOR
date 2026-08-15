@@ -1409,6 +1409,31 @@ def test_user_templates():
     print('templates utilisateur (save + liste + aperçu) OK')
 
 
+def test_state_preview():
+    """L'aperçu d'états en haut du panneau d'attributs suit la
+    sélection et les réglages en direct (normal / survol / clic)."""
+    from hotbox_designer.designer.attributes import AttributeEditor
+    attr = AttributeEditor(Standalone())
+    attr.show()
+    APP.processEvents()
+    assert attr.preview._shapes is None  # rien de sélectionné
+
+    attr.set_options([dict(SQUARE_BUTTON)])
+    assert len(attr.preview._shapes) == 3
+    assert [s.hovered for s in attr.preview._shapes] == [False, True, True]
+    assert [s.clicked for s in attr.preview._shapes] == [False, False, True]
+
+    # un réglage émis par une section se répercute immédiatement
+    attr.optionSet.emit('bgcolor.normal', '#ff0000')
+    assert attr.preview._options['bgcolor.normal'] == '#ff0000'
+    assert attr.preview._shapes[0].options['bgcolor.normal'] == '#ff0000'
+
+    # le widget se peint sans erreur
+    assert not attr.preview.grab().isNull()
+    attr.close()
+    print('aperçu des états (normal/survol/clic) OK')
+
+
 def test_builtin_templates():
     """Templates embarqués : ceux d'origine + le template TAT (base
     studio fournie par l'utilisateur) — les anciens templates maison
@@ -2295,6 +2320,7 @@ if __name__ == '__main__':
     test_startup_framing()
     test_replace_from_library()
     test_user_templates()
+    test_state_preview()
     test_builtin_templates()
     test_color_picker_pipette()
     test_studio_admin_mode()

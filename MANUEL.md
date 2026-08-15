@@ -387,6 +387,11 @@ coup d'œil.
 
 Refondu façon Photoshop :
 
+- **Aperçu d'états en haut du panneau** : le bouton sélectionné rendu
+  dans ses trois états (Normal / Hover / Click), mis à jour en direct
+  à chaque réglage — couleur, bordure, texte, image, forme — sans
+  avoir à survoler le vrai bouton dans le viewport. Section repliable
+  comme les autres.
 - **Couleurs = pastilles cliquables**, les trois états (Normal / Hover /
   Click) **sur une seule ligne** sous une petite légende ; le code hexa
   est dans l'**infobulle** (survole la pastille). Un clic ouvre le

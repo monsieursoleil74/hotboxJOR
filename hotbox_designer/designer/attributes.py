@@ -1,5 +1,5 @@
 from functools import partial
-from hotbox_designer.vendor.Qt import QtCore, QtWidgets
+from hotbox_designer.vendor.Qt import QtCore, QtGui, QtWidgets
 
 from hotbox_designer.qtutils import VALIGNS, HALIGNS
 from hotbox_designer.widgets import (
@@ -14,6 +14,83 @@ SHAPE_LABELS = {
     'square': 'square', 'rounded_rect': 'rounded', 'round': 'round'}
 
 
+class StatePreview(QtWidgets.QWidget):
+    """Aperçu en direct du bouton sélectionné dans ses trois états
+    (normal / survol / clic) : chaque réglage — couleurs, bordure,
+    texte, image, forme — se voit immédiatement, sans avoir à survoler
+    le vrai bouton dans le viewport."""
+
+    STATES = (('Normal', False, False),
+              ('Hover', True, False),
+              ('Click', True, True))
+
+    def __init__(self, parent=None):
+        super(StatePreview, self).__init__(parent)
+        self.setFixedHeight(86)
+        self._options = None
+        self._shapes = None
+
+    def set_options(self, options):
+        """`options` = les boutons sélectionnés ; on montre le premier."""
+        self._options = dict(options[0]) if options else None
+        self._rebuild()
+
+    def update_option(self, name, value):
+        if self._options is None:
+            return
+        self._options[name] = value
+        self._rebuild()
+
+    def _rebuild(self):
+        from hotbox_designer.interactive import Shape
+        if not self._options:
+            self._shapes = None
+            self.update()
+            return
+        options = dict(self._options)
+        options['shape.left'] = 0.0
+        options['shape.top'] = 0.0
+        self._shapes = []
+        for _, hovered, clicked in self.STATES:
+            shape = Shape(dict(options))
+            shape.hovered = hovered
+            shape.clicked = clicked
+            self._shapes.append(shape)
+        self.update()
+
+    def paintEvent(self, _):
+        painter = QtGui.QPainter(self)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+        cell = self.width() / 3.0
+        font = QtGui.QFont()
+        font.setPixelSize(9)
+        for index, (label, _, _) in enumerate(self.STATES):
+            painter.setPen(QtGui.QColor('#8c8c8c'))
+            painter.setFont(font)
+            painter.drawText(
+                QtCore.QRectF(index * cell, 2, cell, 12),
+                QtCore.Qt.AlignCenter, label)
+        if not self._shapes:
+            painter.setPen(QtGui.QColor('#6a6a6a'))
+            painter.drawText(
+                self.rect(), QtCore.Qt.AlignCenter, 'no selection')
+            painter.end()
+            return
+        for index, shape in enumerate(self._shapes):
+            width = max(shape.rect.width(), 1.0)
+            height = max(shape.rect.height(), 1.0)
+            scale = min((cell - 16.0) / width, 58.0 / height, 1.5)
+            painter.save()
+            painter.translate(
+                index * cell + (cell - width * scale) / 2.0,
+                18.0 + (62.0 - height * scale) / 2.0)
+            painter.scale(scale, scale)
+            shape.draw(painter)
+            painter.restore()
+        painter.end()
+
+
 class AttributeEditor(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
     rectModified = QtCore.Signal(str, float)
@@ -26,6 +103,12 @@ class AttributeEditor(QtWidgets.QWidget):
         super(AttributeEditor, self).__init__(parent)
         self.application = application
         self.widget = QtWidgets.QWidget()
+
+        # aperçu vivant des trois états, tout en haut du panneau : tout
+        # réglage émis par une section se répercute immédiatement dessus
+        self.preview = StatePreview()
+        self.preview_toggler = WidgetToggler('Preview', self.preview)
+        self.optionSet.connect(self.preview.update_option)
 
         self.shape = ShapeSettings()
         self.shape.optionSet.connect(self.optionSet.emit)
@@ -55,6 +138,8 @@ class AttributeEditor(QtWidgets.QWidget):
         self.layout = QtWidgets.QVBoxLayout(self.widget)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
+        self.layout.addWidget(self.preview_toggler)
+        self.layout.addWidget(self.preview)
         self.layout.addWidget(self.shape_toggler)
         self.layout.addWidget(self.shape)
         self.layout.addWidget(self.image_toggler)
@@ -84,6 +169,7 @@ class AttributeEditor(QtWidgets.QWidget):
 
     def set_options(self, options):
         self.blockSignals(True)
+        self.preview.set_options(options)
         self.shape.set_options(options)
         self.image.set_options(options)
         self.appearence.set_options(options)

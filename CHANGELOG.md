@@ -4,6 +4,16 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Aperçu d'états en direct + template TAT mis à jour
+
+- **Aperçu d'états dans le panneau d'attributs** (section PREVIEW en
+  haut, repliable) : le bouton sélectionné rendu dans ses trois états
+  Normal / Hover / Click, rafraîchi en direct à chaque réglage —
+  on voit ce qu'on fait quand on modifie couleurs, bordures, texte,
+  image ou forme.
+- **Template TAT mis à jour** (nouvelle version fournie par
+  l'utilisateur).
+
 ## 2026-08 — Polish UI (panneau d'attributs, dialogues) + fix badge anim
 
 - **Correctif : le badge STUDIO ADMIN s'affichait dans l'éditeur en
