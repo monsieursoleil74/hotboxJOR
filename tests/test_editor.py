@@ -1894,6 +1894,72 @@ def test_shelf_drag_organization():
     print('drag & drop d organisation (onglets + boutons, ordre) OK')
 
 
+
+def test_category_palette():
+    """Palette flottante (double-clic sur un onglet) : grille toujours
+    au-dessus, réutilisée si déjà ouverte, synchronisée au refresh,
+    fermée si la catégorie disparaît (switch de librairie)."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import LibraryShelf
+
+    prefs = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: prefs
+    studio_dir = tempfile.mkdtemp()
+    ringo = os.path.join(studio_dir, 'ringo.json')
+
+    def button(name, category='ANIM'):
+        return {'name': name, 'category': category,
+                'options': dict(SQUARE_BUTTON, **{'text.content': name})}
+
+    bl.save_library(ringo, [button('walk'), button('run')])
+
+    try:
+        bl.set_studio_admin(True)
+        bl.set_studio_location(ringo)
+        shelf = LibraryShelf(application)
+        shelf.show()
+        APP.processEvents()
+
+        palette = shelf.open_category_palette(0)
+        assert palette is not None
+        assert palette.isVisible()
+        # toujours au-dessus + contenu de la catégorie, ordre du fichier
+        assert palette.windowFlags() & QtCore.Qt.WindowStaysOnTopHint
+        assert [palette.list.item(i).data(QtCore.Qt.UserRole)['name']
+                for i in range(palette.list.count())] == ['walk', 'run']
+        assert palette.list.isWrapping() is True  # grille multi-lignes
+        # gating identique à la shelf (drag/drop/menus)
+        assert palette.list.shelf is shelf
+        assert palette.list.readonly is True
+
+        # re-double-clic : la MÊME palette revient (pas de doublon)
+        assert shelf.open_category_palette(0) is palette
+        assert len(shelf._palettes) == 1
+
+        # un ajout dans la librairie se reflète au refresh
+        bl.export_to_studio([button('jump')])
+        bl.refresh_shelves()
+        APP.processEvents()
+        assert [palette.list.item(i).data(QtCore.Qt.UserRole)['name']
+                for i in range(palette.list.count())] == [
+            'walk', 'run', 'jump']
+
+        # switch de librairie : la catégorie disparaît, la palette aussi
+        other = os.path.join(tempfile.mkdtemp(), 'pipo.json')
+        bl.save_library(other, [button('solo', 'CAMERA')])
+        shelf._switch_studio_library(other)
+        APP.processEvents()
+        assert palette not in shelf._palettes
+        assert not palette.isVisible()
+        shelf.close()
+    finally:
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)
+    print('palette flottante de catégorie (double-clic) OK')
+
+
 def test_fork_folder_migration():
     """Rangement des données : la librairie perso et le registre des
     raccourcis vivent dans le dossier du fork (prefs/hotboxJOR sous
@@ -2106,6 +2172,7 @@ if __name__ == '__main__':
     test_studio_library_switch()
     test_plus_button_follows_mode()
     test_shelf_drag_organization()
+    test_category_palette()
     test_fork_folder_migration()
     test_hotkey_registry()
     test_hotkey_edit_capture()

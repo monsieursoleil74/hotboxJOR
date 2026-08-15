@@ -4,6 +4,20 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Palette flottante par catégorie (double-clic sur l'onglet)
+
+- **Double-clic sur un onglet** de la shelf → la catégorie s'ouvre dans
+  une fenêtre flottante **toujours au-dessus** (`CategoryPalette`),
+  grille multi-lignes scrollable — pratique pour piocher dans une
+  catégorie de 30 boutons sans scroller la rangée.
+- La palette reste ouverte tant qu'on ne la ferme pas, est réutilisée
+  au double-clic suivant, se synchronise à chaque refresh de la
+  librairie et se ferme si sa catégorie disparaît (switch de
+  librairie).
+- Drag vers les hotboxes, réordonnancement, clic droit et gating
+  admin/animateur identiques à la shelf (listes factorisées :
+  `_configure_list` / `_fill_list`).
+
 ## 2026-08 — Organisation de la shelf au drag & drop
 
 - **Glisser un bouton sur un onglet** = le ranger dans cette catégorie

@@ -185,6 +185,15 @@ affiché avec son vrai rendu en vignette.
   l'alphabétique imposé. **Glisser un bouton dans sa liste** pour le
   repositionner ; **glisser un onglet** (mode admin) pour réordonner
   les catégories. Tout est persisté dans le `.json` de la librairie.
+- **Palette flottante** : **double-clic sur un onglet** → la catégorie
+  s'ouvre dans une fenêtre **toujours au-dessus**, en grille
+  multi-lignes (fini le scroll dans la rangée pour une catégorie de 30
+  boutons). Elle reste ouverte tant qu'on ne la ferme pas, suit les
+  changements de la librairie, se ferme si la catégorie disparaît
+  (switch de librairie), et tout y marche comme dans la shelf :
+  glisser vers une hotbox, réordonner, clic droit, mêmes droits
+  admin/animateur. Plusieurs palettes peuvent rester ouvertes côte à
+  côte.
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 

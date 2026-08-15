@@ -736,6 +736,42 @@ class ShelfList(QtWidgets.QListWidget):
         drag.exec_(QtCore.Qt.CopyAction)
 
 
+class CategoryPalette(QtWidgets.QWidget):
+    """Palette flottante d'une catégorie (double-clic sur son onglet) :
+    grille de boutons avec retour à la ligne, TOUJOURS AU-DESSUS, qui
+    reste ouverte tant qu'on ne la ferme pas — pratique pour piocher
+    dans une grosse catégorie sans scroller la shelf. Les drags (vers
+    une hotbox, un onglet, une liste) marchent comme depuis la shelf."""
+
+    def __init__(self, shelf, category, readonly):
+        super(CategoryPalette, self).__init__(
+            shelf.window(),
+            QtCore.Qt.Tool | QtCore.Qt.WindowStaysOnTopHint)
+        from hotbox_designer.theme import apply_dark_theme
+        apply_dark_theme(self)
+        self.shelf = shelf
+        self.category = category
+        self.readonly = readonly
+        self.setWindowTitle(category)
+        self.list = ShelfList()
+        shelf._configure_list(self.list, category, readonly)
+        # grille multi-lignes (la shelf, elle, reste une rangée)
+        self.list.setWrapping(True)
+        self.list.setResizeMode(QtWidgets.QListView.Adjust)
+        self.list.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        self.list.setHorizontalScrollBarPolicy(
+            QtCore.Qt.ScrollBarAlwaysOff)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.addWidget(self.list)
+        self.resize(4 * (SHELF_THUMB_WIDTH + 22) + 20, 320)
+
+    def closeEvent(self, event):
+        if self in self.shelf._palettes:
+            self.shelf._palettes.remove(self)
+        super(CategoryPalette, self).closeEvent(event)
+
+
 class _ShelfTabBar(QtWidgets.QTabBar):
     """Barre d'onglets de la shelf : accepte le dépôt d'un bouton sur un
     onglet (= le ranger dans cette catégorie), sélectionne l'onglet
@@ -766,6 +802,14 @@ class _ShelfTabBar(QtWidgets.QTabBar):
         if not shelf._can_edit(readonly):
             return None
         return payload
+
+    def mouseDoubleClickEvent(self, event):
+        position = getattr(event, 'position', None)
+        point = position().toPoint() if position else event.pos()
+        index = self.tabAt(point)
+        if index >= 0 and self._tabs.shelf is not None:
+            return self._tabs.shelf.open_category_palette(index)
+        super(_ShelfTabBar, self).mouseDoubleClickEvent(event)
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasFormat(SHELF_ENTRIES_MIME):
@@ -832,6 +876,8 @@ class LibraryShelf(QtWidgets.QWidget):
         # réordonner les onglets au drag (admin) — persisté au lâcher
         self._rebuilding_tabs = False
         self.tabs.tabBar().tabMoved.connect(self._on_tab_moved)
+        # palettes flottantes ouvertes (double-clic sur un onglet)
+        self._palettes = []
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText('＋')
         # ＋ suit le mode : admin → catégorie DANS la librairie studio
@@ -981,6 +1027,8 @@ class LibraryShelf(QtWidgets.QWidget):
                 by_category = {DEFAULT_CATEGORY: []}
             for category in by_category:  # ordre du fichier
                 self._add_tab(category, by_category[category], current)
+        # les palettes flottantes ouvertes suivent le contenu
+        self._sync_palettes()
 
     def _current_key(self):
         """(readonly, catégorie) de l'onglet courant, pour le restaurer
@@ -993,23 +1041,22 @@ class LibraryShelf(QtWidgets.QWidget):
             text = text[len(STUDIO_PREFIX):]
         return (getattr(widget, 'readonly', False), text)
 
-    def _add_tab(self, category, entries, current, readonly=False):
-        shelf_list = ShelfList()
+    def _configure_list(self, shelf_list, category, readonly):
+        """Câblage commun aux listes (onglets ET palettes) : gating,
+        menu contextuel, drag & drop."""
         shelf_list.readonly = readonly
         shelf_list.shelf = self
         shelf_list.category = category
-        # menu contextuel sur toutes les listes (l'ouverture de dossier
-        # marche aussi pour le studio ; suppression/envoi = perso seul)
         shelf_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         shelf_list.customContextMenuRequested.connect(
             lambda pos, lst=shelf_list: self._menu(lst, pos))
-        if not readonly:
-            if not entries:
-                shelf_list.setToolTip(
-                    'Empty category — select shapes and use the save '
-                    'button of the toolbar to fill it')
+
+    def _fill_list(self, shelf_list, entries):
+        """(Re)remplit une liste avec les boutons, dans l'ordre du
+        fichier."""
+        shelf_list.clear()
         suffix = ''
-        if readonly:
+        if shelf_list.readonly:
             suffix = (' (studio, admin)' if is_studio_admin()
                       else ' (studio, read-only)')
         for entry in entries:  # ordre du fichier (réordonnable au drag)
@@ -1021,6 +1068,15 @@ class LibraryShelf(QtWidgets.QWidget):
                 '%s — drag & drop into the hotbox%s' % (
                     entry.get('name') or 'button', suffix))
             shelf_list.addItem(item)
+
+    def _add_tab(self, category, entries, current, readonly=False):
+        shelf_list = ShelfList()
+        self._configure_list(shelf_list, category, readonly)
+        if not readonly and not entries:
+            shelf_list.setToolTip(
+                'Empty category — select shapes and use the save '
+                'button of the toolbar to fill it')
+        self._fill_list(shelf_list, entries)
         # onglet studio : logo du studio en icône (repli ★ si pas de logo)
         if readonly and not self.studio_icon.isNull():
             index = self.tabs.addTab(shelf_list, self.studio_icon, category)
@@ -1256,6 +1312,47 @@ class LibraryShelf(QtWidgets.QWidget):
         if text.startswith(STUDIO_PREFIX):
             text = text[len(STUDIO_PREFIX):]
         return text
+
+    def open_category_palette(self, index):
+        """Double-clic sur un onglet : ouvre (ou ramène devant) la
+        palette flottante de cette catégorie."""
+        widget = self.tabs.widget(index)
+        if widget is None:
+            return
+        category = self._tab_name(index)
+        readonly = getattr(widget, 'readonly', False)
+        for palette in self._palettes:
+            if (palette.category == category
+                    and palette.readonly == readonly):
+                palette.show()
+                palette.raise_()
+                return palette
+        palette = CategoryPalette(self, category, readonly)
+        entries = [widget.item(i).data(QtCore.Qt.UserRole)
+                   for i in range(widget.count())]
+        self._fill_list(palette.list, entries)
+        self._palettes.append(palette)
+        palette.show()
+        return palette
+
+    def _sync_palettes(self):
+        """Après un refresh : recharge les palettes ouvertes ; ferme
+        celles dont la catégorie a disparu (ou librairie switchée)."""
+        for palette in list(self._palettes):
+            match = None
+            for i in range(self.tabs.count()):
+                widget = self.tabs.widget(i)
+                if (self._tab_name(i) == palette.category
+                        and getattr(widget, 'readonly', False)
+                        == palette.readonly):
+                    match = widget
+                    break
+            if match is None:
+                palette.close()
+                continue
+            entries = [match.item(i).data(QtCore.Qt.UserRole)
+                       for i in range(match.count())]
+            self._fill_list(palette.list, entries)
 
     def _on_tab_moved(self, *_):
         """Drag d'un onglet (admin) : persiste le nouvel ordre des
