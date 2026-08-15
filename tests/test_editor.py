@@ -1631,16 +1631,20 @@ def test_studio_library_switch():
         shelf = LibraryShelf(application)
         shelf.show()
         APP.processEvents()
-        assert shelf.library_button.isVisible() is True
+        assert shelf.library_badge.isVisible() is True
 
         # bascule sur le projet A : la lib studio suit, le choix est
-        # mémorisé (current + recent)
+        # mémorisé (current + recent) — et la librairie QUITTÉE (le
+        # défaut) reste accessible dans les récents (régression : la
+        # première librairie disparaissait après un switch)
+        default_before = bl.studio_location()
         shelf._switch_studio_library(project_a)
         assert bl.studio_location() == project_a
         assert shelf.studio_categories() == ['PROJET_A']
         settings = bl.load_studio_settings(application)
         assert settings['current'] == project_a
-        assert settings['recent'] == [project_a]
+        assert settings['recent'][0] == project_a
+        assert default_before in settings['recent']
 
         # « créer » le projet B : json absent → créé vide, bascule
         path_b = os.path.join(project_b, 'button_library.json')
@@ -1650,12 +1654,13 @@ def test_studio_library_switch():
         assert bl.studio_location() == project_b
         assert os.path.exists(path_b)
         recent = bl.load_studio_settings(application)['recent']
-        assert recent == [project_b, project_a]  # plus récent en tête
+        assert recent[:2] == [project_b, project_a]  # plus récent en tête
 
         # re-bascule A : remonte en tête, pas de doublon
         shelf._switch_studio_library(project_a)
         recent = bl.load_studio_settings(application)['recent']
-        assert recent == [project_a, project_b]
+        assert recent[:2] == [project_a, project_b]
+        assert len(recent) == len(set(os.path.normpath(p) for p in recent))
 
         # une NOUVELLE shelf (nouvelle session) retrouve la lib mémorisée
         bl.set_studio_location(None)
@@ -1684,7 +1689,7 @@ def test_studio_library_switch():
         bl.set_studio_admin(False)
         bl.refresh_shelves()
         APP.processEvents()
-        assert shelf.library_button.isVisible() is True
+        assert shelf.library_badge.isVisible() is True
         project_d = tempfile.mkdtemp()  # librairie inexistante
         warned = []
         saved_warning = QtWidgets.QMessageBox.warning

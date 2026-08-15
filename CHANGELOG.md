@@ -4,6 +4,16 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Le badge json devient le sélecteur + fix des récents
+
+- Le bouton TAT disparaît : le **badge vert « nom.json » est lui-même le
+  bouton de switch** — on voit son environnement, on clique dessus pour
+  changer de librairie. Vert pour tout le monde (repère de librairie,
+  pas de rôle ; le rôle reste en infobulle).
+- **Fix** : la librairie QUITTÉE entre aussi dans les récents — la
+  toute première (défaut/variable d'env, jamais choisie via l'UI)
+  disparaissait de la liste après un premier switch.
+
 ## 2026-08 — Le bouton ＋ suit le mode (catégorie studio en admin)
 
 - En mode **admin**, le ＋ de la shelf crée la catégorie **dans la

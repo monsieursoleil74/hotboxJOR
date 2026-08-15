@@ -608,28 +608,24 @@ class LibraryShelf(QtWidgets.QWidget):
         # façon shelf Maya
         self.add_button.released.connect(
             lambda: self._prompt_category(is_studio_admin()))
-        # bouton TAT : SWITCHER de librairie studio (menu = la liste des
-        # librairies, rien d'autre). Visible pour tout le monde —
-        # l'animateur choisit aussi sur quelle librairie il est
-        self.library_button = QtWidgets.QToolButton()
-        self.library_button.setToolTip(
-            'Switch studio library (per project)')
-        self.library_button.released.connect(self._studio_library_menu)
         # bouton dossier : créer (admin) / ouvrir une librairie — à part
         # entière, pas caché dans un menu
         self.open_library_button = QtWidgets.QToolButton()
         self.open_library_button.setIcon(icon('open.png'))
         self.open_library_button.released.connect(
             self._create_or_open_library)
-        # badge = NOM du fichier de librairie courant : repère visuel
-        # permanent (vert = mode admin, gris = lecture seule)
-        self.library_badge = QtWidgets.QLabel()
+        # le badge-BOUTON : le nom du json courant EST le sélecteur —
+        # on voit son environnement, on clique dessus pour switcher
+        # (vert = mode admin, gris = lecture seule)
+        self.library_badge = QtWidgets.QPushButton()
+        self.library_badge.setCursor(QtCore.Qt.PointingHandCursor)
+        self.library_badge.setFlat(True)
+        self.library_badge.released.connect(self._studio_library_menu)
         corner = QtWidgets.QWidget()
         corner_layout = QtWidgets.QHBoxLayout(corner)
         corner_layout.setContentsMargins(0, 0, 4, 0)
         corner_layout.setSpacing(6)
         corner_layout.addWidget(self.library_badge)
-        corner_layout.addWidget(self.library_button)
         corner_layout.addWidget(self.open_library_button)
         corner_layout.addWidget(self.add_button)
         self.tabs.setCornerWidget(corner, QtCore.Qt.TopRightCorner)
@@ -669,20 +665,22 @@ class LibraryShelf(QtWidgets.QWidget):
         return self.add_entries(entries)
 
     def _update_library_badge(self):
-        """Badge = nom du json courant ; vert en mode admin, gris en
-        lecture seule. Infobulle = chemin complet + rôle."""
+        """Badge-bouton = nom du json courant, toujours vert : c'est le
+        repère d'environnement (la librairie), pas un indicateur de
+        rôle. Clic = menu de switch. Infobulle = chemin complet + rôle."""
         from hotbox_designer.theme import ACCENT
         location = studio_location()
-        admin = is_studio_admin()
         self.library_badge.setVisible(bool(location))
-        self.library_badge.setText(' %s ' % studio_library_label())
-        color = ACCENT if admin else '#4f4f4f'
+        self.library_badge.setText(studio_library_label())
         self.library_badge.setStyleSheet(
-            'QLabel {color: white; background: %s; border-radius: 3px;'
-            'font-weight: bold; font-size: 10px; padding: 1px 4px;}' % color)
-        self.library_badge.setToolTip('%s — %s' % (
-            location or 'no library',
-            'admin (editable)' if admin else 'read-only'))
+            'QPushButton {color: white; background: %s; border: none;'
+            'border-radius: 3px; font-weight: bold; font-size: 10px;'
+            'padding: 2px 8px;}'
+            'QPushButton:hover {background: #86a878;}' % ACCENT)
+        self.library_badge.setToolTip(
+            '%s — %s\nClick to switch library' % (
+                location or 'no library',
+                'admin (editable)' if is_studio_admin() else 'read-only'))
 
     def refresh(self):
         current = self._current_key()
@@ -697,10 +695,6 @@ class LibraryShelf(QtWidgets.QWidget):
             self.add_button.setToolTip('Create a personal category')
         logo = studio_logo_path()
         self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
-        if not self.studio_icon.isNull():
-            self.library_button.setIcon(self.studio_icon)
-        else:
-            self.library_button.setText(STUDIO_PREFIX.strip())
         self.tabs.clear()
 
         # 1) onglets studio (partagés) EN PREMIER — on affiche AUSSI les
@@ -920,17 +914,24 @@ class LibraryShelf(QtWidgets.QWidget):
         return True
 
     def _switch_studio_library(self, folder):
-        """Bascule la session sur cette librairie (None = revenir à la
-        variable d'environnement / au défaut) et mémorise le choix."""
+        """Bascule la session sur cette librairie et mémorise le choix.
+        La librairie QUITTÉE entre aussi dans les récents — sinon la
+        toute première (venue du défaut/variable d'env, jamais choisie
+        via l'UI) disparaissait de la liste après un switch."""
+        previous = studio_location()
         set_studio_location(folder)
         settings = load_studio_settings(self.application)
         settings['current'] = folder
-        if folder:
-            normalized = os.path.normpath(folder)
-            recent = [
-                p for p in settings.get('recent') or []
-                if os.path.normpath(p) != normalized]
-            settings['recent'] = ([folder] + recent)[:8]
+        recent, seen = [], set()
+        for candidate in [folder, previous] + (settings.get('recent') or []):
+            if not candidate:
+                continue
+            normalized = os.path.normpath(candidate)
+            if normalized in seen:
+                continue
+            seen.add(normalized)
+            recent.append(candidate)
+        settings['recent'] = recent[:8]
         save_studio_settings(self.application, settings)
         refresh_shelves()
 

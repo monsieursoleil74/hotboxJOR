@@ -233,11 +233,11 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
 - **Choisir / changer de librairie studio (par projet)** — dans le
   coin de la shelf, pour **tout le monde** (la librairie reste en
   lecture seule hors mode admin) :
-  - le **badge** affiche le **nom du fichier** de la librairie courante
-    (ex. `ringo.json`) — **vert** en mode admin, **gris** en lecture
-    seule ; l'infobulle donne le chemin complet ;
-  - le bouton **TAT** ouvre la liste des librairies (récentes +
-    courante cochée) : un clic pour switcher de projet ;
+  - le **badge vert** affiche le **nom du fichier** de la librairie
+    courante (ex. `ringo.json`) et **c'est lui le sélecteur** : cliquer
+    dessus ouvre la liste des librairies (récentes + courante cochée)
+    pour switcher de projet. L'infobulle donne le chemin complet et le
+    rôle (admin / lecture seule) ;
   - le bouton **dossier** crée (admin — dialogue « Enregistrer sous »,
     le nom du `.json` est **libre** : `ringo.json`, `projetX.json`…)
     ou ouvre une librairie existante (animateur : ouverture seulement).
