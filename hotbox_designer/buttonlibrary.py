@@ -139,14 +139,14 @@ def library_location_exists(path):
 
 
 def studio_library_label():
-    """Nom du fichier de librairie courant, pour le badge de la shelf
-    (« ringo.json »…)."""
+    """Nom de la librairie courante pour le badge de la shelf —
+    sans l'extension (« ringo », pas « ringo.json »)."""
     location = studio_location()
     if not location:
         return '(no library)'
     if location.lower().endswith('.json'):
-        return os.path.basename(location)
-    return LIBRARY_FILENAME
+        return os.path.splitext(os.path.basename(location))[0]
+    return os.path.splitext(LIBRARY_FILENAME)[0]
 
 
 def studio_library_path():
@@ -883,9 +883,10 @@ class LibraryShelf(QtWidgets.QWidget):
             empty.setEnabled(False)
 
         def display(path):
-            if path.lower().endswith('.json'):
-                return os.path.basename(path)
-            return os.path.basename(path.rstrip('\\/'))
+            name = os.path.basename(path.rstrip('\\/'))
+            if name.lower().endswith('.json'):
+                name = os.path.splitext(name)[0]
+            return name
 
         for path in entries:
             exists = library_location_exists(path)

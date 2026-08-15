@@ -1684,9 +1684,9 @@ def test_studio_library_switch():
         assert shelf._open_studio_json(ringo) is True
         assert os.path.exists(ringo)
         assert bl.studio_location() == ringo
-        assert bl.studio_library_label() == 'ringo.json'
+        assert bl.studio_library_label() == 'ringo'
         assert os.path.exists(os.path.join(project_c, 'studio_logo.png'))
-        assert 'ringo.json' in shelf.library_badge.text()
+        assert shelf.library_badge.text().strip() == 'ringo'
         # librairie toute neuve : un onglet General vide reste affiché
         # (sinon zéro onglet → Qt cache aussi le coin badge/dossier/＋)
         assert shelf.tabs.count() == 1

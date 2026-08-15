@@ -4,6 +4,11 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Badge et menus sans l'extension .json
+
+- Le badge et la liste des librairies affichent « ringo », plus
+  « ringo.json » (le chemin complet reste dans l'infobulle).
+
 ## 2026-08 — Fix : librairie neuve = shelf vide (tout semblait disparu)
 
 - Créer/ouvrir une librairie **sans aucune catégorie** laissait la shelf
