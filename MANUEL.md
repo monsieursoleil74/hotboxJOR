@@ -197,6 +197,15 @@ affiché avec son vrai rendu en vignette.
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 
+### Sauvegardes de secours
+
+Chaque écriture d'une librairie (perso ou studio) et du
+`hotboxes.json` est **atomique** (le fichier ne peut pas être corrompu
+par une coupure en pleine écriture) et conserve les **3 versions
+précédentes** à côté : `nom.json.bak` (la plus récente), `.bak2`,
+`.bak3`. En cas de pépin, renommer un `.bak` en `.json` suffit à
+revenir en arrière.
+
 ### Où c'est stocké
 
 - **Perso** (modifiable) : `button_library.json` dans le **dossier du
@@ -256,7 +265,10 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   **Aucune librairie par défaut** : au tout premier lancement il n'y en
   a pas (pas de badge, pas d'onglets studio) — on en crée/ouvre une
   explicitement, et seules celles qu'on a réellement chargées vivent
-  dans la liste. Le choix est **mémorisé entre les sessions**
+  dans la liste. La librairie courante est **surveillée** : quand le
+  lead publie un bouton, les shelves ouvertes des animateurs se
+  **rafraîchissent automatiquement**. Le choix est **mémorisé entre les
+  sessions**
   (`studio_settings.json` dans `prefs/hotboxJOR/`) et prend le pas sur
   la variable d'environnement (`HOTBOX_STUDIO_LIBRARY`, réservée au
   déploiement studio). Un `studio_logo.png` différent par projet est

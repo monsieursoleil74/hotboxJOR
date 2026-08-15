@@ -4,6 +4,22 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Robustesse avant déploiement (atomique, refresh auto, CI)
+
+- **Écriture atomique** de tous les json (librairies, hotboxes.json,
+  registre des raccourcis, settings) : fichier temporaire + `os.replace`
+  — une coupure réseau ou un crash en pleine écriture ne peut plus
+  corrompre le fichier (`data.atomic_write_json`).
+- **Backups tournants** pour les fichiers précieux (librairies et
+  `hotboxes.json`) : `.bak` / `.bak2` / `.bak3` conservés à côté, un
+  renommage suffit pour revenir en arrière.
+- **Refresh automatique de la librairie studio** : un
+  `QFileSystemWatcher` (débouncé, re-armé après chaque remplacement
+  atomique) suit le json courant — le lead publie, les shelves des
+  animateurs se mettent à jour toutes seules.
+- **CI GitHub Actions** (`.github/workflows/tests.yml`) : pyflakes
+  (vendor exclu) + suite de tests headless à chaque push/PR.
+
 ## 2026-08 — Palette flottante par catégorie (double-clic sur l'onglet)
 
 - **Double-clic sur un onglet** de la shelf → la catégorie s'ouvre dans
