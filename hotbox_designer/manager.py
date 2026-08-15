@@ -40,9 +40,10 @@ def launch_manager(application, studio_admin=False):
     set_studio_admin(studio_admin)
     if hotbox_manager is None:
         hotbox_manager = HotboxManager(APPLICATIONS[application]())
-    # pas de texte de titre en mode normal (le bandeau Maya suffit) ;
-    # en admin, seul le marqueur STUDIO ADMIN reste
-    hotbox_manager.setWindowTitle('STUDIO ADMIN' if studio_admin else '')
+    # la fenêtre porte toujours le nom du tool ; le mode se lit sur le
+    # badge vert STUDIO ADMIN du bandeau (et de l'éditeur)
+    hotbox_manager.setWindowTitle('Hotbox Designer')
+    hotbox_manager.header.refresh()
     # changement de mode SANS redémarrer Maya : les shelves déjà
     # ouvertes (badge, infobulles, menus) basculent immédiatement
     refresh_shelves()
@@ -182,12 +183,12 @@ class HotboxManager(QtWidgets.QWidget):
         self.tabwidget.addTab(self.shared, "Shared")
         self.tabwidget.currentChanged.connect(self.tab_index_changed)
 
-        header = _ManagerHeader()
+        self.header = _ManagerHeader()
 
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
-        self.layout.addWidget(header)
+        self.layout.addWidget(self.header)
         self.layout.addWidget(self.toolbar)
         self.layout.addWidget(self.tabwidget)
 
@@ -495,23 +496,31 @@ class _EditorLink():
 
 
 class _ManagerHeader(QtWidgets.QWidget):
-    """Bandeau de titre du manager."""
+    """Bandeau du manager : vide en mode animateur (le nom du tool est
+    dans le titre de la fenêtre), badge STUDIO ADMIN en mode lead."""
 
     def __init__(self, parent=None):
         super(_ManagerHeader, self).__init__(parent)
+        from hotbox_designer.theme import ACCENT
         self.setFixedHeight(38)
         self.setStyleSheet(
             '_ManagerHeader {background: #2d2d2d;'
             'border-bottom: 1px solid #242424;}')
-        title = QtWidgets.QLabel('HOTBOX DESIGNER')
-        title.setStyleSheet(
-            'color: #b0b0b0; font-size: 11px; font-weight: bold;'
-            'letter-spacing: 3px; background: transparent;')
+        self.admin_badge = QtWidgets.QLabel('STUDIO ADMIN')
+        self.admin_badge.setStyleSheet(
+            'QLabel {color: white; background: %s; border-radius: 3px;'
+            'font-weight: bold; font-size: 10px; padding: 2px 8px;}'
+            % ACCENT)
         layout = QtWidgets.QHBoxLayout(self)
         layout.setContentsMargins(12, 0, 12, 0)
         layout.setSpacing(4)
-        layout.addWidget(title)
+        layout.addWidget(self.admin_badge)
         layout.addStretch(1)
+        self.refresh()
+
+    def refresh(self):
+        from hotbox_designer.buttonlibrary import is_studio_admin
+        self.admin_badge.setVisible(is_studio_admin())
 
 
 class HotboxManagerToolbar(QtWidgets.QToolBar):

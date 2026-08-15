@@ -284,9 +284,10 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   **catégorie officielle** (*New studio category…*, écrite dans le
   `button_library.json` du dossier studio avec le logo TAT), **envoyer
   des boutons** (*Send to studio library*), renommer, ranger. Un badge
-  **STUDIO ADMIN** s'affiche en haut à droite de la shelf, et le titre
-  de la fenêtre du manager porte « STUDIO ADMIN » — on sait toujours
-  qu'on édite l'officiel.
+  vert **STUDIO ADMIN** s'affiche dans le bandeau du manager et à
+  droite de la barre d'outils de l'éditeur — on sait toujours qu'on
+  édite l'officiel. La fenêtre, elle, s'appelle toujours
+  « Hotbox Designer », quel que soit le mode.
 
 C'est un garde-fou d'interface (le fichier reste accessible sur le
 réseau) ; pour un verrouillage dur, mettre aussi le dossier studio en

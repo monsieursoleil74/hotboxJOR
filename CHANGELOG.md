@@ -9,6 +9,11 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 - **Badge « STUDIO ADMIN »** à droite de la barre d'outils de
   l'éditeur de hotbox : on sait d'un coup d'œil dans quel mode on est.
   Invisible en mode animateur.
+- **Le même badge dans le bandeau du manager**, à la place du texte
+  « HOTBOX DESIGNER » (redondant : le nom du tool vit dans le titre de
+  la fenêtre). La fenêtre s'appelle désormais toujours
+  « Hotbox Designer », quel que soit le mode — plus de titre
+  « STUDIO ADMIN ».
 - **Aperçu de template corrigé** : les formes qui débordent de la zone
   de la hotbox sont rognées comme dans la vraie hotbox — une barre de
   fond plus large que la zone n'envahit plus la vignette.
