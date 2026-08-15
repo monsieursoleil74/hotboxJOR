@@ -347,6 +347,9 @@ def button_thumbnail(options, size=None):
         draw_shape(painter, shape)
     painter.end()
     icon = QtGui.QIcon(pixmap)
+    # même pixmap à l'état sélectionné : sans ça Qt teinte l'icône en
+    # bleu système, moche sur le cadre accent de la sélection
+    icon.addPixmap(pixmap, QtGui.QIcon.Selected)
     if len(_THUMB_CACHE) > 512:  # garde-fou mémoire
         _THUMB_CACHE.clear()
     _THUMB_CACHE[key] = icon
@@ -425,8 +428,13 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
         categories = (self._studio_categories if self.is_studio()
                       else self._perso_categories)
         self.category.addItems(categories)
-        if keep:
+        # on ne garde le texte courant que s'il existe dans la NOUVELLE
+        # liste — sinon on montre sa première catégorie (avant, basculer
+        # sur Studio laissait « General » de la perso dans le champ)
+        if keep and keep in categories:
             self.category.setCurrentText(keep)
+        else:
+            self.category.setCurrentIndex(0)
 
 
 class ShelfList(QtWidgets.QListWidget):
@@ -445,6 +453,35 @@ class ShelfList(QtWidgets.QListWidget):
         self.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         self.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         self.setSpacing(6)
+        # états visuels francs : cadre accent + fond teinté sur TOUTE la
+        # vignette (icône comprise) — le simple surlignage du texte ne se
+        # voyait pas
+        from hotbox_designer.theme import ACCENT
+        color = QtGui.QColor(ACCENT)
+        r, g, b = color.red(), color.green(), color.blue()
+        # le style peint aussi un voile « Highlight » (bleu système) sur
+        # l'icône sélectionnée : on aligne la palette sur l'accent
+        palette = self.palette()
+        palette.setColor(QtGui.QPalette.Highlight, color)
+        palette.setColor(
+            QtGui.QPalette.HighlightedText, QtGui.QColor('white'))
+        self.setPalette(palette)
+        self.setStyleSheet("""
+            QListWidget::item {
+                border: 2px solid transparent;
+                border-radius: 6px;
+                padding: 2px;
+            }
+            QListWidget::item:hover {
+                background: rgba(%(r)d, %(g)d, %(b)d, 50);
+                border: 2px solid rgba(%(r)d, %(g)d, %(b)d, 120);
+            }
+            QListWidget::item:selected {
+                background: rgba(%(r)d, %(g)d, %(b)d, 110);
+                border: 2px solid %(accent)s;
+                color: white;
+            }
+        """ % {'r': r, 'g': g, 'b': b, 'accent': ACCENT})
 
     def selected_entries(self):
         return [

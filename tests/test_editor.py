@@ -1561,6 +1561,15 @@ def test_library_rename_and_save_studio():
         studio_items = [dialog.category.itemText(i)
                         for i in range(dialog.category.count())]
         assert studio_items == ['ANIM', 'SHELF']
+        # le champ montre une catégorie STUDIO (plus le « General » de
+        # la perso resté collé — bug d'origine)
+        assert dialog.category.currentText() == 'ANIM'
+        # une catégorie commune aux deux listes est conservée au switch
+        dialog.category.setCurrentText('SHELF')
+        dialog.destination.setCurrentIndex(0)  # retour Perso
+        assert dialog.category.currentText() == 'Perso'
+        dialog.destination.setCurrentIndex(1)
+        assert dialog.category.currentText() == 'ANIM'
         shelf.close()
     finally:
         del os.environ[STUDIO_ENV_VARIABLE]

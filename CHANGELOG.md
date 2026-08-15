@@ -4,6 +4,18 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Fix catégories du dialogue de sauvegarde + sélection visible dans la shelf
+
+- **Fix** : en basculant la destination sur « Studio (TAT) » dans le
+  dialogue 💾, le champ Category gardait le « General » de la liste
+  perso au lieu de proposer les catégories studio — il affiche
+  désormais la première catégorie de la liste choisie (un nom commun
+  aux deux listes est conservé).
+- **Sélection/hover de la shelf enfin visibles** : cadre accent arrondi
+  + fond teinté sur TOUTE la vignette (icône comprise), survol distinct,
+  icône non teintée (palette Highlight alignée sur l'accent, pixmap
+  Selected explicite) — fini le simple surlignage du texte.
+
 ## 2026-07 — Doc : tester le fork avant déploiement
 
 - README : procédure d'essai **par-dessus** l'installation studio, dans
