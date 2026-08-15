@@ -152,14 +152,13 @@ affiché avec son vrai rendu en vignette.
 
 - **Sauvegarder** : sélectionne un ou plusieurs boutons → bouton 💾 de
   la barre d'outils (ou clic droit → « Save selection to library… ») →
-  nom + **destination** + catégorie. La **destination** (« Library »)
-  permet de choisir **Perso** ou **Studio (TAT)** dès la sauvegarde : on
-  peut donc ranger un bouton directement dans une shelf TAT, sans passer
-  par General puis « Move to ». Le choix Studio n'apparaît qu'en **mode
-  admin** (voir « Deux modes de lancement ») et si un emplacement studio
-  est configuré ; les catégories proposées s'adaptent à la destination
-  (l'onglet courant est proposé par défaut). Toutes les shelves
-  ouvertes se rafraîchissent.
+  nom + catégorie. La **destination est fixée par le mode** : en
+  **admin**, le bouton part dans la **librairie studio courante** (la
+  ligne « Library » rappelle laquelle, avec le logo TAT) ; en
+  animateur, dans **sa librairie perso**. Le champ Category est un menu
+  déroulant (liste complète de la librairie visée) et reste éditable —
+  taper un nouveau nom crée la catégorie. Toutes les shelves ouvertes
+  se rafraîchissent.
 - **Réutiliser** : **glisse-dépose** depuis la shelf vers le canvas
   juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
   Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.

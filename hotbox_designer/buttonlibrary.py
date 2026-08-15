@@ -473,16 +473,20 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
             sorted(studio_categories or []) or [DEFAULT_CATEGORY])
         self.name = QtWidgets.QLineEdit(default_name)
 
+        # la destination est FIXÉE par le mode : admin → la librairie
+        # studio courante, uniquement ; sinon → perso, uniquement.
+        # (Pas de choix à faire — la ligne Library sert de repère.)
         self.destination = QtWidgets.QComboBox()
-        self.destination.addItem('Perso', 'perso')
         if studio_available:
-            # logo du studio sur l'entrée, comme sur les onglets TAT
             logo = studio_logo_path()
+            label = studio_library_label()
             if logo:
                 self.destination.addItem(
-                    QtGui.QIcon(logo), 'Studio (TAT)', 'studio')
+                    QtGui.QIcon(logo), label, 'studio')
             else:
-                self.destination.addItem('Studio (TAT)', 'studio')
+                self.destination.addItem(label, 'studio')
+        else:
+            self.destination.addItem('Perso', 'perso')
         self.destination.currentIndexChanged.connect(self._update_categories)
 
         self.category = QtWidgets.QComboBox()

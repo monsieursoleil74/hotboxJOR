@@ -4,6 +4,12 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Sauvegarde : destination fixée par le mode
+
+- Plus de choix Perso/Studio dans le dialogue 💾 : en **admin** on
+  enregistre dans la **librairie studio courante** (la ligne Library
+  affiche son nom + logo TAT), en animateur dans sa librairie perso.
+
 ## 2026-08 — Dialogue de sauvegarde élargi
 
 - Largeur minimale 340 px et champs étirés : les noms de catégories se

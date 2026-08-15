@@ -220,8 +220,8 @@ class HotboxEditor(QtWidgets.QWidget):
         if not shapes:
             return warning('Button library', 'No shape selected')
         default = shapes[0].options.get('text.content') or 'button'
-        # la destination « Studio » n'est proposée qu'en mode admin :
-        # un animateur sauvegarde toujours dans SA librairie
+        # destination fixée par le mode : admin → la librairie studio
+        # courante uniquement ; animateur → SA librairie perso
         studio_available = (
             studio_write_path() is not None and is_studio_admin())
         dialog = SaveToLibraryDialog(

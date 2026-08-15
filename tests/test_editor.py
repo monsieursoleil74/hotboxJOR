@@ -1524,28 +1524,23 @@ def test_library_rename_and_save_studio():
         assert all(
             e['name'] != 'DirectTool' for e in bl.load_library(shelf.path))
 
-        # le dialogue propose studio et bascule les catégories
+        # destination FIXÉE par le mode : studio_available (admin) →
+        # Studio uniquement, catégories studio, logo TAT ; sinon perso
         dialog = SaveToLibraryDialog(['Perso'], ['ANIM', 'SHELF'], True, 'btn')
-        assert dialog.is_studio() is False
-        perso_items = [dialog.category.itemText(i)
-                       for i in range(dialog.category.count())]
-        assert perso_items == ['Perso']
-        # l'entrée Studio porte le logo TAT (repli embarqué inclus)
-        assert not dialog.destination.itemIcon(1).isNull()
-        dialog.destination.setCurrentIndex(1)  # Studio (TAT)
         assert dialog.is_studio() is True
+        assert dialog.destination.count() == 1
+        assert not dialog.destination.itemIcon(0).isNull()
         studio_items = [dialog.category.itemText(i)
                         for i in range(dialog.category.count())]
         assert studio_items == ['ANIM', 'SHELF']
-        # le champ montre une catégorie STUDIO (plus le « General » de
-        # la perso resté collé — bug d'origine)
         assert dialog.category.currentText() == 'ANIM'
-        # une catégorie commune aux deux listes est conservée au switch
-        dialog.category.setCurrentText('SHELF')
-        dialog.destination.setCurrentIndex(0)  # retour Perso
-        assert dialog.category.currentText() == 'Perso'
-        dialog.destination.setCurrentIndex(1)
-        assert dialog.category.currentText() == 'ANIM'
+
+        dialog = SaveToLibraryDialog(['Perso'], [], False, 'btn')
+        assert dialog.is_studio() is False
+        assert dialog.destination.count() == 1
+        perso_items = [dialog.category.itemText(i)
+                       for i in range(dialog.category.count())]
+        assert perso_items == ['Perso']
         shelf.close()
     finally:
         del os.environ[STUDIO_ENV_VARIABLE]
