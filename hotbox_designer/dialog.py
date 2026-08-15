@@ -96,12 +96,12 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.template_grid.setViewMode(QtWidgets.QListView.IconMode)
         self.template_grid.setResizeMode(QtWidgets.QListView.Adjust)
         self.template_grid.setMovement(QtWidgets.QListView.Static)
-        self.template_grid.setIconSize(QtCore.QSize(108, 66))
-        self.template_grid.setGridSize(QtCore.QSize(122, 96))
+        self.template_grid.setIconSize(QtCore.QSize(128, 78))
+        self.template_grid.setGridSize(QtCore.QSize(142, 112))
         self.template_grid.setUniformItemSizes(True)
         self.template_grid.setWrapping(True)
         self.template_grid.setWordWrap(True)
-        self.template_grid.setFixedHeight(212)
+        self.template_grid.setFixedHeight(360)
         self.template_grid.setSelectionMode(
             QtWidgets.QAbstractItemView.SingleSelection)
         self.template_grid.setStyleSheet(
@@ -112,7 +112,7 @@ class CreateHotboxDialog(QtWidgets.QDialog):
             'QListWidget::item:selected {background: #4a5f3d;}')
         for template in self._templates:
             item = QtWidgets.QListWidgetItem(
-                QtGui.QIcon(hotbox_thumbnail(template, 108, 66)),
+                QtGui.QIcon(hotbox_thumbnail(template, 128, 78)),
                 template['general']['name'] or 'template')
             self.template_grid.addItem(item)
         if self._templates:
@@ -127,18 +127,18 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.duplicate.toggled.connect(self.existing.setEnabled)
         self.template.toggled.connect(self.template_grid.setEnabled)
 
-        # aperçu de la source choisie (template ou hotbox dupliquée)
+        # aperçu réservé à « Duplicate existing » (les vignettes de la
+        # grille font déjà l'aperçu des templates — pas de doublon)
         self.preview = QtWidgets.QLabel()
         self.preview.setFixedSize(240, 150)
         self.preview.setAlignment(QtCore.Qt.AlignCenter)
         self.preview.setStyleSheet(
             'QLabel {background: #2b2b2b; border: 1px solid #242424;'
             'border-radius: 4px; color: #8c8c8c;}')
-        self.template_grid.currentRowChanged.connect(self.update_preview)
+        self.preview.setVisible(False)
+        self.duplicate.toggled.connect(self.preview.setVisible)
         self.existing.currentIndexChanged.connect(self.update_preview)
-        self.new.toggled.connect(self.update_preview)
         self.duplicate.toggled.connect(self.update_preview)
-        self.template.toggled.connect(self.update_preview)
 
         form = QtWidgets.QFormLayout()
         form.addRow('Name:', self.name_edit)
@@ -193,10 +193,10 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 
     def update_preview(self, *_):
         from hotbox_designer.buttonlibrary import hotbox_thumbnail
-        data = self._source_data()
+        data = self._source_data() if self.duplicate.isChecked() else None
         if data is None:
             self.preview.setPixmap(QtGui.QPixmap())
-            self.preview.setText('empty hotbox')
+            self.preview.setText('select a hotbox')
         else:
             self.preview.setText('')
             self.preview.setPixmap(hotbox_thumbnail(data, 240, 150))

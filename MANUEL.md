@@ -194,6 +194,11 @@ affiché avec son vrai rendu en vignette.
   glisser vers une hotbox, réordonner, clic droit, mêmes droits
   admin/animateur. Plusieurs palettes peuvent rester ouvertes côte à
   côte.
+- **Filtre de recherche** : le champ en haut à gauche de la
+  shelf — taper un bout de nom (« snap ») remplace les onglets par un
+  onglet unique de résultats, toutes catégories confondues (perso ET
+  studio). Les résultats se glissent vers la hotbox comme d'habitude ;
+  effacer le champ restaure les onglets.
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 
@@ -436,9 +441,9 @@ habiller un template sans replacer chaque bouton à la main.
 
 À la création d'une hotbox, les templates s'affichent en **grille de
 vignettes cliquables** : tous visibles d'un coup (embarqués puis
-persos), clic = sélectionner (le grand aperçu se met à jour),
-**double-clic = créer directement**. « Duplicate existing » garde son
-menu et son aperçu.
+persos), clic = sélectionner, **double-clic = créer directement** —
+la vignette EST l'aperçu. « Duplicate existing » garde son menu, avec
+un aperçu qui n'apparaît que quand cette option est cochée.
 
 Les templates embarqués sont ceux hérités de l'original, plus le
 template **TAT** (la hotbox de base du studio : grille de boutons

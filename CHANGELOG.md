@@ -18,6 +18,14 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 - **Vignettes de la liste du manager : essayées puis retirées** (choix
   utilisateur) — le panneau Preview de droite fait déjà le travail, la
   liste reste en texte simple.
+- **Filtre de recherche dans la shelf** : champ en haut à gauche —
+  taper un bout de nom montre tous les boutons correspondants, toutes
+  catégories confondues (perso + studio), dans un onglet unique de
+  résultats glissables vers la hotbox. Effacer restaure les onglets.
+- **Création de hotbox épurée** (retour utilisateur) : la grande
+  preview redondante disparaît en mode template (la vignette de la
+  grille EST l'aperçu — vignettes agrandies 128×78, grille pleine
+  hauteur) ; elle ne s'affiche plus que pour « Duplicate existing ».
 - **Raccourcis visibles dans les listes du manager** : la touche
   assignée s'affiche en grisé à droite du nom de chaque hotbox
   (Personal et Shared), mise à jour dès qu'on assigne/efface — plus

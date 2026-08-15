@@ -1399,14 +1399,59 @@ def test_user_templates():
     dialog.template.setChecked(True)
     dialog.template_grid.setCurrentRow(builtin_count)
     APP.processEvents()
-    assert dialog.preview.pixmap() is not None
-    assert not dialog.preview.pixmap().isNull()
+    # l'aperçu du template EST sa vignette dans la grille (la grande
+    # preview est réservée à « Duplicate existing »)
+    item = dialog.template_grid.item(builtin_count)
+    assert not item.icon().isNull()
+    assert dialog.preview.isHidden()
     dialog.name_edit.setText('nouvelle')
     created = dialog.hotbox()
     assert created['general']['name'] == 'nouvelle'
     assert created['shapes'][0]['text.content'] == 'tpl'
     dialog.close()
     print('templates utilisateur (save + liste + aperçu) OK')
+
+
+def test_shelf_filter():
+    """Le champ de filtre de la shelf cherche les boutons par nom,
+    toutes catégories confondues, dans un onglet unique de résultats ;
+    l'effacer restaure les onglets normaux."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import LibraryShelf, save_library
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    entries = [
+        {'name': 'smart_snap', 'category': 'ANIM',
+         'options': dict(SQUARE_BUTTON)},
+        {'name': 'ik_switch', 'category': 'RIG',
+         'options': dict(SQUARE_BUTTON)},
+        {'name': 'snap_keys', 'category': 'RIG',
+         'options': dict(SQUARE_BUTTON)},
+    ]
+    save_library(bl.library_path(application), entries)
+    shelf = LibraryShelf(application)
+    shelf.show()
+    APP.processEvents()
+    normal_tabs = shelf.tabs.count()
+    assert normal_tabs == 2  # ANIM + RIG
+
+    shelf.filter_edit.setText('snap')
+    APP.processEvents()
+    assert shelf.tabs.count() == 1
+    results = shelf.tabs.widget(0)
+    names = [results.item(i).text() for i in range(results.count())]
+    assert sorted(names) == ['smart_snap', 'snap_keys']
+    # glissable vers la hotbox, mais pas de réorganisation depuis là
+    assert results.reorderable is False
+
+    shelf.filter_edit.setText('')
+    APP.processEvents()
+    assert shelf.tabs.count() == normal_tabs
+    shelf.close()
+    print('filtre de recherche de la shelf OK')
 
 
 def test_hotkey_column():
@@ -2337,6 +2382,7 @@ if __name__ == '__main__':
     test_startup_framing()
     test_replace_from_library()
     test_user_templates()
+    test_shelf_filter()
     test_hotkey_column()
     test_state_preview()
     test_builtin_templates()

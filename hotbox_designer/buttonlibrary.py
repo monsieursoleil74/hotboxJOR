@@ -619,6 +619,7 @@ class ShelfList(QtWidgets.QListWidget):
         self.readonly = False  # True pour les onglets studio
         self.shelf = None      # LibraryShelf propriétaire
         self.category = None   # catégorie de l'onglet
+        self.reorderable = True  # False : résultats de recherche
         self.setAcceptDrops(True)
         self.setViewMode(QtWidgets.QListView.IconMode)
         self.setFlow(QtWidgets.QListView.LeftToRight)
@@ -726,11 +727,13 @@ class ShelfList(QtWidgets.QListWidget):
             [entry['options'] for entry in entries]).encode('utf-8')
         mime.setData(BUTTONS_MIME, QtCore.QByteArray(payload))
         # payload complet : permet le dépôt sur un onglet (changement de
-        # catégorie) ou dans une liste (réordonnancement)
-        full = json.dumps({
-            'entries': entries, 'readonly': self.readonly,
-            'category': self.category}).encode('utf-8')
-        mime.setData(SHELF_ENTRIES_MIME, QtCore.QByteArray(full))
+        # catégorie) ou dans une liste (réordonnancement) — pas depuis
+        # les résultats de recherche (sources mélangées)
+        if self.reorderable:
+            full = json.dumps({
+                'entries': entries, 'readonly': self.readonly,
+                'category': self.category}).encode('utf-8')
+            mime.setData(SHELF_ENTRIES_MIME, QtCore.QByteArray(full))
         drag = QtGui.QDrag(self)
         drag.setMimeData(mime)
         pixmap = self.selectedItems()[0].icon().pixmap(
@@ -920,6 +923,18 @@ class LibraryShelf(QtWidgets.QWidget):
         corner_layout.addWidget(self.open_library_button)
         corner_layout.addWidget(self.add_button)
         self.tabs.setCornerWidget(corner, QtCore.Qt.TopRightCorner)
+        # filtre : taper un bout de nom -> tous les boutons
+        # correspondants, toutes categories confondues
+        self.filter_edit = QtWidgets.QLineEdit()
+        self.filter_edit.setPlaceholderText('\U0001f50d filter')
+        self.filter_edit.setFixedWidth(130)
+        self.filter_edit.setClearButtonEnabled(True)
+        self.filter_edit.textChanged.connect(self._apply_filter)
+        left = QtWidgets.QWidget()
+        left_layout = QtWidgets.QHBoxLayout(left)
+        left_layout.setContentsMargins(4, 0, 6, 0)
+        left_layout.addWidget(self.filter_edit)
+        self.tabs.setCornerWidget(left, QtCore.Qt.TopLeftCorner)
         tab_bar = self.tabs.tabBar()
         tab_bar.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
         tab_bar.customContextMenuRequested.connect(self._tab_menu)
@@ -977,6 +992,50 @@ class LibraryShelf(QtWidgets.QWidget):
         self._rebuilding_tabs = True
         try:
             self._refresh()
+        finally:
+            self._rebuilding_tabs = False
+        if self.filter_edit.text().strip():
+            self._filter_tabs()
+
+    def _matching_entries(self, text):
+        """Boutons dont le nom contient `text`, dans tout ce que la
+        shelf montre (studio, + perso hors mode admin)."""
+        text = text.lower()
+        matches = [
+            entry for entry in load_studio_library()
+            if text in (entry.get('name') or '').lower()]
+        if not is_studio_admin():
+            matches += [
+                entry for entry in load_library(self.path)
+                if text in (entry.get('name') or '').lower()]
+        return matches
+
+    def _apply_filter(self, *_):
+        if self.filter_edit.text().strip():
+            self._filter_tabs()
+        else:
+            self.refresh()  # reconstruit les onglets normaux
+
+    def _filter_tabs(self):
+        """Remplace les onglets par un onglet unique de résultats,
+        toutes catégories confondues. Drag vers la hotbox OK ; pas de
+        réorganisation depuis les résultats (sources mélangées)."""
+        text = self.filter_edit.text().strip()
+        matches = self._matching_entries(text)
+        self._rebuilding_tabs = True
+        try:
+            self.tabs.clear()
+            results = ShelfList()
+            results.readonly = True
+            results.reorderable = False
+            results.setAcceptDrops(False)
+            results.shelf = self
+            self._fill_list(results, matches)
+            if not matches:
+                results.setToolTip('No button matches the filter')
+            self.tabs.addTab(
+                results, '\U0001f50d %d result%s' % (
+                    len(matches), 's' if len(matches) > 1 else ''))
         finally:
             self._rebuilding_tabs = False
 
