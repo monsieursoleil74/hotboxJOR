@@ -228,11 +228,14 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
     list** retire une librairie obsolète de la liste (le fichier n'est
     pas touché — la courante n'est pas proposée). L'infobulle donne le
     chemin complet et le rôle (admin / lecture seule) ;
-  - le bouton **dossier** crée (admin — dialogue « Enregistrer sous »,
-    le nom du `.json` est **libre** : `ringo.json`, `projetX.json`…)
-    ou ouvre une librairie existante (animateur : ouverture seulement).
-    À la création, le **logo courant est copié** à côté du nouveau
-    fichier — la nouvelle librairie garde l'identité TAT.
+  - le bouton **page (new)** — admin uniquement — **crée** une
+    librairie : dialogue « Enregistrer sous », nom du `.json` libre
+    (`ringo.json`, `projetX.json`…). À la création, le **logo courant
+    est copié** à côté du nouveau fichier — la nouvelle librairie garde
+    l'identité TAT. (Choisir un fichier existant l'ouvre, jamais
+    d'écrasement.)
+  - le bouton **dossier** — pour tout le monde — **ouvre/charge** une
+    librairie existante.
   **Aucune librairie par défaut** : au tout premier lancement il n'y en
   a pas (pas de badge, pas d'onglets studio) — on en crée/ouvre une
   explicitement, et seules celles qu'on a réellement chargées vivent

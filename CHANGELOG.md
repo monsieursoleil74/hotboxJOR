@@ -4,6 +4,13 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Créer et ouvrir une librairie : deux boutons distincts
+
+- Le bouton dossier faisait les deux — flou. Désormais : bouton
+  **page (new)** = créer une librairie (admin uniquement, nom du .json
+  libre, jamais d'écrasement) ; bouton **dossier** = ouvrir/charger une
+  librairie existante (tout le monde).
+
 ## 2026-08 — Badge et menus sans l'extension .json
 
 - Le badge et la liste des librairies affichent « ringo », plus

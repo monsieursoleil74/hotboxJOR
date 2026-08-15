@@ -1625,6 +1625,9 @@ def test_studio_library_switch():
         # ZÉRO librairie au départ : rien de configuré, badge caché
         assert bl.studio_location() is None
         assert shelf.library_badge.isVisible() is False
+        # admin : bouton « créer » ET bouton « ouvrir » visibles
+        assert shelf.create_library_button.isVisible() is True
+        assert shelf.open_library_button.isVisible() is True
 
         # bascule sur le projet A : la lib studio suit, le choix est
         # mémorisé (current + recent), le badge apparaît
@@ -1699,6 +1702,9 @@ def test_studio_library_switch():
         bl.refresh_shelves()
         APP.processEvents()
         assert shelf.library_badge.isVisible() is True
+        # animateur : pas de bouton « créer », seulement « ouvrir »
+        assert shelf.create_library_button.isVisible() is False
+        assert shelf.open_library_button.isVisible() is True
         project_d = tempfile.mkdtemp()  # librairie inexistante
         warned = []
         saved_warning = QtWidgets.QMessageBox.warning

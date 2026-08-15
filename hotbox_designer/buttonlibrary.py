@@ -629,12 +629,21 @@ class LibraryShelf(QtWidgets.QWidget):
         # librairie chargée — → catégorie perso, façon shelf Maya
         self.add_button.released.connect(lambda: self._prompt_category(
             is_studio_admin() and studio_location() is not None))
-        # bouton dossier : créer (admin) / ouvrir une librairie — à part
-        # entière, pas caché dans un menu
+        # deux boutons bien distincts : CRÉER une librairie (admin
+        # seulement) et OUVRIR/charger une librairie existante
+        self.create_library_button = QtWidgets.QToolButton()
+        self.create_library_button.setIcon(icon('new.png'))
+        self.create_library_button.setToolTip(
+            'Create a new studio library (.json)')
+        self.create_library_button.released.connect(
+            self._create_studio_library)
+        self.create_library_button.setVisible(is_studio_admin())
         self.open_library_button = QtWidgets.QToolButton()
         self.open_library_button.setIcon(icon('open.png'))
+        self.open_library_button.setToolTip(
+            'Open an existing studio library')
         self.open_library_button.released.connect(
-            self._create_or_open_library)
+            self._open_studio_library)
         # le badge-BOUTON : le nom du json courant EST le sélecteur —
         # on voit son environnement, on clique dessus pour switcher
         # (vert = mode admin, gris = lecture seule)
@@ -647,6 +656,7 @@ class LibraryShelf(QtWidgets.QWidget):
         corner_layout.setContentsMargins(0, 0, 4, 0)
         corner_layout.setSpacing(6)
         corner_layout.addWidget(self.library_badge)
+        corner_layout.addWidget(self.create_library_button)
         corner_layout.addWidget(self.open_library_button)
         corner_layout.addWidget(self.add_button)
         self.tabs.setCornerWidget(corner, QtCore.Qt.TopRightCorner)
@@ -709,6 +719,7 @@ class LibraryShelf(QtWidgets.QWidget):
         # SESSION : badge, boutons et logo suivent (le logo peut
         # différer par projet)
         self._update_library_badge()
+        self.create_library_button.setVisible(is_studio_admin())
         if is_studio_admin() and studio_location():
             self.add_button.setToolTip(
                 'Create a category in %s' % studio_library_label())
@@ -923,21 +934,29 @@ class LibraryShelf(QtWidgets.QWidget):
             if os.path.normpath(p) != normalized]
         save_studio_settings(self.application, settings)
 
-    def _create_or_open_library(self):
-        """Bouton dossier : l'admin crée (nom du .json libre) ou ouvre ;
-        l'animateur ne peut qu'ouvrir une librairie existante."""
+    def _library_dialog_start(self):
         start = studio_location() or ''
         if start.lower().endswith('.json'):
             start = os.path.dirname(start)
-        if is_studio_admin():
-            path, _ = QtWidgets.QFileDialog.getSaveFileName(
-                self, 'Create or open a studio library',
-                os.path.join(start, LIBRARY_FILENAME),
-                'Library (*.json)',
-                options=QtWidgets.QFileDialog.DontConfirmOverwrite)
-        else:
-            path, _ = QtWidgets.QFileDialog.getOpenFileName(
-                self, 'Open a studio library', start, 'Library (*.json)')
+        return start
+
+    def _create_studio_library(self):
+        """Bouton « new » (admin) : créer une librairie — dialogue
+        Enregistrer sous, nom du .json libre. Choisir un fichier
+        existant l'ouvre simplement (jamais écrasé)."""
+        path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self, 'Create a studio library',
+            os.path.join(self._library_dialog_start(), LIBRARY_FILENAME),
+            'Library (*.json)',
+            options=QtWidgets.QFileDialog.DontConfirmOverwrite)
+        if path:
+            self._open_studio_json(path)
+
+    def _open_studio_library(self):
+        """Bouton dossier : charger une librairie EXISTANTE."""
+        path, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, 'Open a studio library',
+            self._library_dialog_start(), 'Library (*.json)')
         if path:
             self._open_studio_json(path)
 
