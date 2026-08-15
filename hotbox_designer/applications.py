@@ -125,19 +125,19 @@ class AbstractApplication(object):
 
     def record_hotkey(self, name, sequence, mode):
         """Note (ou met à jour) le raccourci d'une hotbox dans le registre."""
+        from hotbox_designer.data import atomic_write_json
         data = self.load_hotkeys()
         data[name] = {'sequence': sequence, 'mode': mode}
-        with open(self.get_hotkey_file(), 'w') as f:
-            json.dump(data, f, indent=2)
+        atomic_write_json(self.get_hotkey_file(), data)
 
     def remove_hotkey(self, name):
         """Retire le raccourci du registre. Les backends qui posent un
         vrai raccourci DCC (Maya) surchargent pour le débrancher aussi."""
+        from hotbox_designer.data import atomic_write_json
         data = self.load_hotkeys()
         if name in data:
             del data[name]
-            with open(self.get_hotkey_file(), 'w') as f:
-                json.dump(data, f, indent=2)
+            atomic_write_json(self.get_hotkey_file(), data)
 
 
 class Standalone(AbstractApplication):

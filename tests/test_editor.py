@@ -1960,6 +1960,92 @@ def test_category_palette():
     print('palette flottante de catégorie (double-clic) OK')
 
 
+
+def test_atomic_write_and_backups():
+    """Écriture atomique + backups tournants : le json n'est jamais
+    corrompu par une écriture interrompue, les 3 dernières versions
+    restent disponibles à côté."""
+    import tempfile
+    from hotbox_designer.data import atomic_write_json
+    from hotbox_designer import buttonlibrary as bl
+
+    tmp = tempfile.mkdtemp()
+    path = os.path.join(tmp, 'lib.json')
+
+    atomic_write_json(path, ['v1'], backups=3)
+    assert json.load(open(path)) == ['v1']
+    assert not os.path.exists(path + '.bak')  # pas de backup à la création
+    assert not os.path.exists(path + '.tmp')  # le temporaire a disparu
+
+    for version in ('v2', 'v3', 'v4', 'v5'):
+        atomic_write_json(path, [version], backups=3)
+    assert json.load(open(path)) == ['v5']
+    assert json.load(open(path + '.bak')) == ['v4']
+    assert json.load(open(path + '.bak2')) == ['v3']
+    assert json.load(open(path + '.bak3')) == ['v2']
+    assert not os.path.exists(path + '.bak4')  # rotation bornée
+
+    # save_library passe par le circuit atomique + backups
+    lib = os.path.join(tmp, 'button_library.json')
+    bl.save_library(lib, [])
+    bl.save_library(lib, [{'__category__': 'ANIM'}])
+    assert json.load(open(lib + '.bak')) == []
+    assert bl.load_extra_categories(lib) == ['ANIM']
+    print('écriture atomique + backups tournants OK')
+
+
+def test_studio_watcher():
+    """Publication du lead → refresh automatique : le watcher suit le
+    json courant et déclenche refresh_shelves (débouncé)."""
+    import tempfile
+    import time
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import LibraryShelf
+
+    prefs = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: prefs
+    studio_dir = tempfile.mkdtemp()
+    ringo = os.path.join(studio_dir, 'ringo.json')
+    bl.save_library(ringo, [{'__category__': 'ANIM'}])
+
+    try:
+        bl.set_studio_admin(True)
+        bl.set_studio_location(ringo)
+        shelf = LibraryShelf(application)
+        shelf.show()
+        APP.processEvents()
+        # le watcher est armé sur le json courant
+        assert bl._watcher is not None
+        assert [os.path.normpath(f) for f in bl._watcher.files()] == [
+            os.path.normpath(ringo)]
+
+        # modification EXTERNE du fichier (un autre poste publie)
+        entry = {'name': 'new', 'category': 'ANIM',
+                 'options': dict(SQUARE_BUTTON)}
+        bl.save_library(ringo, [{'__category__': 'ANIM'}, entry])
+        # le débounce + l'événement fichier passent par la boucle Qt
+        deadline = time.time() + 3.0
+        updated = False
+        while time.time() < deadline:
+            APP.processEvents()
+            tab = shelf.tabs.widget(0)
+            if tab is not None and tab.count() == 1:
+                updated = True
+                break
+            time.sleep(0.05)
+        assert updated, 'le refresh automatique n a pas eu lieu'
+        # et le watcher est re-armé après le remplacement atomique
+        assert [os.path.normpath(f) for f in bl._watcher.files()] == [
+            os.path.normpath(ringo)]
+        shelf.close()
+    finally:
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)
+        bl.watch_studio_library()  # désarmer (plus de librairie)
+    print('watcher de librairie studio (refresh auto) OK')
+
+
 def test_fork_folder_migration():
     """Rangement des données : la librairie perso et le registre des
     raccourcis vivent dans le dossier du fork (prefs/hotboxJOR sous
@@ -2173,6 +2259,8 @@ if __name__ == '__main__':
     test_plus_button_follows_mode()
     test_shelf_drag_organization()
     test_category_palette()
+    test_atomic_write_and_backups()
+    test_studio_watcher()
     test_fork_folder_migration()
     test_hotkey_registry()
     test_hotkey_edit_capture()

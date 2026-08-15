@@ -104,9 +104,9 @@ def load_studio_settings(application):
 
 
 def save_studio_settings(application, settings):
+    from hotbox_designer.data import atomic_write_json
     try:
-        with open(studio_settings_path(application), 'w') as f:
-            json.dump(settings, f, indent=2)
+        atomic_write_json(studio_settings_path(application), settings)
     except OSError:
         pass
 
@@ -259,8 +259,10 @@ def load_extra_categories(path):
 
 
 def save_library(path, entries):
-    with open(path, 'w') as f:
-        json.dump(entries, f, indent=2)
+    # librairie perso ou OFFICIELLE (partagée réseau) : écriture
+    # atomique + 3 backups tournants (.bak/.bak2/.bak3 à côté du json)
+    from hotbox_designer.data import atomic_write_json
+    atomic_write_json(path, entries, backups=3)
 
 
 # --- ordre du fichier = ordre affiché -----------------------------------
@@ -1029,6 +1031,9 @@ class LibraryShelf(QtWidgets.QWidget):
                 self._add_tab(category, by_category[category], current)
         # les palettes flottantes ouvertes suivent le contenu
         self._sync_palettes()
+        # surveiller le json courant : publication du lead → les
+        # shelves des animateurs se rafraîchissent toutes seules
+        watch_studio_library()
 
     def _current_key(self):
         """(readonly, catégorie) de l'onglet courant, pour le restaurer
@@ -1550,3 +1555,46 @@ def refresh_shelves():
             shelf.refresh()
         except RuntimeError:  # widget C++ détruit
             _shelves.remove(shelf)
+
+
+# --- rafraîchissement AUTOMATIQUE de la librairie studio ----------------
+# Le lead publie un bouton → les shelves des animateurs se mettent à
+# jour toutes seules : un QFileSystemWatcher surveille le json studio
+# courant. Débouncé (les éditeurs/os.replace émettent plusieurs
+# événements), et re-armé après chaque événement car un remplacement
+# atomique fait souvent « perdre » le fichier au watcher.
+
+_watcher = None
+_watch_timer = None
+
+
+def watch_studio_library():
+    """(Re)pointe la surveillance sur le fichier de librairie courant
+    (ou plus rien s'il n'y a pas de librairie)."""
+    global _watcher
+    if QtWidgets.QApplication.instance() is None:
+        return
+    if _watcher is None:
+        _watcher = QtCore.QFileSystemWatcher()
+        _watcher.fileChanged.connect(_on_library_file_changed)
+    files = _watcher.files()
+    if files:
+        _watcher.removePaths(files)
+    path = studio_library_path()
+    if path:
+        _watcher.addPath(path)
+
+
+def _on_library_file_changed(_):
+    global _watch_timer
+    if _watch_timer is None:
+        _watch_timer = QtCore.QTimer()
+        _watch_timer.setSingleShot(True)
+        _watch_timer.setInterval(300)
+        _watch_timer.timeout.connect(_reload_after_change)
+    _watch_timer.start()  # débounce : repart à chaque événement
+
+
+def _reload_after_change():
+    watch_studio_library()  # re-armer (os.replace décroche le watcher)
+    refresh_shelves()

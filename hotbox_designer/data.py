@@ -1,6 +1,7 @@
 
 import os
 import json
+import shutil
 from hotbox_designer.templates import HOTBOX
 
 
@@ -48,9 +49,38 @@ def load_json(filename, default=None):
         return json.load(f)
 
 
+def _rotate_backups(path, depth):
+    """name.json.bak (le plus récent) → .bak2 → .bak3 (rotation)."""
+    try:
+        for i in range(depth, 1, -1):
+            src = (path + '.bak' if i - 1 == 1
+                   else '%s.bak%d' % (path, i - 1))
+            if os.path.exists(src):
+                os.replace(src, '%s.bak%d' % (path, i))
+        shutil.copy(path, path + '.bak')
+    except OSError:
+        pass  # un backup raté ne doit jamais bloquer la sauvegarde
+
+
+def atomic_write_json(path, payload, backups=0):
+    """Écriture SÛRE d'un json : le contenu part dans un fichier
+    temporaire du même dossier, puis remplace l'original d'un coup
+    (os.replace) — un crash ou une coupure réseau en pleine écriture ne
+    peut plus corrompre le fichier. Avec backups>0, les versions
+    précédentes sont conservées à côté (.bak, .bak2…)."""
+    temporary = path + '.tmp'
+    with open(temporary, 'w') as f:
+        json.dump(payload, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    if backups and os.path.exists(path):
+        _rotate_backups(path, backups)
+    os.replace(temporary, path)
+
+
 def save_datas(filename, hotboxes_data):
-    with open(filename, 'w') as f:
-        json.dump(hotboxes_data, f, indent=2)
+    # les hotboxes sont précieuses : écriture atomique + 3 backups
+    atomic_write_json(filename, hotboxes_data, backups=3)
 
 
 def copy_hotbox_data(data):
