@@ -4,6 +4,12 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Mode admin : plus d'onglets perso dans la shelf
+
+- En mode admin, la shelf n'affiche que les onglets de la **librairie
+  studio courante** — le « General » perso (sans logo) n'apparaît plus.
+  Le perso reste entier en mode animateur.
+
 ## 2026-08 — Zéro librairie par défaut + clic droit épuré pour l'animateur
 
 - **Plus de librairie par défaut** (le chemin de dev codé en dur est

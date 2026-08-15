@@ -1754,6 +1754,10 @@ def test_plus_button_follows_mode():
         shelf.add_button.released.emit()
         assert 'OFFICIELLE' in bl.categories_in(ringo)
         assert 'OFFICIELLE' not in shelf.categories()  # pas en perso
+        # en admin, AUCUN onglet perso (pas de « General » sans logo)
+        assert all(
+            shelf.tabs.widget(i).readonly
+            for i in range(shelf.tabs.count()))
 
         # animateur : ＋ écrit dans la librairie PERSO
         bl.set_studio_admin(False)
@@ -1762,6 +1766,10 @@ def test_plus_button_follows_mode():
         shelf.add_button.released.emit()
         assert 'MIENNE' in shelf.categories()
         assert 'MIENNE' not in bl.categories_in(ringo)
+        # en animateur, les onglets perso réapparaissent
+        assert any(
+            not shelf.tabs.widget(i).readonly
+            for i in range(shelf.tabs.count()))
         shelf.close()
     finally:
         QtWidgets.QInputDialog.getText = saved_gettext

@@ -719,16 +719,20 @@ class LibraryShelf(QtWidgets.QWidget):
         for category in sorted(studio):
             self._add_tab(category, studio[category], current, readonly=True)
 
-        # 2) onglets perso (modifiables)
-        by_category = {
-            category: [] for category in load_extra_categories(self.path)}
-        for entry in load_library(self.path):
-            category = entry.get('category') or DEFAULT_CATEGORY
-            by_category.setdefault(category, []).append(entry)
-        if not by_category and not studio:
-            by_category = {DEFAULT_CATEGORY: []}
-        for category in sorted(by_category):
-            self._add_tab(category, by_category[category], current)
+        # 2) onglets perso (modifiables) — CACHÉS en mode admin : on y
+        # gère l'OFFICIEL, le perso appartient au mode animateur (c'est
+        # lui qui faisait apparaître un « General » sans logo)
+        if not is_studio_admin():
+            by_category = {
+                category: []
+                for category in load_extra_categories(self.path)}
+            for entry in load_library(self.path):
+                category = entry.get('category') or DEFAULT_CATEGORY
+                by_category.setdefault(category, []).append(entry)
+            if not by_category and not studio:
+                by_category = {DEFAULT_CATEGORY: []}
+            for category in sorted(by_category):
+                self._add_tab(category, by_category[category], current)
 
     def _current_key(self):
         """(readonly, catégorie) de l'onglet courant, pour le restaurer
