@@ -299,7 +299,7 @@ import hotbox_designer
 hotbox_designer.launch_manager('maya')
 
 # lead : mode ADMIN — librairie officielle éditable (catégories,
-# envoi/renommage/rangement de boutons), badge « ★ STUDIO ADMIN »
+# envoi/renommage/rangement de boutons), badge « STUDIO ADMIN »
 import hotbox_designer
 hotbox_designer.launch_manager('maya', studio_admin=True)
 ```

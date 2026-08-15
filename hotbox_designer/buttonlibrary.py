@@ -534,7 +534,7 @@ class LibraryShelf(QtWidgets.QWidget):
         self.add_button.released.connect(self._prompt_category)
         # badge visible seulement quand le manager est lancé en mode
         # admin studio : on sait d'un coup d'œil qu'on édite l'officiel
-        self.admin_badge = QtWidgets.QLabel(' ★ STUDIO ADMIN ')
+        self.admin_badge = QtWidgets.QLabel(' STUDIO ADMIN ')
         self.admin_badge.setToolTip(
             'Studio admin mode — you are editing the OFFICIAL library')
         from hotbox_designer.theme import ACCENT

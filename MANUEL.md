@@ -233,7 +233,7 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   **catégorie officielle** (*New studio category…*, écrite dans le
   `button_library.json` du dossier studio avec le logo TAT), **envoyer
   des boutons** (*Send to studio library*), renommer, ranger. Un badge
-  **★ STUDIO ADMIN** s'affiche en haut à droite de la shelf, et le titre
+  **STUDIO ADMIN** s'affiche en haut à droite de la shelf, et le titre
   de la fenêtre du manager porte « STUDIO ADMIN » — on sait toujours
   qu'on édite l'officiel.
 
