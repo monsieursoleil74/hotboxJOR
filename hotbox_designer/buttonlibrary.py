@@ -407,7 +407,13 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
         self.destination = QtWidgets.QComboBox()
         self.destination.addItem('Perso', 'perso')
         if studio_available:
-            self.destination.addItem('Studio (TAT)', 'studio')
+            # logo du studio sur l'entrée, comme sur les onglets TAT
+            logo = studio_logo_path()
+            if logo:
+                self.destination.addItem(
+                    QtGui.QIcon(logo), 'Studio (TAT)', 'studio')
+            else:
+                self.destination.addItem('Studio (TAT)', 'studio')
         self.destination.currentIndexChanged.connect(self._update_categories)
 
         self.category = QtWidgets.QComboBox()

@@ -1530,6 +1530,8 @@ def test_library_rename_and_save_studio():
         perso_items = [dialog.category.itemText(i)
                        for i in range(dialog.category.count())]
         assert perso_items == ['Perso']
+        # l'entrée Studio porte le logo TAT (repli embarqué inclus)
+        assert not dialog.destination.itemIcon(1).isNull()
         dialog.destination.setCurrentIndex(1)  # Studio (TAT)
         assert dialog.is_studio() is True
         studio_items = [dialog.category.itemText(i)
