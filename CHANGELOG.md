@@ -15,10 +15,9 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 - **Grille de templates à la création** : fini le menu déroulant
   aveugle — chaque template en vignette + nom, tous visibles d'un
   coup, clic = sélectionner, double-clic = créer directement.
-- **Vignettes dans la liste du manager** — version discrète (retour
-  utilisateur) : lignes compactes (34 px) avec une petite vignette
-  44×26 en repère visuel à côté du nom ; le vrai aperçu reste le
-  panneau Preview de droite.
+- **Vignettes de la liste du manager : essayées puis retirées** (choix
+  utilisateur) — le panneau Preview de droite fait déjà le travail, la
+  liste reste en texte simple.
 - **Correctif : les boutons OK/Cancel du sélecteur de couleurs
   prenaient la couleur choisie** (le style de la pastille ruisselait
   sur le dialogue enfant). Style ciblé sur la pastille seule ; et plus
