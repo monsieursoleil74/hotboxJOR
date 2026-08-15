@@ -4,6 +4,23 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Organisation de la shelf au drag & drop
+
+- **Glisser un bouton sur un onglet** = le ranger dans cette catégorie
+  (l'onglet survolé se sélectionne pendant le drag) ; **glisser dans la
+  liste** d'une catégorie = le déposer à une position précise (et donc
+  réordonner au sein d'une catégorie).
+- **Glisser les onglets** (mode admin) réordonne les catégories,
+  persisté dans le json.
+- **L'ordre affiché = l'ordre du fichier** (onglets ET boutons) — fini
+  l'alphabétique imposé ; le lead met les importants en premier.
+- Nouvelles fonctions de structure (`parse_library_structure`,
+  `save_library_structure`, `move_entries_to_category`,
+  `set_category_order`) : le json est réécrit sous forme canonique
+  (marqueur de catégorie puis ses boutons, dans l'ordre).
+- Gating conservé : perso toujours, studio en admin ; un drag ne change
+  jamais de librairie (perso↔perso, studio↔studio).
+
 ## 2026-08 — Créer et ouvrir une librairie : deux boutons distincts
 
 - Le bouton dossier faisait les deux — flou. Désormais : bouton

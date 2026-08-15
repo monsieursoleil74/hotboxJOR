@@ -31,6 +31,9 @@ from hotbox_designer.qtutils import icon
 
 LIBRARY_FILENAME = 'button_library.json'
 BUTTONS_MIME = 'application/x-hotbox-designer-buttons'
+# payload complet d'un drag de shelf (déplacement/réordonnancement) :
+# {'entries': [...], 'readonly': bool, 'category': str}
+SHELF_ENTRIES_MIME = 'application/x-hotbox-designer-shelf-entries'
 DEFAULT_CATEGORY = 'General'
 THUMB_SIZE = 24
 # vignettes de la shelf (plus grandes que celles de la fenêtre legacy)
@@ -258,6 +261,78 @@ def load_extra_categories(path):
 def save_library(path, entries):
     with open(path, 'w') as f:
         json.dump(entries, f, indent=2)
+
+
+# --- ordre du fichier = ordre affiché -----------------------------------
+# L'ordre des catégories (onglets) et des boutons dans une catégorie est
+# celui du fichier — plus d'alphabétique imposé. Les fonctions ci-dessous
+# reconstruisent le fichier sous forme canonique : pour chaque catégorie,
+# son marqueur puis ses boutons, dans l'ordre voulu.
+
+def parse_library_structure(path):
+    """(ordre_des_categories, {categorie: [boutons]}) — ordre de
+    première apparition dans le fichier (marqueur ou bouton)."""
+    order, by_category = [], {}
+    for entry in load_library_raw(path):
+        if CATEGORY_KEY in entry:
+            category = entry[CATEGORY_KEY]
+            if category not in by_category:
+                order.append(category)
+                by_category[category] = []
+        elif 'options' in entry:
+            category = entry.get('category') or DEFAULT_CATEGORY
+            if category not in by_category:
+                order.append(category)
+                by_category[category] = []
+            by_category[category].append(entry)
+    return order, by_category
+
+
+def save_library_structure(path, order, by_category):
+    raw = []
+    for category in order:
+        raw.append({CATEGORY_KEY: category})
+        raw.extend(by_category.get(category) or [])
+    save_library(path, raw)
+
+
+def set_category_order(path, ordered_names):
+    """Réordonne les catégories (drag des onglets). Les noms inconnus
+    sont ignorés, les catégories omises gardent leur place à la fin."""
+    order, by_category = parse_library_structure(path)
+    known = [c for c in ordered_names if c in by_category]
+    rest = [c for c in order if c not in known]
+    save_library_structure(path, known + rest, by_category)
+
+
+def move_entries_to_category(path, entries, category, index=None):
+    """Déplace (et/ou réordonne) des boutons vers `category`, insérés à
+    la position `index` parmi les boutons restants (None = à la fin).
+    Sert au drag & drop entre catégories ET au réordonnancement dans une
+    même catégorie. Retourne le nombre de boutons déplacés."""
+    order, by_category = parse_library_structure(path)
+    moved = []
+    for name in list(by_category):
+        kept = []
+        for entry in by_category[name]:
+            (moved if entry in entries else kept).append(entry)
+        by_category[name] = kept
+    if not moved:
+        return 0
+    if category not in by_category:
+        by_category[category] = []
+        order.append(category)
+    updated = []
+    for entry in moved:
+        entry = dict(entry)
+        entry['category'] = category
+        updated.append(entry)
+    target = by_category[category]
+    if index is None or index > len(target):
+        index = len(target)
+    by_category[category] = target[:index] + updated + target[index:]
+    save_library_structure(path, order, by_category)
+    return len(updated)
 
 
 def categories_in(path):
@@ -538,6 +613,9 @@ class ShelfList(QtWidgets.QListWidget):
     def __init__(self, parent=None):
         super(ShelfList, self).__init__(parent)
         self.readonly = False  # True pour les onglets studio
+        self.shelf = None      # LibraryShelf propriétaire
+        self.category = None   # catégorie de l'onglet
+        self.setAcceptDrops(True)
         self.setViewMode(QtWidgets.QListView.IconMode)
         self.setFlow(QtWidgets.QListView.LeftToRight)
         self.setWrapping(False)
@@ -584,6 +662,57 @@ class ShelfList(QtWidgets.QListWidget):
             for item in self.selectedItems()
             if item.data(QtCore.Qt.UserRole)]
 
+    def _drop_payload(self, event):
+        """Payload d'un drag de shelf accepté ici : même librairie
+        (perso↔perso, studio↔studio) et cible modifiable."""
+        data = event.mimeData().data(SHELF_ENTRIES_MIME)
+        if not data or self.shelf is None:
+            return None
+        try:
+            payload = json.loads(bytes(data).decode('utf-8'))
+        except ValueError:
+            return None
+        if payload.get('readonly') != self.readonly:
+            return None
+        if not self.shelf._can_edit(self.readonly):
+            return None
+        return payload
+
+    def dragEnterEvent(self, event):
+        if self._drop_payload(event) is not None:
+            return event.acceptProposedAction()
+        super(ShelfList, self).dragEnterEvent(event)
+
+    def dragMoveEvent(self, event):
+        if self._drop_payload(event) is not None:
+            return event.acceptProposedAction()
+        super(ShelfList, self).dragMoveEvent(event)
+
+    def dropEvent(self, event):
+        payload = self._drop_payload(event)
+        if payload is None:
+            return super(ShelfList, self).dropEvent(event)
+        position = getattr(event, 'position', None)
+        point = (position().toPoint() if position
+                 else event.pos())
+        row = self.indexAt(point).row()
+        entries = payload['entries']
+        if row < 0:
+            index = None  # à la fin
+        else:
+            # position parmi les boutons NON déplacés (les déplacés
+            # sont d'abord retirés par move_entries_to_category)
+            index = 0
+            for i in range(row):
+                item = self.item(i)
+                if item.data(QtCore.Qt.UserRole) not in entries:
+                    index += 1
+        path = self.shelf._category_target(self.readonly)
+        if path and move_entries_to_category(
+                path, entries, self.category, index):
+            refresh_shelves()
+        event.acceptProposedAction()
+
     def startDrag(self, actions):
         entries = self.selected_entries()
         if not entries:
@@ -592,6 +721,12 @@ class ShelfList(QtWidgets.QListWidget):
         payload = json.dumps(
             [entry['options'] for entry in entries]).encode('utf-8')
         mime.setData(BUTTONS_MIME, QtCore.QByteArray(payload))
+        # payload complet : permet le dépôt sur un onglet (changement de
+        # catégorie) ou dans une liste (réordonnancement)
+        full = json.dumps({
+            'entries': entries, 'readonly': self.readonly,
+            'category': self.category}).encode('utf-8')
+        mime.setData(SHELF_ENTRIES_MIME, QtCore.QByteArray(full))
         drag = QtGui.QDrag(self)
         drag.setMimeData(mime)
         pixmap = self.selectedItems()[0].icon().pixmap(
@@ -599,6 +734,78 @@ class ShelfList(QtWidgets.QListWidget):
         if not pixmap.isNull():
             drag.setPixmap(pixmap)
         drag.exec_(QtCore.Qt.CopyAction)
+
+
+class _ShelfTabBar(QtWidgets.QTabBar):
+    """Barre d'onglets de la shelf : accepte le dépôt d'un bouton sur un
+    onglet (= le ranger dans cette catégorie), sélectionne l'onglet
+    survolé pendant le drag."""
+
+    def __init__(self, tabs):
+        super(_ShelfTabBar, self).__init__(tabs)
+        self._tabs = tabs
+        self.setAcceptDrops(True)
+
+    def _payload(self, event, index):
+        if index < 0:
+            return None
+        shelf = self._tabs.shelf
+        widget = self._tabs.widget(index)
+        if shelf is None or widget is None:
+            return None
+        data = event.mimeData().data(SHELF_ENTRIES_MIME)
+        if not data:
+            return None
+        try:
+            payload = json.loads(bytes(data).decode('utf-8'))
+        except ValueError:
+            return None
+        readonly = getattr(widget, 'readonly', False)
+        if payload.get('readonly') != readonly:
+            return None
+        if not shelf._can_edit(readonly):
+            return None
+        return payload
+
+    def dragEnterEvent(self, event):
+        if event.mimeData().hasFormat(SHELF_ENTRIES_MIME):
+            return event.acceptProposedAction()
+        super(_ShelfTabBar, self).dragEnterEvent(event)
+
+    def dragMoveEvent(self, event):
+        position = getattr(event, 'position', None)
+        point = position().toPoint() if position else event.pos()
+        index = self.tabAt(point)
+        if index >= 0:
+            self._tabs.setCurrentIndex(index)  # survol = on voit où on va
+        if event.mimeData().hasFormat(SHELF_ENTRIES_MIME):
+            return event.acceptProposedAction()
+        super(_ShelfTabBar, self).dragMoveEvent(event)
+
+    def dropEvent(self, event):
+        position = getattr(event, 'position', None)
+        point = position().toPoint() if position else event.pos()
+        index = self.tabAt(point)
+        payload = self._payload(event, index)
+        if payload is None:
+            return super(_ShelfTabBar, self).dropEvent(event)
+        shelf = self._tabs.shelf
+        widget = self._tabs.widget(index)
+        category = shelf._tab_name(index)
+        path = shelf._category_target(getattr(widget, 'readonly', False))
+        if path and category != payload.get('category'):
+            if move_entries_to_category(path, payload['entries'], category):
+                refresh_shelves()
+        event.acceptProposedAction()
+
+
+class _ShelfTabs(QtWidgets.QTabWidget):
+    """QTabWidget de la shelf avec sa barre d'onglets à drops."""
+
+    def __init__(self, shelf):
+        super(_ShelfTabs, self).__init__()
+        self.shelf = shelf
+        self.setTabBar(_ShelfTabBar(self))
 
 
 class LibraryShelf(QtWidgets.QWidget):
@@ -619,9 +826,12 @@ class LibraryShelf(QtWidgets.QWidget):
             set_studio_location(current)
         logo = studio_logo_path()
         self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
-        self.tabs = QtWidgets.QTabWidget()
+        self.tabs = _ShelfTabs(self)
         self.tabs.setDocumentMode(True)
         self.tabs.setIconSize(QtCore.QSize(20, 16))
+        # réordonner les onglets au drag (admin) — persisté au lâcher
+        self._rebuilding_tabs = False
+        self.tabs.tabBar().tabMoved.connect(self._on_tab_moved)
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText('＋')
         # ＋ suit le mode : admin → catégorie DANS la librairie studio
@@ -714,6 +924,13 @@ class LibraryShelf(QtWidgets.QWidget):
                 'admin (editable)' if is_studio_admin() else 'read-only'))
 
     def refresh(self):
+        self._rebuilding_tabs = True
+        try:
+            self._refresh()
+        finally:
+            self._rebuilding_tabs = False
+
+    def _refresh(self):
         current = self._current_key()
         # le mode admin et la librairie peuvent changer EN COURS DE
         # SESSION : badge, boutons et logo suivent (le logo peut
@@ -740,7 +957,8 @@ class LibraryShelf(QtWidgets.QWidget):
         for entry in load_studio_library():
             category = entry.get('category') or DEFAULT_CATEGORY
             studio.setdefault(category, []).append(entry)
-        for category in sorted(studio):
+        self.tabs.tabBar().setMovable(is_studio_admin())
+        for category in studio:  # ordre du FICHIER, plus d'alphabétique
             self._add_tab(category, studio[category], current, readonly=True)
         # librairie toute neuve (aucune catégorie) en admin : un onglet
         # « General » vide garde la shelf vivante — sans AUCUN onglet,
@@ -761,7 +979,7 @@ class LibraryShelf(QtWidgets.QWidget):
                 by_category.setdefault(category, []).append(entry)
             if not by_category and not studio:
                 by_category = {DEFAULT_CATEGORY: []}
-            for category in sorted(by_category):
+            for category in by_category:  # ordre du fichier
                 self._add_tab(category, by_category[category], current)
 
     def _current_key(self):
@@ -778,6 +996,8 @@ class LibraryShelf(QtWidgets.QWidget):
     def _add_tab(self, category, entries, current, readonly=False):
         shelf_list = ShelfList()
         shelf_list.readonly = readonly
+        shelf_list.shelf = self
+        shelf_list.category = category
         # menu contextuel sur toutes les listes (l'ouverture de dossier
         # marche aussi pour le studio ; suppression/envoi = perso seul)
         shelf_list.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -792,7 +1012,7 @@ class LibraryShelf(QtWidgets.QWidget):
         if readonly:
             suffix = (' (studio, admin)' if is_studio_admin()
                       else ' (studio, read-only)')
-        for entry in sorted(entries, key=lambda e: e.get('name') or ''):
+        for entry in entries:  # ordre du fichier (réordonnable au drag)
             item = QtWidgets.QListWidgetItem(entry.get('name') or 'button')
             item.setIcon(button_thumbnail(
                 entry['options'], (SHELF_THUMB_WIDTH, SHELF_THUMB_HEIGHT)))
@@ -1036,6 +1256,25 @@ class LibraryShelf(QtWidgets.QWidget):
         if text.startswith(STUDIO_PREFIX):
             text = text[len(STUDIO_PREFIX):]
         return text
+
+    def _on_tab_moved(self, *_):
+        """Drag d'un onglet (admin) : persiste le nouvel ordre des
+        catégories dans le json de la librairie courante."""
+        if self._rebuilding_tabs or not is_studio_admin():
+            return
+        path = studio_write_path()
+        if not path:
+            return
+        names = [self._tab_name(i) for i in range(self.tabs.count())]
+        set_category_order(path, names)
+        # les autres shelves se resynchronisent ; pas la nôtre (le drag
+        # est en cours, la reconstruire casserait le geste)
+        for shelf in list(_shelves):
+            if shelf is not self:
+                try:
+                    shelf.refresh()
+                except RuntimeError:
+                    pass
 
     def _category_target(self, readonly):
         """Fichier de librairie à modifier selon l'onglet (studio/perso)."""

@@ -173,10 +173,18 @@ affiché avec son vrai rendu en vignette.
   - Ces trois actions marchent aussi sur les onglets **studio**, mais
     uniquement en **mode admin** (elles écrivent dans le
     `button_library.json` du dossier studio).
-- **Ranger un bouton dans une autre catégorie** : clic droit sur un ou
-  plusieurs boutons → **Move to category…** (choisir une catégorie
-  existante ou en taper une nouvelle). Perso toujours ; studio en mode
-  admin.
+- **Ranger un bouton dans une autre catégorie** — deux façons :
+  - **glisser-déposer** le(s) bouton(s) **sur l'onglet** de la catégorie
+    visée (l'onglet survolé se sélectionne pendant le drag), ou **dans
+    la liste** d'une catégorie, à la position voulue ;
+  - clic droit → **Move to category…** (choisir une catégorie existante
+    ou en taper une nouvelle).
+  Perso toujours ; studio en mode admin. Le drag reste dans la même
+  librairie (perso↔perso, studio↔studio).
+- **Réordonner** : l'ordre affiché est celui du fichier — fini
+  l'alphabétique imposé. **Glisser un bouton dans sa liste** pour le
+  repositionner ; **glisser un onglet** (mode admin) pour réordonner
+  les catégories. Tout est persisté dans le `.json` de la librairie.
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 

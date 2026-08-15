@@ -1792,6 +1792,108 @@ def test_plus_button_follows_mode():
     print('bouton ＋ selon le mode (studio en admin, perso sinon) OK')
 
 
+
+def test_shelf_drag_organization():
+    """Organisation par drag & drop : ordre du fichier respecté (onglets
+    et boutons), déplacement/réordonnancement via
+    move_entries_to_category, ordre des onglets via set_category_order,
+    onglets déplaçables en admin seulement."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import LibraryShelf
+
+    prefs = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: prefs
+    studio_dir = tempfile.mkdtemp()
+    ringo = os.path.join(studio_dir, 'ringo.json')
+
+    def button(name, category):
+        return {'name': name, 'category': category,
+                'options': dict(SQUARE_BUTTON, **{'text.content': name})}
+
+    # ordre voulu dans le fichier : B avant A, b1 avant b2
+    bl.save_library(ringo, [
+        {'__category__': 'B'}, button('b1', 'B'), button('b2', 'B'),
+        {'__category__': 'A'}, button('a1', 'A')])
+
+    try:
+        bl.set_studio_admin(True)
+        bl.set_studio_location(ringo)
+        shelf = LibraryShelf(application)
+        shelf.show()
+        APP.processEvents()
+
+        # l'ordre du FICHIER est respecté (fini l'alphabétique)
+        names = [shelf._tab_name(i) for i in range(shelf.tabs.count())]
+        assert names == ['B', 'A']
+        tab_b = shelf.tabs.widget(0)
+        assert [tab_b.item(i).data(QtCore.Qt.UserRole)['name']
+                for i in range(tab_b.count())] == ['b1', 'b2']
+        assert shelf.tabs.tabBar().isMovable() is True  # admin
+
+        # déplacement vers une autre catégorie, à une position précise
+        order, by_cat = bl.parse_library_structure(ringo)
+        assert bl.move_entries_to_category(
+            ringo, [by_cat['B'][1]], 'A', index=0) == 1
+        order, by_cat = bl.parse_library_structure(ringo)
+        assert [e['name'] for e in by_cat['A']] == ['b2', 'a1']
+        assert by_cat['A'][0]['category'] == 'A'
+        assert [e['name'] for e in by_cat['B']] == ['b1']
+        assert order == ['B', 'A']
+
+        # réordonnancement DANS la même catégorie
+        assert bl.move_entries_to_category(
+            ringo, [by_cat['A'][1]], 'A', index=0) == 1
+        _, by_cat = bl.parse_library_structure(ringo)
+        assert [e['name'] for e in by_cat['A']] == ['a1', 'b2']
+
+        # ordre des onglets (drag d'onglet → set_category_order)
+        bl.set_category_order(ringo, ['A', 'B'])
+        order, _ = bl.parse_library_structure(ringo)
+        assert order == ['A', 'B']
+        bl.refresh_shelves()
+        APP.processEvents()
+        names = [shelf._tab_name(i) for i in range(shelf.tabs.count())]
+        assert names == ['A', 'B']
+
+        # drop simulé sur la liste de « A » : b1 (venu de B) à la fin
+        _, by_cat = bl.parse_library_structure(ringo)
+        payload = {'entries': [by_cat['B'][0]], 'readonly': True,
+                   'category': 'B'}
+        mime = QtCore.QMimeData()
+        mime.setData(bl.SHELF_ENTRIES_MIME, QtCore.QByteArray(
+            json.dumps(payload).encode('utf-8')))
+        tab_a = shelf.tabs.widget(0)
+        assert tab_a.category == 'A' and tab_a.shelf is shelf
+        try:
+            event = QtGui.QDropEvent(
+                QtCore.QPointF(2000, 2000), QtCore.Qt.CopyAction, mime,
+                QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
+        except TypeError:  # signature Qt5
+            event = QtGui.QDropEvent(
+                QtCore.QPoint(2000, 2000), QtCore.Qt.CopyAction, mime,
+                QtCore.Qt.LeftButton, QtCore.Qt.NoModifier)
+        tab_a.dropEvent(event)
+        _, by_cat = bl.parse_library_structure(ringo)
+        assert [e['name'] for e in by_cat['A']] == ['a1', 'b2', 'b1']
+        assert by_cat.get('B', []) == []
+
+        # en mode animateur : onglets studio non déplaçables, drop refusé
+        bl.set_studio_admin(False)
+        bl.refresh_shelves()
+        APP.processEvents()
+        assert shelf.tabs.tabBar().isMovable() is False
+        studio_list = shelf.tabs.widget(0)
+        assert studio_list.readonly is True
+        assert studio_list._drop_payload(event) is None
+        shelf.close()
+    finally:
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)
+    print('drag & drop d organisation (onglets + boutons, ordre) OK')
+
+
 def test_fork_folder_migration():
     """Rangement des données : la librairie perso et le registre des
     raccourcis vivent dans le dossier du fork (prefs/hotboxJOR sous
@@ -2003,6 +2105,7 @@ if __name__ == '__main__':
     test_studio_admin_mode()
     test_studio_library_switch()
     test_plus_button_follows_mode()
+    test_shelf_drag_organization()
     test_fork_folder_migration()
     test_hotkey_registry()
     test_hotkey_edit_capture()
