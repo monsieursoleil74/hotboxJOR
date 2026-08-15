@@ -10,9 +10,12 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   registre des raccourcis, settings) : fichier temporaire + `os.replace`
   — une coupure réseau ou un crash en pleine écriture ne peut plus
   corrompre le fichier (`data.atomic_write_json`).
-- **Backups tournants** pour les fichiers précieux (librairies et
-  `hotboxes.json`) : `.bak` / `.bak2` / `.bak3` conservés à côté, un
-  renommage suffit pour revenir en arrière.
+- **Backups tournants** pour la librairie STUDIO uniquement :
+  `.bak` / `.bak2` / `.bak3` rangés dans un sous-dossier `_backups/` à
+  côté du json — copier un `.bak` par-dessus le `.json` suffit pour
+  revenir en arrière. Les fichiers des prefs Maya (perso,
+  `hotboxes.json`) restent sans backup : l'écriture atomique les
+  protège déjà, et ça n'encombre pas les prefs.
 - **Refresh automatique de la librairie studio** : un
   `QFileSystemWatcher` (débouncé, re-armé après chaque remplacement
   atomique) suit le json courant — le lead publie, les shelves des

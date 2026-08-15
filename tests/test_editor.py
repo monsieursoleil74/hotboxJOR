@@ -1963,34 +1963,52 @@ def test_category_palette():
 
 def test_atomic_write_and_backups():
     """Écriture atomique + backups tournants : le json n'est jamais
-    corrompu par une écriture interrompue, les 3 dernières versions
-    restent disponibles à côté."""
+    corrompu par une écriture interrompue ; les 3 dernières versions de
+    la librairie STUDIO restent disponibles dans `_backups/` — les
+    fichiers des prefs Maya (perso, hotboxes) restent sans backup."""
     import tempfile
     from hotbox_designer.data import atomic_write_json
     from hotbox_designer import buttonlibrary as bl
 
     tmp = tempfile.mkdtemp()
     path = os.path.join(tmp, 'lib.json')
+    backups = os.path.join(tmp, '_backups')
+
+    def bak(name):
+        return os.path.join(backups, name)
 
     atomic_write_json(path, ['v1'], backups=3)
     assert json.load(open(path)) == ['v1']
-    assert not os.path.exists(path + '.bak')  # pas de backup à la création
+    assert not os.path.exists(backups)        # pas de backup à la création
     assert not os.path.exists(path + '.tmp')  # le temporaire a disparu
 
     for version in ('v2', 'v3', 'v4', 'v5'):
         atomic_write_json(path, [version], backups=3)
     assert json.load(open(path)) == ['v5']
-    assert json.load(open(path + '.bak')) == ['v4']
-    assert json.load(open(path + '.bak2')) == ['v3']
-    assert json.load(open(path + '.bak3')) == ['v2']
-    assert not os.path.exists(path + '.bak4')  # rotation bornée
+    assert json.load(open(bak('lib.json.bak'))) == ['v4']
+    assert json.load(open(bak('lib.json.bak2'))) == ['v3']
+    assert json.load(open(bak('lib.json.bak3'))) == ['v2']
+    assert not os.path.exists(bak('lib.json.bak4'))  # rotation bornée
 
-    # save_library passe par le circuit atomique + backups
-    lib = os.path.join(tmp, 'button_library.json')
-    bl.save_library(lib, [])
-    bl.save_library(lib, [{'__category__': 'ANIM'}])
-    assert json.load(open(lib + '.bak')) == []
-    assert bl.load_extra_categories(lib) == ['ANIM']
+    # la librairie STUDIO passe par le circuit backups…
+    studio = os.path.join(tmp, 'studio', 'TAT.json')
+    os.makedirs(os.path.dirname(studio))
+    bl.set_studio_location(studio)
+    try:
+        bl.save_library(studio, [])
+        bl.save_library(studio, [{'__category__': 'ANIM'}])
+        assert json.load(open(os.path.join(
+            os.path.dirname(studio), '_backups', 'TAT.json.bak'))) == []
+        assert bl.load_extra_categories(studio) == ['ANIM']
+
+        # …mais pas une librairie quelconque (perso dans les prefs)
+        perso = os.path.join(tmp, 'button_library.json')
+        bl.save_library(perso, [])
+        bl.save_library(perso, [{'__category__': 'X'}])
+        assert not os.path.exists(
+            os.path.join(tmp, '_backups', 'button_library.json.bak'))
+    finally:
+        bl.set_studio_location(None)
     print('écriture atomique + backups tournants OK')
 
 

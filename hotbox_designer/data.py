@@ -49,15 +49,24 @@ def load_json(filename, default=None):
         return json.load(f)
 
 
+BACKUP_FOLDER = '_backups'
+
+
 def _rotate_backups(path, depth):
-    """name.json.bak (le plus récent) → .bak2 → .bak3 (rotation)."""
+    """Copies de secours dans un sous-dossier `_backups/` à côté du
+    fichier : name.json.bak (le plus récent) → .bak2 → .bak3."""
     try:
+        folder = os.path.join(
+            os.path.dirname(os.path.abspath(path)), BACKUP_FOLDER)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        base = os.path.join(folder, os.path.basename(path))
         for i in range(depth, 1, -1):
-            src = (path + '.bak' if i - 1 == 1
-                   else '%s.bak%d' % (path, i - 1))
+            src = (base + '.bak' if i - 1 == 1
+                   else '%s.bak%d' % (base, i - 1))
             if os.path.exists(src):
-                os.replace(src, '%s.bak%d' % (path, i))
-        shutil.copy(path, path + '.bak')
+                os.replace(src, '%s.bak%d' % (base, i))
+        shutil.copy(path, base + '.bak')
     except OSError:
         pass  # un backup raté ne doit jamais bloquer la sauvegarde
 
@@ -67,7 +76,7 @@ def atomic_write_json(path, payload, backups=0):
     temporaire du même dossier, puis remplace l'original d'un coup
     (os.replace) — un crash ou une coupure réseau en pleine écriture ne
     peut plus corrompre le fichier. Avec backups>0, les versions
-    précédentes sont conservées à côté (.bak, .bak2…)."""
+    précédentes sont conservées dans `_backups/` (.bak, .bak2…)."""
     temporary = path + '.tmp'
     with open(temporary, 'w') as f:
         json.dump(payload, f, indent=2)
@@ -79,8 +88,9 @@ def atomic_write_json(path, payload, backups=0):
 
 
 def save_datas(filename, hotboxes_data):
-    # les hotboxes sont précieuses : écriture atomique + 3 backups
-    atomic_write_json(filename, hotboxes_data, backups=3)
+    # écriture atomique (anti-corruption) ; pas de backups dans les
+    # prefs Maya — seule la librairie studio en garde (cf. save_library)
+    atomic_write_json(filename, hotboxes_data)
 
 
 def copy_hotbox_data(data):
