@@ -527,6 +527,9 @@ def hotbox_thumbnail(hotbox_data, width=190, height=120):
     painter.translate(
         (width - hb_w * scale) / 2, (height - hb_h * scale) / 2)
     painter.scale(scale, scale)
+    # même cadrage que la vraie hotbox : une forme qui déborde de la
+    # zone est rognée (sinon elle paraît « trop grande » dans l'aperçu)
+    painter.setClipRect(QtCore.QRectF(0, 0, hb_w, hb_h))
     for options in shapes:
         Shape(dict(options)).draw(painter)
     painter.end()

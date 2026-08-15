@@ -4,6 +4,19 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Badge admin dans l'éditeur, aperçu rogné, ménage templates
+
+- **Badge « STUDIO ADMIN »** à droite de la barre d'outils de
+  l'éditeur de hotbox : on sait d'un coup d'œil dans quel mode on est.
+  Invisible en mode animateur.
+- **Aperçu de template corrigé** : les formes qui débordent de la zone
+  de la hotbox sont rognées comme dans la vraie hotbox — une barre de
+  fond plus large que la zone n'envahit plus la vignette.
+- **Templates maison retirés** (choix utilisateur) : Pie_8_Directions,
+  Mini_Shelf_4x3, Barre_6_Boutons, Manette, Nid_Abeille, Colonnes_TAT,
+  Grille_6x4. Restent les templates d'origine et les templates
+  utilisateur (« Save hotbox as template »).
+
 ## 2026-08 — Robustesse avant déploiement (atomique, refresh auto, CI)
 
 - **Écriture atomique** de tous les json (librairies, hotboxes.json,

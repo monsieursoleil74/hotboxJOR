@@ -431,17 +431,10 @@ habiller un template sans replacer chaque bouton à la main.
 À la création d'une hotbox (« From template »), un **aperçu** du
 template s'affiche dans le dialogue (idem pour « Duplicate existing »).
 
-Aux templates hérités de l'original s'ajoutent des templates maison,
-dans le style du thème : **Pie_8_Directions** (marking menu à 8
-directions), **Mini_Shelf_4x3** (panneau titré + grille de 12 boutons),
-**Barre_6_Boutons** (bande compacte), **Manette** (croix
-directionnelle + boutons A/B/X/Y colorés + gâchettes, façon manette de
-jeu), **Nid_Abeille** (14 boutons ronds en quinconce serré),
-**Colonnes_TAT** (4 colonnes titrées SHELF / ANIM / EXTRA / ANIMBOT,
-calquées sur les catégories studio) et **Grille_6x4** (24 boutons).
-Combinés à « Replace with library button », ils permettent de monter
-une hotbox en quelques minutes : créer depuis le template, puis
-remplacer chaque bouton par un bouton de la shelf.
+Les templates embarqués sont ceux hérités de l'original. Combinés à
+« Replace with library button », ils permettent de monter une hotbox
+rapidement : créer depuis le template, puis remplacer chaque bouton
+par un bouton de la shelf.
 
 **Créer ses propres templates** : sélectionne une hotbox dans le
 manager → bouton **Save hotbox as template** (💾 de la barre d'outils du

@@ -196,6 +196,23 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.arrange_h)
         self.toolbar.addAction(self.arrange_v)
 
+        # badge « STUDIO ADMIN » calé à droite : rappel visuel du mode
+        # de lancement — les animateurs ne le voient jamais
+        from hotbox_designer.buttonlibrary import is_studio_admin
+        from hotbox_designer.theme import ACCENT
+        spacer = QtWidgets.QWidget()
+        spacer.setSizePolicy(
+            QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
+        self.toolbar.addWidget(spacer)
+        self.admin_badge = QtWidgets.QLabel('STUDIO ADMIN')
+        self.admin_badge.setStyleSheet(
+            'QLabel {color: white; background: %s; border-radius: 3px;'
+            'font-weight: bold; font-size: 10px; padding: 2px 8px;'
+            'margin-right: 4px;}' % ACCENT)
+        # la visibilité d'un widget de toolbar se pilote par son action
+        self.admin_badge_action = self.toolbar.addWidget(self.admin_badge)
+        self.admin_badge_action.setVisible(is_studio_admin())
+
         self.layout = QtWidgets.QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 10, 0)
         self.layout.addWidget(self.toolbar)

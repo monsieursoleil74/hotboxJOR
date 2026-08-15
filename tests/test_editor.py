@@ -914,6 +914,22 @@ def test_thumbnail_cache_and_dedup():
     assert pixmap.width() == 190 and pixmap.height() == 120
     assert not pixmap.isNull()
 
+    # une forme qui déborde de la zone est rognée comme dans la vraie
+    # hotbox (sinon une barre trop large envahit l'aperçu)
+    data = {'general': dict(HOTBOX, name='t2', width=400, height=300),
+            'shapes': [dict(SQUARE_BUTTON, **{
+                'shape.left': -400.0, 'shape.top': 100.0,
+                'shape.width': 1200.0, 'shape.height': 60.0,
+                'bgcolor.normal': '#ff0000',
+                'bgcolor.transparency': 0,
+                'border': False})]}
+    pixmap = hotbox_thumbnail(data, 190, 120)
+    image = pixmap.toImage()
+    # au centre (dans la zone) : la barre rouge est là
+    assert QtGui.QColor(image.pixel(95, 60)).red() > 200
+    # sur le bord gauche (hors zone) : fond intact, pas de débordement
+    assert QtGui.QColor(image.pixel(1, 60)).red() < 100
+
     # cache des vignettes de bouton : deux appels identiques = même objet
     _THUMB_CACHE.clear()
     options = dict(SQUARE_BUTTON, **{'text.content': 'A'})
@@ -1393,25 +1409,18 @@ def test_user_templates():
     print('templates utilisateur (save + liste + aperçu) OK')
 
 
-def test_new_builtin_templates():
-    """Les 3 templates ajoutés (Pie 8, Mini shelf, Barre 6) sont listés
-    et s'ouvrent dans l'éditeur sans erreur."""
+def test_builtin_templates():
+    """Seuls les templates d'origine restent embarqués (les templates
+    maison ont été retirés — choix utilisateur) et ils se chargent."""
     from hotbox_designer.data import load_templates
 
     templates = load_templates()
+    assert templates, 'aucun template embarqué chargé'
     names = [t['general']['name'] for t in templates]
-    for expected in ('Pie_8_Directions', 'Mini_Shelf_4x3', 'Barre_6_Boutons',
-                     'Manette', 'Nid_Abeille', 'Colonnes_TAT', 'Grille_6x4'):
-        assert expected in names, expected
-        data = templates[names.index(expected)]
-        assert data['shapes'], expected
-        editor = HotboxEditor(
-            copy.deepcopy(data), Standalone(), parent=None)
-        editor.show()
-        APP.processEvents()
-        assert len(editor.shape_editor.shapes) == len(data['shapes'])
-        editor.close()
-    print('nouveaux templates embarqués (pie 8, mini shelf, barre) OK')
+    for removed in ('Pie_8_Directions', 'Mini_Shelf_4x3', 'Barre_6_Boutons',
+                    'Manette', 'Nid_Abeille', 'Colonnes_TAT', 'Grille_6x4'):
+        assert removed not in names, removed
+    print('templates embarqués (origine uniquement) OK')
 
 
 def test_color_picker_pipette():
@@ -1589,6 +1598,15 @@ def test_studio_admin_mode():
         APP.processEvents()
         assert 'admin' in shelf.library_badge.toolTip()
         shelf.close()
+
+        # badge « STUDIO ADMIN » de la barre d'outils de l'éditeur :
+        # visible en mode admin, jamais pour les animateurs
+        from hotbox_designer.designer.menu import MenuWidget
+        menu = MenuWidget()
+        assert menu.admin_badge_action.isVisible() is True
+        bl.set_studio_admin(False)
+        menu = MenuWidget()
+        assert menu.admin_badge_action.isVisible() is False
     finally:
         bl.set_studio_admin(False)  # ne pas polluer les autres tests
     print('mode admin studio (lancement + bascule en session) OK')
@@ -2243,7 +2261,7 @@ if __name__ == '__main__':
     test_startup_framing()
     test_replace_from_library()
     test_user_templates()
-    test_new_builtin_templates()
+    test_builtin_templates()
     test_color_picker_pipette()
     test_studio_admin_mode()
     test_studio_library_switch()
