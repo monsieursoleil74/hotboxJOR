@@ -1582,10 +1582,22 @@ def test_studio_admin_mode():
         APP.processEvents()
         assert shelf.admin_badge.isVisible() is True
         assert shelf._can_edit(readonly=True) is True
+
+        # bascule de mode EN COURS DE SESSION (sans reconstruire la
+        # shelf) : refresh_shelves() fait suivre badge et gardes
+        bl.set_studio_admin(False)
+        bl.refresh_shelves()
+        APP.processEvents()
+        assert shelf.admin_badge.isVisible() is False
+        assert shelf._can_edit(readonly=True) is False
+        bl.set_studio_admin(True)
+        bl.refresh_shelves()
+        APP.processEvents()
+        assert shelf.admin_badge.isVisible() is True
         shelf.close()
     finally:
         bl.set_studio_admin(False)  # ne pas polluer les autres tests
-    print('mode admin studio (au lancement) OK')
+    print('mode admin studio (lancement + bascule en session) OK')
 
 
 def test_fork_folder_migration():

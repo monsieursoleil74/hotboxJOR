@@ -4,6 +4,14 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Bascule de mode sans redémarrer Maya
+
+- Relancer `launch_manager('maya')` ou
+  `launch_manager('maya', studio_admin=True)` dans la même session
+  bascule le mode immédiatement : titre du manager, badge et menus des
+  shelves déjà ouvertes suivent (`refresh_shelves()` au lancement, badge
+  resynchronisé dans `LibraryShelf.refresh`).
+
 ## 2026-08 — Retrait du mode test (bouton play)
 
 - Le bouton ▶ « Test the hotbox » de la barre d'outils est retiré, jugé

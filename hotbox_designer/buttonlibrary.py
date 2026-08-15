@@ -586,6 +586,9 @@ class LibraryShelf(QtWidgets.QWidget):
 
     def refresh(self):
         current = self._current_key()
+        # le mode admin peut changer EN COURS DE SESSION (relancer
+        # launch_manager avec/sans studio_admin) : le badge suit
+        self.admin_badge.setVisible(is_studio_admin())
         self.tabs.clear()
 
         # 1) onglets studio (partagés) EN PREMIER — on affiche AUSSI les

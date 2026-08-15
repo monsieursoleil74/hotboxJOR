@@ -226,6 +226,9 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   rename, delete). Les onglets studio sont intouchables — pas de
   création/renommage de catégorie, pas d'envoi vers le studio, pas de
   destination « Studio » à la sauvegarde.
+- **Changer de mode sans redémarrer Maya** : il suffit de relancer
+  l'autre commande dans le Script Editor — le manager, le badge et les
+  shelves déjà ouvertes basculent immédiatement.
 - **Mode admin** : tout s'ouvre sur les onglets studio — créer une
   **catégorie officielle** (*New studio category…*, écrite dans le
   `button_library.json` du dossier studio avec le logo TAT), **envoyer

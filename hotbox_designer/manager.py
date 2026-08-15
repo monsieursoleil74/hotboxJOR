@@ -34,7 +34,8 @@ def launch_manager(application, studio_admin=False):
     studio devient éditable (catégories officielles, envoi de boutons).
     Sans le paramètre (les animateurs), elle est en lecture seule et
     chacun travaille dans sa librairie perso."""
-    from hotbox_designer.buttonlibrary import set_studio_admin
+    from hotbox_designer.buttonlibrary import (
+        set_studio_admin, refresh_shelves)
     global hotbox_manager
     set_studio_admin(studio_admin)
     if hotbox_manager is None:
@@ -43,6 +44,9 @@ def launch_manager(application, studio_admin=False):
     if studio_admin:
         title += '  —  ★ STUDIO ADMIN'
     hotbox_manager.setWindowTitle(title)
+    # changement de mode SANS redémarrer Maya : les shelves déjà
+    # ouvertes (badge, infobulles, menus) basculent immédiatement
+    refresh_shelves()
     hotbox_manager.show()
 
 
