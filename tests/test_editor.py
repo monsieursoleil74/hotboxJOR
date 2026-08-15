@@ -1571,7 +1571,8 @@ def test_studio_admin_mode():
         shelf = LibraryShelf(application)
         shelf.show()
         APP.processEvents()
-        assert shelf.admin_badge.isVisible() is False
+        # badge = nom du json, en mode lecture seule (infobulle)
+        assert 'read-only' in shelf.library_badge.toolTip()
         assert shelf._can_edit(readonly=False) is True   # perso : oui
         assert shelf._can_edit(readonly=True) is False   # studio : non
         shelf.close()
@@ -1582,7 +1583,7 @@ def test_studio_admin_mode():
         shelf = LibraryShelf(application)
         shelf.show()
         APP.processEvents()
-        assert shelf.admin_badge.isVisible() is True
+        assert 'admin' in shelf.library_badge.toolTip()
         assert shelf._can_edit(readonly=True) is True
 
         # bascule de mode EN COURS DE SESSION (sans reconstruire la
@@ -1590,12 +1591,12 @@ def test_studio_admin_mode():
         bl.set_studio_admin(False)
         bl.refresh_shelves()
         APP.processEvents()
-        assert shelf.admin_badge.isVisible() is False
+        assert 'read-only' in shelf.library_badge.toolTip()
         assert shelf._can_edit(readonly=True) is False
         bl.set_studio_admin(True)
         bl.refresh_shelves()
         APP.processEvents()
-        assert shelf.admin_badge.isVisible() is True
+        assert 'admin' in shelf.library_badge.toolTip()
         shelf.close()
     finally:
         bl.set_studio_admin(False)  # ne pas polluer les autres tests
@@ -1667,11 +1668,16 @@ def test_studio_library_switch():
         assert bl.get_studio_override() is None
         assert bl.load_studio_settings(application)['current'] is None
 
-        # l'admin crée le json manquant via l'ouverture d'un dossier
+        # l'admin crée un json au NOM LIBRE ; le logo courant est copié
+        # à côté (la nouvelle librairie garde l'identité TAT)
         project_c = tempfile.mkdtemp()
-        assert shelf._open_studio_folder(project_c) is True
-        assert os.path.exists(
-            os.path.join(project_c, 'button_library.json'))
+        ringo = os.path.join(project_c, 'ringo.json')
+        assert shelf._open_studio_json(ringo) is True
+        assert os.path.exists(ringo)
+        assert bl.studio_location() == ringo
+        assert bl.studio_library_label() == 'ringo.json'
+        assert os.path.exists(os.path.join(project_c, 'studio_logo.png'))
+        assert 'ringo.json' in shelf.library_badge.text()
 
         # en mode ANIMATEUR : le bouton reste visible (il choisit sur
         # quelle librairie il est), mais pas de création possible
@@ -1679,21 +1685,21 @@ def test_studio_library_switch():
         bl.refresh_shelves()
         APP.processEvents()
         assert shelf.library_button.isVisible() is True
-        project_d = tempfile.mkdtemp()  # pas de button_library.json
+        project_d = tempfile.mkdtemp()  # librairie inexistante
         warned = []
         saved_warning = QtWidgets.QMessageBox.warning
         QtWidgets.QMessageBox.warning = (
             lambda *a, **k: warned.append(a) or 0)
         try:
-            assert shelf._open_studio_folder(project_d) is False
+            assert shelf._open_studio_json(
+                os.path.join(project_d, 'perso.json')) is False
         finally:
             QtWidgets.QMessageBox.warning = saved_warning
         assert warned  # prévenu, pas de création
-        assert not os.path.exists(
-            os.path.join(project_d, 'button_library.json'))
+        assert not os.path.exists(os.path.join(project_d, 'perso.json'))
         # ouvrir une librairie EXISTANTE marche pour lui
-        assert shelf._open_studio_folder(project_a) is True
-        assert bl.studio_location() == project_a
+        assert shelf._open_studio_json(ringo) is True
+        assert bl.studio_location() == ringo
         shelf.close()
     finally:
         bl.set_studio_admin(False)

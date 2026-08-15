@@ -226,24 +226,23 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   rename, delete). Les onglets studio sont intouchables — pas de
   création/renommage de catégorie, pas d'envoi vers le studio, pas de
   destination « Studio » à la sauvegarde.
-- **Choisir / changer de librairie studio (par projet)** — un bouton
-  **TAT** à côté du « ＋ » de la shelf, pour **tout le monde** :
-  l'animateur choisit lui aussi sur quelle librairie il est (elle reste
-  en lecture seule pour lui). Le menu affiche la librairie courante et
-  permet :
-  - **Create / open library…** (admin) ou **Open library…**
-    (animateur) — choisir un dossier ; l'admin peut y créer le
-    `button_library.json` s'il n'existe pas (premier lancement : c'est
-    ici qu'on crée sa première librairie), l'animateur ne peut ouvrir
-    qu'une librairie existante ;
-  - la liste des **librairies récentes** (cochée = courante) pour
-    switcher d'un projet à l'autre en un clic ;
-  - **Use default location** — revenir à `HOTBOX_STUDIO_LIBRARY` / au
-    chemin par défaut.
+- **Choisir / changer de librairie studio (par projet)** — dans le
+  coin de la shelf, pour **tout le monde** (la librairie reste en
+  lecture seule hors mode admin) :
+  - le **badge** affiche le **nom du fichier** de la librairie courante
+    (ex. `ringo.json`) — **vert** en mode admin, **gris** en lecture
+    seule ; l'infobulle donne le chemin complet ;
+  - le bouton **TAT** ouvre la liste des librairies (récentes +
+    courante cochée) : un clic pour switcher de projet ;
+  - le bouton **dossier** crée (admin — dialogue « Enregistrer sous »,
+    le nom du `.json` est **libre** : `ringo.json`, `projetX.json`…)
+    ou ouvre une librairie existante (animateur : ouverture seulement).
+    À la création, le **logo courant est copié** à côté du nouveau
+    fichier — la nouvelle librairie garde l'identité TAT.
   Le choix est **mémorisé entre les sessions**
   (`studio_settings.json` dans `prefs/hotboxJOR/`) et prend le pas sur
-  la variable d'environnement. Le logo des onglets suit la librairie
-  (un `studio_logo.png` par projet est possible).
+  la variable d'environnement. Un `studio_logo.png` différent par
+  projet est possible.
 - **Changer de mode sans redémarrer Maya** : il suffit de relancer
   l'autre commande dans le Script Editor — le manager, le badge et les
   shelves déjà ouvertes basculent immédiatement.

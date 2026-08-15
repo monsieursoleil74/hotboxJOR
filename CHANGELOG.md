@@ -4,6 +4,20 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Sélecteur de librairie refondu (retours d'usage)
+
+- **Badge = nom du json courant** (`ringo.json`…) à la place de
+  « STUDIO ADMIN » : vert en mode admin, gris en lecture seule,
+  chemin complet en infobulle.
+- **Menu du bouton TAT simplifié** : uniquement la liste des librairies
+  (récentes + courante cochée). « Use default location » et l'en-tête
+  supprimés.
+- **Create/open = bouton dossier à part entière** : l'admin crée via un
+  « Enregistrer sous » (nom du `.json` **libre**) ou ouvre ; l'animateur
+  ouvre seulement.
+- **Le logo n'est plus perdu** : à la création d'une librairie, le
+  `studio_logo.png` courant est copié à côté du nouveau fichier.
+
 ## 2026-08 — Le sélecteur de librairie studio ouvert aux animateurs
 
 - Le bouton **TAT** de la shelf est désormais visible en mode

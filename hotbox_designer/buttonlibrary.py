@@ -20,12 +20,14 @@ hotbox.
 """
 import json
 import os
+import shutil
 import subprocess
 import sys
 
 from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
 from hotbox_designer.interactive import Shape
 from hotbox_designer.painting import draw_shape
+from hotbox_designer.qtutils import icon
 
 LIBRARY_FILENAME = 'button_library.json'
 BUTTONS_MIME = 'application/x-hotbox-designer-buttons'
@@ -126,6 +128,17 @@ def studio_location():
     if not location:
         return None
     return os.path.expandvars(os.path.expanduser(location))
+
+
+def studio_library_label():
+    """Nom du fichier de librairie courant, pour le badge de la shelf
+    (« ringo.json »…)."""
+    location = studio_location()
+    if not location:
+        return '(no library)'
+    if location.lower().endswith('.json'):
+        return os.path.basename(location)
+    return LIBRARY_FILENAME
 
 
 def studio_library_path():
@@ -592,30 +605,29 @@ class LibraryShelf(QtWidgets.QWidget):
         self.add_button.setText('＋')
         self.add_button.setToolTip('Create a category')
         self.add_button.released.connect(self._prompt_category)
-        # bouton TAT : changer de librairie studio (par projet).
-        # Visible pour TOUT LE MONDE — l'animateur choisit sur quelle
-        # librairie il est (ouvrir/switcher), seul l'admin peut en CRÉER
+        # bouton TAT : SWITCHER de librairie studio (menu = la liste des
+        # librairies, rien d'autre). Visible pour tout le monde —
+        # l'animateur choisit aussi sur quelle librairie il est
         self.library_button = QtWidgets.QToolButton()
         self.library_button.setToolTip(
-            'Studio library — switch per project '
-            '(read-only outside admin mode)')
+            'Switch studio library (per project)')
         self.library_button.released.connect(self._studio_library_menu)
-        # badge visible seulement quand le manager est lancé en mode
-        # admin studio : on sait d'un coup d'œil qu'on édite l'officiel
-        self.admin_badge = QtWidgets.QLabel(' STUDIO ADMIN ')
-        self.admin_badge.setToolTip(
-            'Studio admin mode — you are editing the OFFICIAL library')
-        from hotbox_designer.theme import ACCENT
-        self.admin_badge.setStyleSheet(
-            'QLabel {color: white; background: %s; border-radius: 3px;'
-            'font-weight: bold; font-size: 10px; padding: 1px 4px;}' % ACCENT)
-        self.admin_badge.setVisible(is_studio_admin())
+        # bouton dossier : créer (admin) / ouvrir une librairie — à part
+        # entière, pas caché dans un menu
+        self.open_library_button = QtWidgets.QToolButton()
+        self.open_library_button.setIcon(icon('open.png'))
+        self.open_library_button.released.connect(
+            self._create_or_open_library)
+        # badge = NOM du fichier de librairie courant : repère visuel
+        # permanent (vert = mode admin, gris = lecture seule)
+        self.library_badge = QtWidgets.QLabel()
         corner = QtWidgets.QWidget()
         corner_layout = QtWidgets.QHBoxLayout(corner)
         corner_layout.setContentsMargins(0, 0, 4, 0)
         corner_layout.setSpacing(6)
-        corner_layout.addWidget(self.admin_badge)
+        corner_layout.addWidget(self.library_badge)
         corner_layout.addWidget(self.library_button)
+        corner_layout.addWidget(self.open_library_button)
         corner_layout.addWidget(self.add_button)
         self.tabs.setCornerWidget(corner, QtCore.Qt.TopRightCorner)
         tab_bar = self.tabs.tabBar()
@@ -653,12 +665,28 @@ class LibraryShelf(QtWidgets.QWidget):
             return added
         return self.add_entries(entries)
 
+    def _update_library_badge(self):
+        """Badge = nom du json courant ; vert en mode admin, gris en
+        lecture seule. Infobulle = chemin complet + rôle."""
+        from hotbox_designer.theme import ACCENT
+        location = studio_location()
+        admin = is_studio_admin()
+        self.library_badge.setVisible(bool(location))
+        self.library_badge.setText(' %s ' % studio_library_label())
+        color = ACCENT if admin else '#4f4f4f'
+        self.library_badge.setStyleSheet(
+            'QLabel {color: white; background: %s; border-radius: 3px;'
+            'font-weight: bold; font-size: 10px; padding: 1px 4px;}' % color)
+        self.library_badge.setToolTip('%s — %s' % (
+            location or 'no library',
+            'admin (editable)' if admin else 'read-only'))
+
     def refresh(self):
         current = self._current_key()
-        # le mode admin peut changer EN COURS DE SESSION (relancer
-        # launch_manager avec/sans studio_admin) : badge et bouton
-        # librairie suivent ; le logo aussi (il peut différer par projet)
-        self.admin_badge.setVisible(is_studio_admin())
+        # le mode admin et la librairie peuvent changer EN COURS DE
+        # SESSION : badge, boutons et logo suivent (le logo peut
+        # différer par projet)
+        self._update_library_badge()
         logo = studio_logo_path()
         self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
         if not self.studio_icon.isNull():
@@ -803,59 +831,67 @@ class LibraryShelf(QtWidgets.QWidget):
             'Studio library is not configured or not writable.\n'
             'Set the HOTBOX_STUDIO_LIBRARY location first.')
 
-    # --- choix de la librairie studio (bouton TAT, mode admin) --------
+    # --- choix de la librairie studio ---------------------------------
     def _studio_library_menu(self):
-        """Librairie courante, création/ouverture, et bascule rapide
-        entre les librairies récentes (une par projet, typiquement)."""
+        """Bouton TAT : UNIQUEMENT la liste des librairies (récentes +
+        courante), la cochée est celle en cours. Rien d'autre."""
         menu = QtWidgets.QMenu(self)
         location = studio_location()
-        header = menu.addAction(
-            'Library: %s' % (location or '(none)'))
-        header.setEnabled(False)
-        menu.addSeparator()
-        # l'animateur peut OUVRIR une librairie existante ; la création
-        # est réservée à l'admin
-        label = ('Create / open library…' if is_studio_admin()
-                 else 'Open library…')
-        menu.addAction(label, self._choose_studio_library)
-        recent = load_studio_settings(self.application).get('recent') or []
-        if recent:
-            menu.addSeparator()
-            normalized = os.path.normpath(location) if location else ''
-            for path in recent:
-                action = menu.addAction(
-                    path, lambda p=path: self._switch_studio_library(p))
-                action.setCheckable(True)
-                action.setChecked(os.path.normpath(path) == normalized)
-        if get_studio_override():
-            menu.addSeparator()
-            menu.addAction(
-                'Use default location (env variable)',
-                lambda: self._switch_studio_library(None))
+        normalized = os.path.normpath(location) if location else ''
+        entries = list(
+            load_studio_settings(self.application).get('recent') or [])
+        # l'emplacement courant (ex. défaut/variable d'env) est toujours
+        # proposé, même s'il n'a jamais été choisi via l'UI
+        if location and all(
+                os.path.normpath(p) != normalized for p in entries):
+            entries.insert(0, location)
+        if not entries:
+            empty = menu.addAction('No library — use the folder button')
+            empty.setEnabled(False)
+        for path in entries:
+            if path.lower().endswith('.json'):
+                label = os.path.basename(path)
+            else:
+                label = os.path.basename(path.rstrip('\\/'))
+            action = menu.addAction(
+                label, lambda p=path: self._switch_studio_library(p))
+            action.setToolTip(path)
+            action.setCheckable(True)
+            action.setChecked(os.path.normpath(path) == normalized)
         menu.exec_(QtGui.QCursor.pos())
 
-    def _choose_studio_library(self):
-        """Choisit un DOSSIER de librairie studio puis bascule."""
-        title = ('Choose the studio library folder' if is_studio_admin()
-                 else 'Open a studio library folder')
-        folder = QtWidgets.QFileDialog.getExistingDirectory(
-            self, title, studio_location() or '')
-        if folder:
-            self._open_studio_folder(folder)
+    def _create_or_open_library(self):
+        """Bouton dossier : l'admin crée (nom du .json libre) ou ouvre ;
+        l'animateur ne peut qu'ouvrir une librairie existante."""
+        start = studio_location() or ''
+        if start.lower().endswith('.json'):
+            start = os.path.dirname(start)
+        if is_studio_admin():
+            path, _ = QtWidgets.QFileDialog.getSaveFileName(
+                self, 'Create or open a studio library',
+                os.path.join(start, LIBRARY_FILENAME),
+                'Library (*.json)',
+                options=QtWidgets.QFileDialog.DontConfirmOverwrite)
+        else:
+            path, _ = QtWidgets.QFileDialog.getOpenFileName(
+                self, 'Open a studio library', start, 'Library (*.json)')
+        if path:
+            self._open_studio_json(path)
 
-    def _open_studio_folder(self, folder):
-        """Valide le dossier puis bascule dessus. Si le
-        button_library.json manque : l'admin le crée, l'animateur est
-        prévenu (il ne peut qu'ouvrir une librairie existante).
-        Retourne True si la bascule a eu lieu."""
-        path = os.path.join(folder, LIBRARY_FILENAME)
+    def _open_studio_json(self, path):
+        """Bascule sur ce fichier de librairie ; s'il n'existe pas,
+        l'admin le crée (et le logo courant est COPIÉ à côté, pour ne
+        pas perdre l'identité TAT), l'animateur est prévenu. Retourne
+        True si la bascule a eu lieu."""
+        if not path.lower().endswith('.json'):
+            path += '.json'
         if not os.path.exists(path):
             if not is_studio_admin():
                 QtWidgets.QMessageBox.warning(
                     self, 'Studio library',
-                    'No studio library (%s) in this folder.'
-                    % LIBRARY_FILENAME)
+                    'This library does not exist:\n%s' % path)
                 return False
+            current_logo = studio_logo_path()
             try:
                 save_library(path, [])
             except OSError:
@@ -863,7 +899,16 @@ class LibraryShelf(QtWidgets.QWidget):
                     self, 'Studio library',
                     'Could not create %s (folder not writable).' % path)
                 return False
-        self._switch_studio_library(folder)
+            # la nouvelle librairie hérite du logo courant
+            if current_logo:
+                destination = os.path.join(
+                    os.path.dirname(path) or '.', STUDIO_LOGO_NAMES[0])
+                if not os.path.exists(destination):
+                    try:
+                        shutil.copy(current_logo, destination)
+                    except OSError:
+                        pass
+        self._switch_studio_library(path)
         return True
 
     def _switch_studio_library(self, folder):
