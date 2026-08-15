@@ -559,9 +559,10 @@ class HotboxTableView(QtWidgets.QTableView):
         self.setShowGrid(False)
         self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
-        # lignes hautes : chaque hotbox montre sa mini-vignette
-        vheader.setDefaultSectionSize(52)
-        self.setIconSize(QtCore.QSize(76, 44))
+        # entre-deux : lignes compactes + petite vignette discrète en
+        # repère visuel — le VRAI aperçu reste le panneau de droite
+        vheader.setDefaultSectionSize(34)
+        self.setIconSize(QtCore.QSize(44, 26))
         self.setStyleSheet(
             'QTableView {border: none; background: #313131;'
             'alternate-background-color: #353535;}'
