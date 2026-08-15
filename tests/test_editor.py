@@ -1749,6 +1749,10 @@ def test_plus_button_follows_mode():
         assert all(
             shelf.tabs.widget(i).readonly
             for i in range(shelf.tabs.count()))
+        # la sauvegarde propose la catégorie de l'ONGLET COURANT
+        names = [shelf._tab_name(i) for i in range(shelf.tabs.count())]
+        shelf.tabs.setCurrentIndex(names.index('OFFICIELLE'))
+        assert shelf.current_category() == 'OFFICIELLE'
 
         # animateur : ＋ écrit dans la librairie PERSO
         bl.set_studio_admin(False)
@@ -1761,6 +1765,14 @@ def test_plus_button_follows_mode():
         assert any(
             not shelf.tabs.widget(i).readonly
             for i in range(shelf.tabs.count()))
+        # catégorie proposée = onglet perso courant ; sur un onglet
+        # studio (lecture seule), repli sur General
+        for i in range(shelf.tabs.count()):
+            shelf.tabs.setCurrentIndex(i)
+            if shelf.tabs.widget(i).readonly:
+                assert shelf.current_category() == 'General'
+            elif shelf._tab_name(i) == 'MIENNE':
+                assert shelf.current_category() == 'MIENNE'
         shelf.close()
     finally:
         QtWidgets.QInputDialog.getText = saved_gettext

@@ -1081,13 +1081,18 @@ class LibraryShelf(QtWidgets.QWidget):
         return widget.selected_entries()
 
     def current_category(self):
-        # une sauvegarde va toujours dans la librairie PERSO : si
-        # l'onglet courant est studio (lecture seule), on retombe sur
-        # General
+        """Catégorie proposée par défaut à la sauvegarde : l'ONGLET
+        COURANT, s'il correspond à la destination du mode (studio en
+        admin, perso sinon) — on enregistre là où on est, sans
+        re-choisir à chaque fois."""
         widget = self.tabs.currentWidget()
-        if widget is None or getattr(widget, 'readonly', False):
+        if widget is None:
             return DEFAULT_CATEGORY
-        return self.tabs.tabText(self.tabs.currentIndex()) or DEFAULT_CATEGORY
+        readonly = getattr(widget, 'readonly', False)
+        if readonly == is_studio_admin():
+            return self._tab_name(
+                self.tabs.currentIndex()) or DEFAULT_CATEGORY
+        return DEFAULT_CATEGORY
 
     def _menu(self, shelf_list, position):
         menu = QtWidgets.QMenu(self)

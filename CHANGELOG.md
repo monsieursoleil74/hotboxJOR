@@ -4,6 +4,12 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Sauvegarde : catégorie proposée = l'onglet courant
+
+- Le dialogue 💾 pré-remplit la catégorie avec **l'onglet où l'on est**
+  (onglet studio en admin, onglet perso en animateur) au lieu de
+  toujours « General » — on se place sur l'onglet, 💾, OK.
+
 ## 2026-08 — Clic droit de l'éditeur réduit à l'essentiel
 
 - Le menu contextuel ne garde que **Save selection to library…** et

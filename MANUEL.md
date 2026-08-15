@@ -141,10 +141,12 @@ affiché avec son vrai rendu en vignette.
   nom + catégorie. La **destination est fixée par le mode** : en
   **admin**, le bouton part dans la **librairie studio courante** (la
   ligne « Library » rappelle laquelle, avec le logo TAT) ; en
-  animateur, dans **sa librairie perso**. Le champ Category est un menu
-  déroulant (liste complète de la librairie visée) et reste éditable —
-  taper un nouveau nom crée la catégorie. Toutes les shelves ouvertes
-  se rafraîchissent.
+  animateur, dans **sa librairie perso**. La **catégorie proposée est
+  celle de l'onglet courant** de la shelf — on se met sur l'onglet
+  voulu, 💾, OK : rapide. Le champ Category reste un menu déroulant
+  (liste complète de la librairie visée) et éditable — taper un nouveau
+  nom crée la catégorie. Toutes les shelves ouvertes se
+  rafraîchissent.
 - **Réutiliser** : **glisse-dépose** depuis la shelf vers le canvas
   juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
   Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.
