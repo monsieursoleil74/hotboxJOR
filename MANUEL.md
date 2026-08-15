@@ -236,8 +236,11 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   - le **badge vert** affiche le **nom du fichier** de la librairie
     courante (ex. `ringo.json`) et **c'est lui le sélecteur** : cliquer
     dessus ouvre la liste des librairies (récentes + courante cochée)
-    pour switcher de projet. L'infobulle donne le chemin complet et le
-    rôle (admin / lecture seule) ;
+    pour switcher de projet. Une librairie dont le fichier a disparu est
+    marquée « (missing) » et non cliquable ; le sous-menu **Remove from
+    list** retire une librairie obsolète de la liste (le fichier n'est
+    pas touché — la courante n'est pas proposée). L'infobulle donne le
+    chemin complet et le rôle (admin / lecture seule) ;
   - le bouton **dossier** crée (admin — dialogue « Enregistrer sous »,
     le nom du `.json` est **libre** : `ringo.json`, `projetX.json`…)
     ou ouvre une librairie existante (animateur : ouverture seulement).

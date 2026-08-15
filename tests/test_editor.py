@@ -1662,6 +1662,20 @@ def test_studio_library_switch():
         assert recent[:2] == [project_a, project_b]
         assert len(recent) == len(set(os.path.normpath(p) for p in recent))
 
+        # ménage : oublier une librairie obsolète — retirée des récents
+        # et elle ne réapparaît pas au switch suivant
+        shelf._forget_studio_library(project_b)
+        recent = bl.load_studio_settings(application)['recent']
+        assert all(os.path.normpath(p) != os.path.normpath(project_b)
+                   for p in recent)
+        shelf._switch_studio_library(project_a)
+        recent = bl.load_studio_settings(application)['recent']
+        assert all(os.path.normpath(p) != os.path.normpath(project_b)
+                   for p in recent)
+        # détection des librairies disparues (entrée « missing » du menu)
+        assert bl.library_location_exists(project_a) is True
+        assert bl.library_location_exists(tempfile.mkdtemp()) is False
+
         # une NOUVELLE shelf (nouvelle session) retrouve la lib mémorisée
         bl.set_studio_location(None)
         shelf2 = LibraryShelf(application)

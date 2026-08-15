@@ -130,6 +130,16 @@ def studio_location():
     return os.path.expandvars(os.path.expanduser(location))
 
 
+def library_location_exists(path):
+    """Vrai si cet emplacement de librairie pointe encore sur un fichier
+    réel (.json direct, ou dossier contenant button_library.json)."""
+    if not path:
+        return False
+    if path.lower().endswith('.json'):
+        return os.path.exists(path)
+    return os.path.exists(os.path.join(path, LIBRARY_FILENAME))
+
+
 def studio_library_label():
     """Nom du fichier de librairie courant, pour le badge de la shelf
     (« ringo.json »…)."""
@@ -850,17 +860,46 @@ class LibraryShelf(QtWidgets.QWidget):
         if not entries:
             empty = menu.addAction('No library — use the folder button')
             empty.setEnabled(False)
-        for path in entries:
+
+        def display(path):
             if path.lower().endswith('.json'):
-                label = os.path.basename(path)
-            else:
-                label = os.path.basename(path.rstrip('\\/'))
+                return os.path.basename(path)
+            return os.path.basename(path.rstrip('\\/'))
+
+        for path in entries:
+            exists = library_location_exists(path)
+            is_current = os.path.normpath(path) == normalized
+            label = display(path)
+            if not exists:
+                label += '  (missing)'
             action = menu.addAction(
                 label, lambda p=path: self._switch_studio_library(p))
             action.setToolTip(path)
             action.setCheckable(True)
-            action.setChecked(os.path.normpath(path) == normalized)
+            action.setChecked(is_current)
+            action.setEnabled(exists and not is_current)
+        # faire le ménage : oublier une librairie obsolète (la courante
+        # n'est pas proposée — on est dessus)
+        others = [
+            p for p in entries if os.path.normpath(p) != normalized]
+        if others:
+            menu.addSeparator()
+            remove_menu = menu.addMenu('Remove from list')
+            for path in others:
+                remove_menu.addAction(
+                    display(path),
+                    lambda p=path: self._forget_studio_library(p))
         menu.exec_(QtGui.QCursor.pos())
+
+    def _forget_studio_library(self, path):
+        """Retire une librairie de la liste des récents (le fichier
+        lui-même n'est évidemment pas touché)."""
+        settings = load_studio_settings(self.application)
+        normalized = os.path.normpath(path)
+        settings['recent'] = [
+            p for p in settings.get('recent') or []
+            if os.path.normpath(p) != normalized]
+        save_studio_settings(self.application, settings)
 
     def _create_or_open_library(self):
         """Bouton dossier : l'admin crée (nom du .json libre) ou ouvre ;

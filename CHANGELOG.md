@@ -4,6 +4,15 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Ménage dans la liste des librairies
+
+- Sous-menu **Remove from list** dans le menu du badge : retirer une
+  librairie obsolète des récents (le fichier n'est pas touché ; la
+  courante n'est pas proposée, et une librairie oubliée ne réapparaît
+  pas au switch suivant).
+- Les librairies dont le fichier a **disparu** sont marquées
+  « (missing) » et non cliquables.
+
 ## 2026-08 — Le badge json devient le sélecteur + fix des récents
 
 - Le bouton TAT disparaît : le **badge vert « nom.json » est lui-même le
