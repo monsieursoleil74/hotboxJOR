@@ -197,19 +197,15 @@ affiché avec son vrai rendu en vignette.
 - **Masquer/afficher** la shelf : le bouton librairie de la barre
   d'outils.
 
-### Sauvegardes de secours
+### Écritures protégées
 
 Chaque écriture d'un fichier de données (librairies, `hotboxes.json`,
-raccourcis, réglages) est **atomique** : le fichier ne peut pas être
-corrompu par un crash ou une coupure en pleine écriture.
-
-La **librairie studio** conserve en plus les **3 versions précédentes**
-dans un sous-dossier `_backups/` à côté du json : `nom.json.bak` (la
-plus récente), `.bak2`, `.bak3`. En cas de pépin (catégorie supprimée
-par mégarde…), copier un `.bak` par-dessus le `.json` suffit à revenir
-en arrière. Les fichiers des prefs Maya (librairie perso,
-`hotboxes.json`) n'ont pas de backups — l'écriture atomique les
-protège déjà de la corruption, et ça évite d'encombrer les prefs.
+raccourcis, réglages) est **atomique** : le contenu part dans un
+fichier temporaire puis remplace l'original d'un seul coup — un crash
+ou une coupure en pleine écriture ne peut pas corrompre le fichier.
+Aucun fichier annexe n'est créé : les sauvegardes historiques restent
+à la charge de l'utilisateur (copie manuelle) ou du studio (backups
+quotidiens des serveurs).
 
 ### Où c'est stocké
 

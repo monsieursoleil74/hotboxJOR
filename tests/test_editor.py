@@ -1961,55 +1961,28 @@ def test_category_palette():
 
 
 
-def test_atomic_write_and_backups():
-    """Écriture atomique + backups tournants : le json n'est jamais
-    corrompu par une écriture interrompue ; les 3 dernières versions de
-    la librairie STUDIO restent disponibles dans `_backups/` — les
-    fichiers des prefs Maya (perso, hotboxes) restent sans backup."""
+def test_atomic_write():
+    """Écriture atomique : le json n'est jamais corrompu par une
+    écriture interrompue, et aucun fichier annexe ne traîne — pas de
+    backups (le studio a les siens, l'utilisateur fait les siens)."""
     import tempfile
     from hotbox_designer.data import atomic_write_json
     from hotbox_designer import buttonlibrary as bl
 
     tmp = tempfile.mkdtemp()
-    path = os.path.join(tmp, 'lib.json')
-    backups = os.path.join(tmp, '_backups')
+    path = os.path.join(tmp, 'TAT.json')
 
-    def bak(name):
-        return os.path.join(backups, name)
-
-    atomic_write_json(path, ['v1'], backups=3)
-    assert json.load(open(path)) == ['v1']
-    assert not os.path.exists(backups)        # pas de backup à la création
+    for version in ('v1', 'v2', 'v3'):
+        atomic_write_json(path, [version])
+    assert json.load(open(path)) == ['v3']
     assert not os.path.exists(path + '.tmp')  # le temporaire a disparu
+    assert os.listdir(tmp) == ['TAT.json']    # rien d'autre dans le dossier
 
-    for version in ('v2', 'v3', 'v4', 'v5'):
-        atomic_write_json(path, [version], backups=3)
-    assert json.load(open(path)) == ['v5']
-    assert json.load(open(bak('lib.json.bak'))) == ['v4']
-    assert json.load(open(bak('lib.json.bak2'))) == ['v3']
-    assert json.load(open(bak('lib.json.bak3'))) == ['v2']
-    assert not os.path.exists(bak('lib.json.bak4'))  # rotation bornée
-
-    # la librairie STUDIO passe par le circuit backups…
-    studio = os.path.join(tmp, 'studio', 'TAT.json')
-    os.makedirs(os.path.dirname(studio))
-    bl.set_studio_location(studio)
-    try:
-        bl.save_library(studio, [])
-        bl.save_library(studio, [{'__category__': 'ANIM'}])
-        assert json.load(open(os.path.join(
-            os.path.dirname(studio), '_backups', 'TAT.json.bak'))) == []
-        assert bl.load_extra_categories(studio) == ['ANIM']
-
-        # …mais pas une librairie quelconque (perso dans les prefs)
-        perso = os.path.join(tmp, 'button_library.json')
-        bl.save_library(perso, [])
-        bl.save_library(perso, [{'__category__': 'X'}])
-        assert not os.path.exists(
-            os.path.join(tmp, '_backups', 'button_library.json.bak'))
-    finally:
-        bl.set_studio_location(None)
-    print('écriture atomique + backups tournants OK')
+    # save_library passe par le circuit atomique
+    bl.save_library(path, [{'__category__': 'ANIM'}])
+    assert bl.load_extra_categories(path) == ['ANIM']
+    assert os.listdir(tmp) == ['TAT.json']
+    print('écriture atomique OK')
 
 
 def test_studio_watcher():
@@ -2277,7 +2250,7 @@ if __name__ == '__main__':
     test_plus_button_follows_mode()
     test_shelf_drag_organization()
     test_category_palette()
-    test_atomic_write_and_backups()
+    test_atomic_write()
     test_studio_watcher()
     test_fork_folder_migration()
     test_hotkey_registry()

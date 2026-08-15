@@ -259,16 +259,9 @@ def load_extra_categories(path):
 
 
 def save_library(path, entries):
-    # écriture atomique (anti-corruption) pour toutes les librairies ;
-    # seule la librairie STUDIO (partagée) garde en plus 3 backups
-    # tournants dans le sous-dossier _backups/ à côté du json — la
-    # perso vit dans les prefs Maya, pas la peine de l'encombrer
+    # écriture atomique : anti-corruption, pas de fichier en plus
     from hotbox_designer.data import atomic_write_json
-    studio = studio_write_path()
-    is_studio = studio and (
-        os.path.normcase(os.path.abspath(path))
-        == os.path.normcase(os.path.abspath(studio)))
-    atomic_write_json(path, entries, backups=3 if is_studio else 0)
+    atomic_write_json(path, entries)
 
 
 # --- ordre du fichier = ordre affiché -----------------------------------
