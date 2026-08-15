@@ -174,8 +174,12 @@ affiché avec son vrai rendu en vignette.
 - **Organiser les catégories** — clic droit sur un **onglet** :
   - **New category… / New studio category…** — créer une catégorie
     (persistée même vide ; le libellé s'adapte selon que l'onglet est
-    perso ou studio). Le bouton **＋** en haut à droite crée toujours
-    une catégorie **perso**.
+    perso ou studio). Le bouton **＋** en haut à droite **suit le
+    mode** : en admin il crée une catégorie **dans la librairie studio
+    courante** (onglet logo TAT) ; en animateur une catégorie
+    **perso**, façon shelf Maya. Les catégories studio vivent dans le
+    `.json` de la librairie : chaque librairie (ringo.json,
+    pipo.json…) a les siennes, switcher change les onglets.
   - **Rename category…** — renommer : tous les boutons de la catégorie
     (et le marqueur de catégorie vide) sont ré-étiquetés.
   - **Delete category** — supprimer (seulement si elle est vide).

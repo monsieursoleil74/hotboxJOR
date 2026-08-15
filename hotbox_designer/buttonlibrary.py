@@ -603,8 +603,11 @@ class LibraryShelf(QtWidgets.QWidget):
         self.tabs.setIconSize(QtCore.QSize(20, 16))
         self.add_button = QtWidgets.QToolButton()
         self.add_button.setText('＋')
-        self.add_button.setToolTip('Create a category')
-        self.add_button.released.connect(self._prompt_category)
+        # ＋ suit le mode : admin → catégorie DANS la librairie studio
+        # courante (onglet logo TAT) ; animateur → catégorie perso,
+        # façon shelf Maya
+        self.add_button.released.connect(
+            lambda: self._prompt_category(is_studio_admin()))
         # bouton TAT : SWITCHER de librairie studio (menu = la liste des
         # librairies, rien d'autre). Visible pour tout le monde —
         # l'animateur choisit aussi sur quelle librairie il est
@@ -687,6 +690,11 @@ class LibraryShelf(QtWidgets.QWidget):
         # SESSION : badge, boutons et logo suivent (le logo peut
         # différer par projet)
         self._update_library_badge()
+        if is_studio_admin():
+            self.add_button.setToolTip(
+                'Create a category in %s' % studio_library_label())
+        else:
+            self.add_button.setToolTip('Create a personal category')
         logo = studio_logo_path()
         self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
         if not self.studio_icon.isNull():

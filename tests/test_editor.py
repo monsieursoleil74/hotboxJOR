@@ -1707,6 +1707,51 @@ def test_studio_library_switch():
     print('sélecteur de librairie studio (switch/création/récents) OK')
 
 
+def test_plus_button_follows_mode():
+    """Le bouton ＋ de la shelf suit le mode : admin → catégorie créée
+    DANS la librairie studio courante (onglet TAT) ; animateur →
+    catégorie perso (façon shelf Maya)."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.buttonlibrary import LibraryShelf
+
+    prefs = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: prefs
+    studio_dir = tempfile.mkdtemp()
+    ringo = os.path.join(studio_dir, 'ringo.json')
+    bl.save_library(ringo, [])
+
+    saved_gettext = QtWidgets.QInputDialog.getText
+    try:
+        bl.set_studio_admin(True)
+        bl.set_studio_location(ringo)
+        shelf = LibraryShelf(application)
+        shelf.show()
+        APP.processEvents()
+
+        # admin : ＋ écrit dans ringo.json
+        QtWidgets.QInputDialog.getText = (
+            lambda *a, **k: ('OFFICIELLE', True))
+        shelf.add_button.released.emit()
+        assert 'OFFICIELLE' in bl.categories_in(ringo)
+        assert 'OFFICIELLE' not in shelf.categories()  # pas en perso
+
+        # animateur : ＋ écrit dans la librairie PERSO
+        bl.set_studio_admin(False)
+        bl.refresh_shelves()
+        QtWidgets.QInputDialog.getText = lambda *a, **k: ('MIENNE', True)
+        shelf.add_button.released.emit()
+        assert 'MIENNE' in shelf.categories()
+        assert 'MIENNE' not in bl.categories_in(ringo)
+        shelf.close()
+    finally:
+        QtWidgets.QInputDialog.getText = saved_gettext
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)
+    print('bouton ＋ selon le mode (studio en admin, perso sinon) OK')
+
+
 def test_fork_folder_migration():
     """Rangement des données : la librairie perso et le registre des
     raccourcis vivent dans le dossier du fork (prefs/hotboxJOR sous
@@ -1917,6 +1962,7 @@ if __name__ == '__main__':
     test_color_picker_pipette()
     test_studio_admin_mode()
     test_studio_library_switch()
+    test_plus_button_follows_mode()
     test_fork_folder_migration()
     test_hotkey_registry()
     test_hotkey_edit_capture()

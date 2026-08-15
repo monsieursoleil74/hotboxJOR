@@ -4,6 +4,14 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Le bouton ＋ suit le mode (catégorie studio en admin)
+
+- En mode **admin**, le ＋ de la shelf crée la catégorie **dans la
+  librairie studio courante** (onglet logo TAT) — avant il créait
+  toujours une catégorie perso, d'où des onglets sans logo. En mode
+  animateur, il crée une catégorie **perso** (façon shelf Maya).
+  L'infobulle du ＋ affiche la destination.
+
 ## 2026-08 — Sélecteur de librairie refondu (retours d'usage)
 
 - **Badge = nom du json courant** (`ringo.json`…) à la place de
