@@ -175,8 +175,9 @@ affiché avec son vrai rendu en vignette.
     `button_library.json` du dossier studio).
 - **Ranger un bouton dans une autre catégorie** — deux façons :
   - **glisser-déposer** le(s) bouton(s) **sur l'onglet** de la catégorie
-    visée (l'onglet survolé se sélectionne pendant le drag), ou **dans
-    la liste** d'une catégorie, à la position voulue ;
+    visée (le survoler ne change pas l'affichage — on peut traverser la
+    barre vers le canvas sans changer de catégorie), ou **dans la
+    liste** d'une catégorie, à la position voulue ;
   - clic droit → **Move to category…** (choisir une catégorie existante
     ou en taper une nouvelle).
   Perso toujours ; studio en mode admin. Le drag reste dans la même
