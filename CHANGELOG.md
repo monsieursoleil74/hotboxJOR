@@ -6,6 +6,10 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Drag & drop : plus de bascule d'onglet au survol** (retour
+  utilisateur) — glisser un bouton vers le canvas traversait la barre
+  d'onglets et changeait de catégorie au passage. Le dépôt SUR un
+  onglet range toujours le bouton dans cette catégorie.
 - **Bandeau STUDIO ADMIN pleine largeur** dans le manager : barre
   verte traversante, texte centré plus gros — impossible à rater. En
   mode animateur, le bandeau disparaît complètement (plus de bande

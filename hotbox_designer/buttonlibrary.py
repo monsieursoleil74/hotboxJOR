@@ -794,8 +794,10 @@ class CategoryPalette(QtWidgets.QWidget):
 
 class _ShelfTabBar(QtWidgets.QTabBar):
     """Barre d'onglets de la shelf : accepte le dépôt d'un bouton sur un
-    onglet (= le ranger dans cette catégorie), sélectionne l'onglet
-    survolé pendant le drag."""
+    onglet (= le ranger dans cette catégorie). Survoler un onglet
+    pendant un drag ne le sélectionne PAS (retour utilisateur : glisser
+    un bouton vers le canvas traversait la barre et changeait de
+    catégorie au passage)."""
 
     def __init__(self, tabs):
         super(_ShelfTabBar, self).__init__(tabs)
@@ -837,11 +839,6 @@ class _ShelfTabBar(QtWidgets.QTabBar):
         super(_ShelfTabBar, self).dragEnterEvent(event)
 
     def dragMoveEvent(self, event):
-        position = getattr(event, 'position', None)
-        point = position().toPoint() if position else event.pos()
-        index = self.tabAt(point)
-        if index >= 0:
-            self._tabs.setCurrentIndex(index)  # survol = on voit où on va
         if event.mimeData().hasFormat(SHELF_ENTRIES_MIME):
             return event.acceptProposedAction()
         super(_ShelfTabBar, self).dragMoveEvent(event)
