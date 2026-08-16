@@ -327,12 +327,14 @@ class ImageSettings(QtWidgets.QWidget):
         value = str(values[0]) if len(values) == 1 else None
         self.fit.setCurrentText(value)
 
+        # tailles affichées en pixels ENTIERS — le float de précision
+        # interne (redimensionnement à la molette) n'a rien à faire ici
         values = list({option['image.width'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
+        value = str(int(round(values[0]))) if len(values) == 1 else None
         self.width.setText(value)
 
         values = list({option['image.height'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
+        value = str(int(round(values[0]))) if len(values) == 1 else None
         self.height.setText(value)
         self._update_placement_enabled()
 
