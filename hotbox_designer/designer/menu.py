@@ -206,8 +206,8 @@ class MenuWidget(QtWidgets.QWidget):
         self.admin_badge = QtWidgets.QLabel('STUDIO ADMIN')
         self.admin_badge.setStyleSheet(
             'QLabel {color: white; background: %s; border-radius: 3px;'
-            'font-weight: bold; font-size: 10px; padding: 2px 8px;'
-            'margin-right: 4px;}' % ACCENT)
+            'font-weight: bold; font-size: 12px; letter-spacing: 3px;'
+            'padding: 6px 16px; margin-right: 4px;}' % ACCENT)
         self.admin_badge_action = self.toolbar.addWidget(self.admin_badge)
         self.update_admin_badge()
 
