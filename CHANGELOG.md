@@ -6,6 +6,9 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Infobulle du badge sans chemin pour les animateurs** : elle
+  affiche juste « Studio library (read-only) » — le chemin complet
+  reste visible en mode admin (et via « Open library folder »).
 - **Dossier de données renommé `prefs/hotbox/`** (au lieu de
   `prefs/hotboxJOR/` ; `~/.hotbox` en standalone) : le suffixe JOR ne
   servait à rien. L'ancien dossier est **renommé automatiquement** au

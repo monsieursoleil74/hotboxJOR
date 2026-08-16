@@ -1693,8 +1693,10 @@ def test_studio_admin_mode():
         shelf = LibraryShelf(application)
         shelf.show()
         APP.processEvents()
-        # badge = nom du json, en mode lecture seule (infobulle)
+        # badge = nom du json, en mode lecture seule (infobulle) —
+        # SANS le chemin de la librairie (réservé à l'admin)
         assert 'read-only' in shelf.library_badge.toolTip()
+        assert tmp not in shelf.library_badge.toolTip()
         assert shelf._can_edit(readonly=False) is True   # perso : oui
         assert shelf._can_edit(readonly=True) is False   # studio : non
         shelf.close()

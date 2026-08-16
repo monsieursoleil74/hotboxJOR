@@ -991,10 +991,15 @@ class LibraryShelf(QtWidgets.QWidget):
             'border-radius: 3px; font-weight: bold; font-size: 10px;'
             'padding: 2px 8px;}'
             'QPushButton:hover {background: #86a878;}' % ACCENT)
-        self.library_badge.setToolTip(
-            '%s — %s\nClick to switch library' % (
-                location or 'no library',
-                'admin (editable)' if is_studio_admin() else 'read-only'))
+        if is_studio_admin():
+            self.library_badge.setToolTip(
+                '%s — admin (editable)\nClick to switch library'
+                % (location or 'no library'))
+        else:
+            # pas de chemin pour les animateurs — l'admin le voit ici
+            # et a « Open library folder » au clic droit
+            self.library_badge.setToolTip(
+                'Studio library (read-only)\nClick to switch library')
 
     def refresh(self):
         self._rebuilding_tabs = True
