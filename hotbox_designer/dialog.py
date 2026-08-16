@@ -170,6 +170,11 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         self.layout.addWidget(self.template_grid)
         self.layout.addWidget(self.preview, 0, QtCore.Qt.AlignHCenter)
         self.layout.addLayout(self.down_layout)
+        # la fenêtre colle TOUJOURS à son contenu : quand l'aperçu
+        # Duplicate se cache, la hauteur se réajuste au lieu de laisser
+        # le vide se redistribuer entre les éléments (gros trou au-dessus
+        # des options)
+        self.layout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         self.update_preview()
 
     def _create_from_template(self, _):

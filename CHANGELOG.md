@@ -6,6 +6,11 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Correctif création de hotbox** : en basculant entre « From
+  template » et « Empty hotbox », un grand vide apparaissait (la
+  fenêtre gardait sa hauteur quand l'aperçu Duplicate se cachait). Le
+  dialogue colle désormais toujours à son contenu.
+
 - **Registre de commandes nommées essayé puis RETIRÉ** (choix
   utilisateur) : les boutons appelaient `hotbox_designer.run('Nom')`
   avec le code centralisé à côté de la librairie studio. Trop de
