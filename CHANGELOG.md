@@ -6,6 +6,10 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Bandeau STUDIO ADMIN pleine largeur** dans le manager : barre
+  verte traversante, texte centré plus gros — impossible à rater. En
+  mode animateur, le bandeau disparaît complètement (plus de bande
+  vide inutile).
 - **Correctif création de hotbox** : en basculant entre « From
   template » et « Empty hotbox », un grand vide apparaissait (la
   fenêtre gardait sa hauteur quand l'aperçu Duplicate se cachait). Le

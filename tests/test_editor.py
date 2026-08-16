@@ -1741,18 +1741,18 @@ def test_studio_admin_mode():
         menu.update_admin_badge()
         assert menu.admin_badge.isHidden() is True
 
-        # bandeau du manager : plus de texte « HOTBOX DESIGNER » (le
-        # nom du tool vit dans le titre de fenêtre), badge admin
-        # visible en mode lead seulement, bascule via refresh()
+        # bandeau du manager : barre verte pleine largeur en mode
+        # lead, ENTIÈREMENT masqué en mode animateur (plus de bande
+        # vide), bascule via refresh()
         from hotbox_designer.manager import _ManagerHeader
-        header = _ManagerHeader()
-        header.show()
-        APP.processEvents()
-        assert header.admin_badge.isVisible() is False
+        header = _ManagerHeader()  # admin False à ce stade
+        assert header.isHidden() is True
         bl.set_studio_admin(True)
         header.refresh()
-        assert header.admin_badge.isVisible() is True
-        header.close()
+        assert header.isHidden() is False
+        bl.set_studio_admin(False)
+        header.refresh()
+        assert header.isHidden() is True
     finally:
         bl.set_studio_admin(False)  # ne pas polluer les autres tests
     print('mode admin studio (lancement + bascule en session) OK')

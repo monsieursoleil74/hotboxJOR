@@ -474,31 +474,31 @@ class _EditorLink():
 
 
 class _ManagerHeader(QtWidgets.QWidget):
-    """Bandeau du manager : vide en mode animateur (le nom du tool est
-    dans le titre de la fenêtre), badge STUDIO ADMIN en mode lead."""
+    """Bandeau du manager : barre verte PLEINE LARGEUR « STUDIO ADMIN »
+    en mode lead ; complètement masqué en mode animateur (une bande
+    vide ne servait à rien)."""
 
     def __init__(self, parent=None):
         super(_ManagerHeader, self).__init__(parent)
         from hotbox_designer.theme import ACCENT
-        self.setFixedHeight(38)
-        self.setStyleSheet(
-            '_ManagerHeader {background: #2d2d2d;'
-            'border-bottom: 1px solid #242424;}')
+        self.setFixedHeight(32)
+        # sans WA_StyledBackground, un QWidget sous-classé ne peint pas
+        # le fond défini par stylesheet
+        self.setAttribute(QtCore.Qt.WA_StyledBackground, True)
+        self.setStyleSheet('_ManagerHeader {background: %s;}' % ACCENT)
         self.admin_badge = QtWidgets.QLabel('STUDIO ADMIN')
+        self.admin_badge.setAlignment(QtCore.Qt.AlignCenter)
         self.admin_badge.setStyleSheet(
-            'QLabel {color: white; background: %s; border-radius: 3px;'
-            'font-weight: bold; font-size: 10px; padding: 2px 8px;}'
-            % ACCENT)
+            'QLabel {color: white; background: transparent;'
+            'font-weight: bold; font-size: 12px; letter-spacing: 4px;}')
         layout = QtWidgets.QHBoxLayout(self)
-        layout.setContentsMargins(12, 0, 12, 0)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(self.admin_badge)
-        layout.addStretch(1)
         self.refresh()
 
     def refresh(self):
         from hotbox_designer.buttonlibrary import is_studio_admin
-        self.admin_badge.setVisible(is_studio_admin())
+        self.setVisible(is_studio_admin())
 
 
 class HotboxManagerToolbar(QtWidgets.QToolBar):
