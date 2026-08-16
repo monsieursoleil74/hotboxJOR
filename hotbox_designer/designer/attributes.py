@@ -270,7 +270,7 @@ class ImageSettings(QtWidgets.QWidget):
         self.height.valueSet.connect(method)
 
         # placement libre de l'image dans le bouton
-        self.place = QtWidgets.QPushButton('◈ Place in button')
+        self.place = QtWidgets.QPushButton('Place Image')
         self.place.setCheckable(True)
         self.place.setToolTip(
             'Drag the image inside the button to position it, '
