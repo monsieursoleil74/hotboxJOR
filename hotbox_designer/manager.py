@@ -104,8 +104,12 @@ class HotboxManager(QtWidgets.QWidget):
         parent = application.main_window
         super(HotboxManager, self).__init__(parent, QtCore.Qt.Tool)
         from hotbox_designer.theme import apply_dark_theme
+        from hotbox_designer.buttonlibrary import restore_studio_location
         apply_dark_theme(self)
         self.application = application
+        # la librairie studio mémorisée est active dès le manager (le
+        # registre ƒ et le mode admin la voient sans ouvrir d'éditeur)
+        restore_studio_location(application)
         # une fenêtre d'édition par hotbox, toutes ouvrables en même
         # temps (le copier-coller passe par le presse-papier système)
         self.editors = []

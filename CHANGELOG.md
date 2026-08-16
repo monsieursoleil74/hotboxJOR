@@ -6,6 +6,9 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes nommées
 
+- **Correctif : la librairie studio mémorisée est restaurée dès le
+  lancement du manager** — le registre ƒ affichait « No studio library
+  configured » tant qu'aucun éditeur (et sa shelf) n'avait été ouvert.
 - **Les boutons appellent un NOM, plus du code en dur** :
   `hotbox_designer.run('TAT.PrepaManager')`. Les commandes vivent dans
   `commands.json` à côté de la librairie studio, relues à chaque clic —

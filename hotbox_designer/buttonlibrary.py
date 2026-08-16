@@ -103,6 +103,19 @@ def load_studio_settings(application):
     return data if isinstance(data, dict) else {}
 
 
+def restore_studio_location(application):
+    """Applique la librairie studio mémorisée (studio_settings.json)
+    si aucun choix n'est déjà actif dans la session. Appelé au
+    lancement du manager ET à la construction d'une shelf — sinon, ƒ
+    (registre) ou le badge ne voyaient la librairie qu'après
+    l'ouverture d'un premier éditeur."""
+    if _STUDIO_OVERRIDE:
+        return
+    current = load_studio_settings(application).get('current')
+    if current:
+        set_studio_location(current)
+
+
 def save_studio_settings(application, settings):
     from hotbox_designer.data import atomic_write_json
     try:
@@ -872,9 +885,7 @@ class LibraryShelf(QtWidgets.QWidget):
         self.path = library_path(application)
         # librairie studio mémorisée (choisie via le bouton TAT) :
         # appliquée avant le premier refresh
-        current = load_studio_settings(application).get('current')
-        if current:
-            set_studio_location(current)
+        restore_studio_location(application)
         logo = studio_logo_path()
         self.studio_icon = QtGui.QIcon(logo) if logo else QtGui.QIcon()
         self.tabs = _ShelfTabs(self)

@@ -1412,6 +1412,33 @@ def test_user_templates():
     print('templates utilisateur (save + liste + aperçu) OK')
 
 
+def test_studio_location_restored_at_manager_launch():
+    """La librairie studio mémorisée est active dès l'ouverture du
+    manager — sans devoir ouvrir un éditeur d'abord (le registre ƒ la
+    voyait seulement après la construction d'une première shelf)."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.manager import HotboxManager
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    studio = os.path.join(tmp, 'TAT.json')
+    bl.save_library(studio, [])
+    bl.save_studio_settings(application, {'current': studio, 'recent': []})
+    bl.set_studio_location(None)
+    try:
+        assert bl.studio_location() is None
+        manager = HotboxManager(application)
+        assert bl.studio_location() == studio  # restaurée par le manager
+        from hotbox_designer.commandregistry import registry_path
+        assert registry_path() == os.path.join(tmp, 'commands.json')
+        manager.close()
+    finally:
+        bl.set_studio_location(None)
+    print('librairie mémorisée restaurée au lancement du manager OK')
+
+
 def test_command_registry():
     """Registre de commandes nommées : les boutons appellent
     hotbox_designer.run('Nom'), le code vit dans commands.json à côté
@@ -2464,6 +2491,7 @@ if __name__ == '__main__':
     test_startup_framing()
     test_replace_from_library()
     test_user_templates()
+    test_studio_location_restored_at_manager_launch()
     test_command_registry()
     test_shelf_filter()
     test_hotkey_column()
