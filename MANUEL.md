@@ -476,11 +476,23 @@ appelle une **commande nommée** —
     import hotbox_designer
     hotbox_designer.run('TAT.PrepaManager')
 
-Les commandes vivent dans **`commands.json`, posé à côté de la
-librairie studio** (même dossier serveur). Le code est **relu à chaque
-clic** : mettre à jour une commande dans le registre met à jour tous
-les boutons qui l'appellent, dans toutes les hotboxes de tout le
-monde, sans rien redistribuer.
+Les commandes vivent **à côté de la librairie studio** (même dossier
+serveur), sous deux formes fusionnées :
+
+- **`commands.json`** — les petits snippets, édités via le dialogue ƒ ;
+- **le sous-dossier `commands/`** — un **vrai fichier par commande** :
+  `CAM.flipCam.py`, `Machin.mel`… Le nom du fichier (sans extension)
+  est le nom de la commande, l'extension donne le langage. C'est la
+  forme recommandée pour les **longs scripts** : lisible, éditable
+  dans un vrai éditeur de code, versionnable — fini le pavé illisible
+  dans le json. En cas de doublon avec le json, le fichier gagne.
+
+Le code est **relu à chaque clic** : mettre à jour une commande (json
+OU fichier) met à jour tous les boutons qui l'appellent, dans toutes
+les hotboxes de tout le monde, sans rien redistribuer. Dans le
+dialogue ƒ, les commandes-fichiers sont marquées « file » (chemin en
+infobulle) : leur code s'édite aussi depuis ƒ (écrit dans le fichier),
+mais leur nom/langage viennent du fichier.
 
 - **Voir / éditer** : bouton **ƒ** de la barre d'outils du manager.
   Liste des commandes + aperçu du code ; **Add / Edit / Delete en mode

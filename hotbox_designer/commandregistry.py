@@ -18,6 +18,15 @@ commande dans le registre met à jour tous les boutons qui l'appellent,
 partout, sans toucher aux hotboxes. Édition en mode admin (bouton ƒ du
 manager), lecture seule pour les animateurs — même modèle que la
 librairie de boutons.
+
+Deux sources, fusionnées :
+
+- ``commands.json`` — les petits snippets, édités via le dialogue ƒ ;
+- le sous-dossier ``commands/`` — un VRAI fichier par commande
+  (``CAM.flipCam.py``, ``Machin.mel``) : lisible, éditable dans un
+  vrai éditeur de code, versionnable. Le nom du fichier (sans
+  l'extension) est le nom de la commande ; l'extension donne le
+  langage. En cas de doublon avec le json, le FICHIER gagne.
 """
 import json
 import os
@@ -37,17 +46,62 @@ def registry_path():
     return os.path.join(folder, REGISTRY_FILENAME)
 
 
+def commands_folder():
+    """Sous-dossier `commands/` à côté du registre — un fichier .py ou
+    .mel par commande. None sans librairie configurée."""
+    path = registry_path()
+    return os.path.join(os.path.dirname(path), 'commands') if path else None
+
+
+def _load_command_files():
+    """{nom: {'language', 'command', 'file'}} depuis le dossier
+    `commands/` : Nom.py -> python, Nom.mel -> mel."""
+    folder = commands_folder()
+    if not folder or not os.path.isdir(folder):
+        return {}
+    registry = {}
+    for filename in sorted(os.listdir(folder)):
+        stem, ext = os.path.splitext(filename)
+        language = {'.py': 'python', '.mel': 'mel'}.get(ext.lower())
+        if not language or not stem:
+            continue
+        filepath = os.path.join(folder, filename)
+        try:
+            with open(filepath, 'r', encoding='utf-8') as f:
+                code = f.read()
+        except (OSError, UnicodeDecodeError):
+            continue
+        registry[stem] = {
+            'language': language, 'command': code, 'file': filepath}
+    return registry
+
+
 def load_registry(path=None):
-    """{nom: {'language': 'python'|'mel', 'command': code}} — {} sinon."""
+    """{nom: {'language': 'python'|'mel', 'command': code}} — fusion du
+    json (snippets) et du dossier commands/ (fichiers .py/.mel, qui
+    gagnent en cas de doublon). {} sinon."""
     path = path or registry_path()
-    if not path or not os.path.exists(path):
-        return {}
-    try:
-        with open(path, 'r') as f:
-            data = json.load(f)
-    except (ValueError, OSError):
-        return {}
-    return data if isinstance(data, dict) else {}
+    registry = {}
+    if path and os.path.exists(path):
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+        except (ValueError, OSError):
+            data = {}
+        if isinstance(data, dict):
+            registry.update(data)
+    registry.update(_load_command_files())
+    return registry
+
+
+def save_command_file(filepath, code):
+    """Réécrit le fichier d'une commande (atomique, utf-8)."""
+    temporary = filepath + '.tmp'
+    with open(temporary, 'w', encoding='utf-8') as f:
+        f.write(code)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(temporary, filepath)
 
 
 def save_registry(data, path=None):

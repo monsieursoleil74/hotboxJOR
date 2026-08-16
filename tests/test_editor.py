@@ -1516,12 +1516,35 @@ def test_command_registry():
         assert 'TAT.New' in names
         editor.close()
 
-        # dialogue : liste + gating admin
+        # commandes en FICHIERS : le dossier commands/ à côté du json,
+        # un .py ou .mel par commande, lisible et versionnable —
+        # fusionné avec le json, le fichier gagne en cas de doublon
+        folder = cr.commands_folder()
+        assert folder == os.path.join(tmp, 'commands')
+        os.makedirs(folder)
+        with open(os.path.join(folder, 'CAM.flip.py'), 'w') as f:
+            f.write('import tests.test_editor as t;'
+                    't._REGISTRY_PROOF["ran"] = "file"')
+        with open(os.path.join(folder, 'TAT.Test.py'), 'w') as f:
+            f.write('pass')  # doublon : le fichier gagne sur le json
+        registry = cr.load_registry()
+        assert registry['CAM.flip']['language'] == 'python'
+        assert registry['TAT.Test']['command'] == 'pass'
+        assert registry['TAT.Test'].get('file')
+        hotbox_designer.run('CAM.flip')
+        assert proof['ran'] == 'file'
+
+        # dialogue : liste + gating admin ; la sauvegarde ne recopie
+        # PAS les commandes-fichiers dans le json
         dialog = CommandRegistryDialog(can_edit=True)
         dialog.show()
         APP.processEvents()
-        assert dialog.list.count() == 2  # TAT.Test + TAT.New
+        assert dialog.list.count() == 3  # TAT.Test(file) + TAT.New + CAM.flip
         assert dialog.add_button.isVisibleTo(dialog)
+        dialog._save()
+        json_only = json.load(open(cr.registry_path()))
+        assert 'CAM.flip' not in json_only
+        assert 'file' not in (json_only.get('TAT.New') or {})
         dialog.close()
         dialog = CommandRegistryDialog(can_edit=False)
         assert not dialog.add_button.isVisibleTo(dialog)

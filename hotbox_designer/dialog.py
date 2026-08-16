@@ -586,9 +586,13 @@ class CommandRegistryDialog(QtWidgets.QDialog):
         self.list.clear()
         for name in sorted(self.registry):
             record = self.registry[name] or {}
-            item = QtWidgets.QListWidgetItem(
-                '%s   (%s)' % (name, record.get('language') or 'python'))
+            suffix = record.get('language') or 'python'
+            if record.get('file'):
+                suffix += ', file'  # un vrai .py/.mel du dossier commands/
+            item = QtWidgets.QListWidgetItem('%s   (%s)' % (name, suffix))
             item.setData(QtCore.Qt.UserRole, name)
+            if record.get('file'):
+                item.setToolTip(record['file'])
             self.list.addItem(item)
         self._selection_changed()
 
@@ -604,8 +608,13 @@ class CommandRegistryDialog(QtWidgets.QDialog):
         self.delete_button.setEnabled(bool(name))
 
     def _save(self):
+        """N'écrit dans le json QUE les snippets — les commandes
+        adossées à un fichier .py/.mel restent dans leur fichier."""
         from hotbox_designer.commandregistry import save_registry
-        if not save_registry(self.registry):
+        snippets = {
+            name: record for name, record in self.registry.items()
+            if not (record or {}).get('file')}
+        if not save_registry(snippets):
             warning('Registry', 'No studio library configured — '
                     'the registry lives next to it.', self)
 
@@ -626,26 +635,49 @@ class CommandRegistryDialog(QtWidgets.QDialog):
         dialog = CommandEditDialog(
             name, record.get('language') or 'python',
             record.get('command') or '', parent=self)
+        if record.get('file'):
+            # commande = un fichier : nom et langage viennent du fichier
+            dialog.name_edit.setReadOnly(True)
+            dialog.language_combo.setEnabled(False)
+            dialog.name_edit.setToolTip(record['file'])
         if dialog.exec_() != QtWidgets.QDialog.Accepted:
             return
         new_name, language, command = dialog.values()
-        if new_name != name:
-            del self.registry[name]
-        self.registry[new_name] = {
-            'language': language, 'command': command}
-        self._save()
+        if record.get('file'):
+            from hotbox_designer.commandregistry import save_command_file
+            try:
+                save_command_file(record['file'], command)
+            except OSError:
+                return warning(
+                    'Registry', 'Could not write %s' % record['file'], self)
+            self.registry[name] = dict(record, command=command)
+        else:
+            if new_name != name:
+                del self.registry[name]
+            self.registry[new_name] = {
+                'language': language, 'command': command}
+            self._save()
         self._populate()
 
     def _delete(self):
         name = self._current_name()
         if not name:
             return
+        record = self.registry.get(name) or {}
         result = QtWidgets.QMessageBox.question(
             self, 'Registry',
             "Delete '%s'?\nButtons calling it will raise an error "
             'until it is recreated.' % name)
         if result != QtWidgets.QMessageBox.Yes:
             return
-        del self.registry[name]
-        self._save()
+        if record.get('file'):
+            try:
+                os.remove(record['file'])
+            except OSError:
+                return warning(
+                    'Registry', 'Could not delete %s' % record['file'], self)
+            del self.registry[name]
+        else:
+            del self.registry[name]
+            self._save()
         self._populate()

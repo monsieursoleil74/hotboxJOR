@@ -17,6 +17,13 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 - **Bouton ƒ du manager** : voir le registre (tous), l'éditer
   (Add/Edit/Delete, mode admin seulement) — nom, langage python/mel,
   code avec coloration syntaxique.
+- **Commandes en vrais fichiers .py/.mel** : le sous-dossier
+  `commands/` à côté de la librairie — un fichier par commande
+  (`CAM.flipCam.py`), nom = nom du fichier, langage = extension.
+  Recommandé pour les longs scripts (lisible, éditable dans un vrai
+  éditeur, versionnable — fini le pavé illisible dans le json).
+  Fusionné avec `commands.json` (réservé aux petits snippets), le
+  fichier gagne en cas de doublon ; éditable aussi depuis ƒ.
 - **ƒ aussi dans la barre d'outils de l'éditeur** + le menu
   « Registered command » se recharge à l'ouverture du déroulant — on
   crée une commande et on la pose sur un bouton sans quitter
