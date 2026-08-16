@@ -272,6 +272,14 @@ class ImageSettings(QtWidgets.QWidget):
         # placement libre de l'image dans le bouton
         self.place = QtWidgets.QPushButton('Place Image')
         self.place.setCheckable(True)
+        # vert tant que le mode placement est actif : on SAIT qu'on est
+        # dedans, re-cliquer rend la main (retour gris)
+        from hotbox_designer.theme import ACCENT, ACCENT_DIM
+        self.place.setObjectName('placeImage')
+        self.place.setStyleSheet(
+            'QPushButton#placeImage:checked {background: %s;'
+            'color: white; font-weight: bold; border: 1px solid %s;}'
+            % (ACCENT, ACCENT_DIM))
         self.place.setToolTip(
             'Drag the image inside the button to position it, '
             'mouse wheel to resize (Esc to finish)')
