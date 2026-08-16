@@ -488,8 +488,12 @@ monde, sans rien redistribuer.
 - **Poser sur un bouton** : dans l'éditeur, section **Action** →
   menu **Registered command** — en choisir une écrit l'appel
   `run('Nom')` sur le clic gauche du/des bouton(s) sélectionné(s)
-  (même principe que le sous-menu fluide). Le menu est caché si le
-  registre est vide.
+  (même principe que le sous-menu fluide). La liste se **recharge à
+  l'ouverture du menu** : une commande ajoutée apparaît sans rouvrir
+  l'éditeur.
+- **ƒ aussi dans l'éditeur** (barre d'outils, à côté des boutons
+  librairie) : voir/créer/éditer les commandes sans repasser par le
+  manager.
 - Une commande **supprimée** du registre fait remonter une erreur
   claire au clic (nom + chemin du registre) tant qu'elle n'est pas
   recréée.

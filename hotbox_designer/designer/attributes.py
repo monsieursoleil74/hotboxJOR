@@ -14,6 +14,20 @@ SHAPE_LABELS = {
     'square': 'square', 'rounded_rect': 'rounded', 'round': 'round'}
 
 
+class ReloadingCombo(QtWidgets.QComboBox):
+    """Combo dont la liste est reconstruite À L'OUVERTURE du menu (via
+    un callback) : les commandes ajoutées au registre apparaissent
+    sans rouvrir l'éditeur."""
+
+    def __init__(self, reload_callback, parent=None):
+        super(ReloadingCombo, self).__init__(parent)
+        self._reload = reload_callback
+
+    def showPopup(self):
+        self._reload()
+        super(ReloadingCombo, self).showPopup()
+
+
 class StatePreview(QtWidgets.QWidget):
     """Aperçu en direct du bouton sélectionné dans ses trois états
     (normal / survol / clic) : chaque réglage — couleurs, bordure,
@@ -184,6 +198,9 @@ class AttributeEditor(QtWidgets.QWidget):
 
     def set_registry(self, names):
         self.action.set_registry(names)
+
+    def reload_registry(self):
+        self.action.reload_registry()
 
     def image_modified(self, option, value):
         self.optionSet.emit(option, value)
@@ -459,8 +476,9 @@ class ActionSettings(QtWidgets.QWidget):
         # commandes NOMMÉES du registre (commands.json de la librairie
         # studio) : en choisir une pose hotbox_designer.run('Nom') sur
         # le clic gauche — la commande s'update dans le registre, tous
-        # les boutons suivent
-        self._registry = QtWidgets.QComboBox()
+        # les boutons suivent. La liste se recharge à l'ouverture du
+        # menu : plus besoin de rouvrir l'éditeur après un ajout.
+        self._registry = ReloadingCombo(self.reload_registry)
         self._registry.currentIndexChanged.connect(self._registry_chosen)
 
         self._lactive = BoolCombo(False)
@@ -549,20 +567,25 @@ class ActionSettings(QtWidgets.QWidget):
             self._submenu.setCurrentIndex(0)
             self._submenu.blockSignals(False)
 
+    def reload_registry(self):
+        """Relit le registre (commands.json de la librairie courante)."""
+        from hotbox_designer.commandregistry import load_registry
+        self.set_registry(sorted(load_registry()))
+
     def set_registry(self, names):
-        """Peuple la liste des commandes nommées. Cachée si le registre
-        est vide ou absent (pas de librairie studio)."""
+        """Peuple la liste des commandes nommées."""
         self._registry.blockSignals(True)
         self._registry.clear()
         self._registry.addItem('— none —', '')
         for name in names:
             self._registry.addItem(name, name)
+        if not names:
+            self._registry.addItem('(empty registry)', '')
+            index = self._registry.count() - 1
+            model_item = self._registry.model().item(index)
+            if model_item is not None:
+                model_item.setEnabled(False)
         self._registry.blockSignals(False)
-        has_names = bool(names)
-        self._registry.setVisible(has_names)
-        label = self.layout.labelForField(self._registry)
-        if label is not None:
-            label.setVisible(has_names)
 
     def _registry_chosen(self, index):
         name = self._registry.itemData(index)

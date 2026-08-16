@@ -79,6 +79,8 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.libraryRequested.connect(self.open_button_library)
         self.menu.saveToLibraryRequested.connect(
             self.save_selection_to_library)
+        self.menu.commandRegistryRequested.connect(
+            self.open_command_registry)
         self.menu.deleteRequested.connect(self.delete_selection)
         self.menu.sizeChanged.connect(self.editor_size_changed)
         self.menu.fitZoneRequested.connect(self.fit_zone_to_shapes)
@@ -549,6 +551,23 @@ class HotboxEditor(QtWidgets.QWidget):
         self.selection_changed()
         self.shape_editor.repaint()
         self.set_data_modified()
+
+    def open_command_registry(self):
+        """Le registre de commandes nommées, sans repasser par le
+        manager. À la fermeture, le menu « Registered command » est
+        rechargé (il l'est aussi à chaque ouverture du menu)."""
+        from hotbox_designer.buttonlibrary import (
+            is_studio_admin, studio_location)
+        from hotbox_designer.dialog import (
+            CommandRegistryDialog, warning)
+        if not studio_location():
+            return warning(
+                'Command registry',
+                'No studio library configured — the registry lives in '
+                'its folder (commands.json).')
+        dialog = CommandRegistryDialog(is_studio_admin(), parent=self)
+        dialog.exec_()
+        self.attribute_editor.reload_registry()
 
     def set_registry_command(self, name):
         """Pose l'appel à la commande NOMMÉE `name` du registre sur le

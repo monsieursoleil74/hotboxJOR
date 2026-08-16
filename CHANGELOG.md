@@ -17,6 +17,10 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 - **Bouton ƒ du manager** : voir le registre (tous), l'éditer
   (Add/Edit/Delete, mode admin seulement) — nom, langage python/mel,
   code avec coloration syntaxique.
+- **ƒ aussi dans la barre d'outils de l'éditeur** + le menu
+  « Registered command » se recharge à l'ouverture du déroulant — on
+  crée une commande et on la pose sur un bouton sans quitter
+  l'éditeur ni le rouvrir.
 - **Menu « Registered command »** dans la section Action de l'éditeur :
   choisir une commande pose l'appel sur le clic gauche de la sélection,
   comme le sous-menu fluide.

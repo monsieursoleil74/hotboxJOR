@@ -1504,13 +1504,23 @@ def test_command_registry():
         options = editor.shape_editor.shapes[0].options
         assert options['action.left'] is True
         assert options['action.left.command'] == snippet
+
+        # une commande ajoutée au registre apparaît dans le menu SANS
+        # rouvrir l'éditeur (rechargé à l'ouverture du menu déroulant)
+        registry = cr.load_registry()
+        registry['TAT.New'] = {'language': 'python', 'command': 'pass'}
+        cr.save_registry(registry)
+        editor.attribute_editor.reload_registry()
+        combo = editor.attribute_editor.action._registry
+        names = [combo.itemText(i) for i in range(combo.count())]
+        assert 'TAT.New' in names
         editor.close()
 
         # dialogue : liste + gating admin
         dialog = CommandRegistryDialog(can_edit=True)
         dialog.show()
         APP.processEvents()
-        assert dialog.list.count() == 1
+        assert dialog.list.count() == 2  # TAT.Test + TAT.New
         assert dialog.add_button.isVisibleTo(dialog)
         dialog.close()
         dialog = CommandRegistryDialog(can_edit=False)

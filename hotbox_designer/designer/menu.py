@@ -12,6 +12,7 @@ class MenuWidget(QtWidgets.QWidget):
     pasteStyleRequested = QtCore.Signal()
     libraryRequested = QtCore.Signal()
     saveToLibraryRequested = QtCore.Signal()
+    commandRegistryRequested = QtCore.Signal()
     undoRequested = QtCore.Signal()
     redoRequested = QtCore.Signal()
     sizeChanged = QtCore.Signal()
@@ -186,6 +187,12 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.library)
         self.toolbar.addAction(self.savetolibrary)
+        self.registry = QtWidgets.QAction('ƒ', self)
+        self.registry.setToolTip(
+            'Command registry — named commands called by buttons via '
+            "hotbox_designer.run('Name')")
+        self.registry.triggered.connect(self.commandRegistryRequested.emit)
+        self.toolbar.addAction(self.registry)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.onbottom)
         self.toolbar.addAction(self.ontop)
