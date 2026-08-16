@@ -6,6 +6,11 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Dossier de données renommé `prefs/hotbox/`** (au lieu de
+  `prefs/hotboxJOR/` ; `~/.hotbox` en standalone) : le suffixe JOR ne
+  servait à rien. L'ancien dossier est **renommé automatiquement** au
+  premier lancement — librairie perso, raccourcis, templates et
+  réglages suivent sans rien faire.
 - **Play retiré du bouton switch du manager** : le bouton affiche la
   commande à coller (bouton de shelf Maya), le petit play de test ne
   servait à rien.

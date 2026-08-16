@@ -3,7 +3,7 @@
 Deux niveaux, façon pipeline studio :
 
 - **Perso** : ``button_library.json`` dans le dossier de données
-  (préférences Maya ; ``~/.hotboxjor`` en standalone). Modifiable par
+  (préférences Maya ; ``~/.hotbox`` en standalone). Modifiable par
   l'artiste.
 - **Studio** (optionnel, LECTURE SEULE hors mode admin) : une librairie
   partagée, choisie via l'UI (badge/bouton dossier de la shelf, choix
@@ -125,7 +125,7 @@ def save_studio_settings(application, settings):
 
 
 def library_path(application):
-    """Librairie perso : dans le dossier du fork (`prefs/hotboxJOR/`
+    """Librairie perso : dans le dossier du fork (`prefs/hotbox/`
     sous Maya). Un fichier resté à la racine des prefs (versions
     antérieures) est déplacé une fois pour toutes."""
     from hotbox_designer.applications import migrate_legacy_file

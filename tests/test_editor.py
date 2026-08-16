@@ -2203,14 +2203,14 @@ def test_studio_watcher():
 
 def test_fork_folder_migration():
     """Rangement des données : la librairie perso et le registre des
-    raccourcis vivent dans le dossier du fork (prefs/hotboxJOR sous
+    raccourcis vivent dans le dossier du fork (prefs/hotbox sous
     Maya) ; les fichiers restés à la racine des prefs sont migrés
     automatiquement, hotboxes.json reste où il est."""
     import tempfile
     from hotbox_designer import buttonlibrary as bl
 
     root = tempfile.mkdtemp()
-    fork = os.path.join(root, 'hotboxJOR')
+    fork = os.path.join(root, 'hotbox')
 
     class MayaLike(Standalone):
         def get_data_folder(self):
@@ -2231,7 +2231,7 @@ def test_fork_folder_migration():
     path = bl.library_path(app)
     assert path == os.path.join(fork, 'button_library.json')
     assert not os.path.exists(legacy)          # déplacé...
-    assert os.path.exists(path)                # ...vers hotboxJOR/
+    assert os.path.exists(path)                # ...vers hotbox/
     assert [e['name'] for e in bl.load_library(path)] == ['old']
 
     # registre des raccourcis : pareil
@@ -2249,7 +2249,32 @@ def test_fork_folder_migration():
     solo.get_data_folder = lambda: solo_root
     assert bl.library_path(solo) == os.path.join(
         solo_root, 'button_library.json')
-    print('rangement des données (prefs/hotboxJOR + migration) OK')
+    # renommage hotboxJOR -> hotbox : l'ancien dossier est repris
+    # tel quel au premier lancement (vraie classe Maya-like)
+    from hotbox_designer.applications import (
+        FORK_FOLDER_NAME, LEGACY_FORK_FOLDER_NAME)
+    assert FORK_FOLDER_NAME == 'hotbox'
+    root2 = tempfile.mkdtemp()
+    old_folder = os.path.join(root2, LEGACY_FORK_FOLDER_NAME)
+    os.makedirs(old_folder)
+    with open(os.path.join(old_folder, 'studio_settings.json'), 'w') as f:
+        json.dump({'current': 'x'}, f)
+
+    class MayaLike2(Standalone):
+        def get_data_folder(self):
+            return root2
+        # get_fork_folder de Maya, réutilisé tel quel
+        get_fork_folder = __import__(
+            'hotbox_designer.applications', fromlist=['Maya']
+        ).Maya.get_fork_folder
+
+    app2 = MayaLike2()
+    fork2 = app2.get_fork_folder()
+    assert fork2 == os.path.join(root2, 'hotbox')
+    assert not os.path.exists(old_folder)  # renommé, pas dupliqué
+    assert os.path.exists(os.path.join(fork2, 'studio_settings.json'))
+
+    print('rangement des données (prefs/hotbox + migrations) OK')
 
 
 def test_hotkey_registry():

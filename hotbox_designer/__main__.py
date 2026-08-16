@@ -1,7 +1,7 @@
 """Lancement standalone : ``python -m hotbox_designer``.
 
 Ouvre le gestionnaire de hotboxes hors de tout DCC (données dans
-~/.hotboxjor). Pratique pour développer et éditer des hotboxes sans
+~/.hotbox). Pratique pour développer et éditer des hotboxes sans
 Maya ; les hotkeys globaux restent réservés aux DCC.
 """
 import sys

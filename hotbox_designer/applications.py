@@ -15,7 +15,10 @@ HOTKEYS_FILENAME = 'hotbox_hotkey.json'
 # encombrer la racine des prefs Maya. hotboxes.json, lui, RESTE à la
 # racine : c'est le format/emplacement de l'original (compatibilité et
 # retour arrière garantis).
-FORK_FOLDER_NAME = 'hotboxJOR'
+FORK_FOLDER_NAME = 'hotbox'
+# ancien nom du dossier (versions antérieures) — renommé une fois pour
+# toutes au premier lancement
+LEGACY_FORK_FOLDER_NAME = 'hotboxJOR'
 SETMODE_PRESS_RELEASE = 'open on press | close on release'
 SETMODE_SWITCH_ON_PRESS = 'switch on press'
 
@@ -26,7 +29,7 @@ def execute(command):
 
 def migrate_legacy_file(legacy_path, new_path):
     """Déplace une bonne fois un fichier de l'ancien emplacement (racine
-    des prefs) vers le dossier hotboxJOR/. Sans effet si la destination
+    des prefs) vers le dossier hotbox/. Sans effet si la destination
     existe déjà, si la source n'existe pas, ou si les chemins sont
     identiques."""
     if legacy_path == new_path or os.path.exists(new_path):
@@ -64,8 +67,8 @@ class AbstractApplication(object):
 
     def get_fork_folder(self):
         """Dossier des données propres au fork. Par défaut le dossier de
-        données lui-même (Standalone : ~/.hotboxjor est déjà dédié) ;
-        Maya le range dans `prefs/hotboxJOR/`."""
+        données lui-même (Standalone : ~/.hotbox est déjà dédié) ;
+        Maya le range dans `prefs/hotbox/`."""
         return self.get_data_folder()
 
     @staticmethod
@@ -142,12 +145,18 @@ class AbstractApplication(object):
 
 class Standalone(AbstractApplication):
     """Backend hors DCC : développement, tests et édition de hotboxes
-    sans Maya/Nuke/Houdini. Les données vivent dans ~/.hotboxjor et les
+    sans Maya/Nuke/Houdini. Les données vivent dans ~/.hotbox et les
     hotkeys globaux ne sont pas disponibles (ils appartiennent au DCC)."""
 
     @staticmethod
     def get_data_folder():
-        folder = os.path.expanduser('~/.hotboxjor')
+        folder = os.path.expanduser('~/.hotbox')
+        legacy = os.path.expanduser('~/.hotboxjor')
+        if not os.path.exists(folder) and os.path.exists(legacy):
+            try:
+                os.rename(legacy, folder)  # migration une fois pour toutes
+            except OSError:
+                return legacy  # au pire on reste dans l'ancien dossier
         if not os.path.exists(folder):
             os.makedirs(folder)
         return folder
@@ -180,9 +189,17 @@ class Maya(AbstractApplication):
         return cmds.internalVar(userPrefDir=True)
 
     def get_fork_folder(self):
-        """Les données du fork vivent dans `prefs/hotboxJOR/` au lieu
-        d'encombrer la racine des prefs Maya."""
+        """Les données du fork vivent dans `prefs/hotbox/` au lieu
+        d'encombrer la racine des prefs Maya. Un dossier `hotboxJOR`
+        des versions antérieures est renommé une fois pour toutes."""
         folder = os.path.join(self.get_data_folder(), FORK_FOLDER_NAME)
+        legacy = os.path.join(
+            self.get_data_folder(), LEGACY_FORK_FOLDER_NAME)
+        if not os.path.exists(folder) and os.path.exists(legacy):
+            try:
+                os.rename(legacy, folder)  # migration une fois pour toutes
+            except OSError:
+                return legacy  # au pire on reste dans l'ancien dossier
         if not os.path.exists(folder):
             try:
                 os.makedirs(folder)

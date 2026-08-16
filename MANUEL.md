@@ -216,8 +216,8 @@ quotidiens des serveurs).
 ### Où c'est stocké
 
 - **Perso** (modifiable) : `button_library.json` dans le **dossier du
-  fork** — `Documents\maya\<version>\prefs\hotboxJOR\` sous Maya
-  (`~/.hotboxjor` en standalone). Le registre des raccourcis et les
+  fork** — `Documents\maya\<version>\prefs\hotbox\` sous Maya
+  (`~/.hotbox` en standalone). Le registre des raccourcis et les
   templates utilisateur y vivent aussi ; un fichier resté à la racine
   des prefs (anciennes versions) est déplacé automatiquement au premier
   lancement. `hotboxes.json`, lui, reste à la racine des prefs — c'est
@@ -276,7 +276,7 @@ hotbox_designer.launch_manager('maya', studio_admin=True)
   lead publie un bouton, les shelves ouvertes des animateurs se
   **rafraîchissent automatiquement**. Le choix est **mémorisé entre les
   sessions**
-  (`studio_settings.json` dans `prefs/hotboxJOR/`) et prend le pas sur
+  (`studio_settings.json` dans `prefs/hotbox/`) et prend le pas sur
   la variable d'environnement (`HOTBOX_STUDIO_LIBRARY`, réservée au
   déploiement studio). Un `studio_logo.png` différent par projet est
   possible.
