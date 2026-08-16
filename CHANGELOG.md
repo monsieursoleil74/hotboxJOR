@@ -17,6 +17,10 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 - **Bouton ƒ du manager** : voir le registre (tous), l'éditer
   (Add/Edit/Delete, mode admin seulement) — nom, langage python/mel,
   code avec coloration syntaxique.
+- **Garde-fou langage** : l'appel généré par le registre
+  (`hotbox_designer.run('Nom')`) s'exécute en Python même s'il a été
+  posé sur un clic resté en MEL (vieux bouton recyclé) — fini le
+  « Cannot find procedure "import" » incompréhensible.
 - **Commandes en vrais fichiers .py/.mel** : le sous-dossier
   `commands/` à côté de la librairie — un fichier par commande
   (`CAM.flipCam.py`), nom = nom du fichier, langage = extension.

@@ -1493,6 +1493,13 @@ def test_command_registry():
         snippet = cr.run_snippet('TAT.Test')
         assert "hotbox_designer.run('TAT.Test')" in snippet
 
+        # garde-fou : le snippet posé sur un clic resté en MEL (vieux
+        # bouton recyclé) s'exécute quand même en Python — fini le
+        # « Cannot find procedure "import" »
+        from hotbox_designer.languages import execute_code
+        execute_code('mel', snippet)
+        assert proof['ran'] == 'v2'  # la commande a bien tourné
+
         # l'éditeur pose l'appel sur la sélection
         data = {'general': dict(HOTBOX, name='reg', width=200, height=100),
                 'shapes': [dict(SQUARE_BUTTON)]}
