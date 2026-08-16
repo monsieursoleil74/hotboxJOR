@@ -934,7 +934,7 @@ class LibraryShelf(QtWidgets.QWidget):
         # filtre : taper un bout de nom -> tous les boutons
         # correspondants, toutes categories confondues
         self.filter_edit = QtWidgets.QLineEdit()
-        self.filter_edit.setPlaceholderText('\U0001f50d filter')
+        self.filter_edit.setPlaceholderText('Search...')
         self.filter_edit.setFixedWidth(130)
         self.filter_edit.setClearButtonEnabled(True)
         self.filter_edit.textChanged.connect(self._apply_filter)
@@ -1041,9 +1041,7 @@ class LibraryShelf(QtWidgets.QWidget):
             self._fill_list(results, matches)
             if not matches:
                 results.setToolTip('No button matches the filter')
-            self.tabs.addTab(
-                results, '\U0001f50d %d result%s' % (
-                    len(matches), 's' if len(matches) > 1 else ''))
+            self.tabs.addTab(results, 'Search')
         finally:
             self._rebuilding_tabs = False
 

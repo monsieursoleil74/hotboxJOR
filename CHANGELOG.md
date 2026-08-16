@@ -6,6 +6,8 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Filtre de la shelf façon Outliner** (retour utilisateur) : simple
+  champ « Search... », onglet de résultats sobre sans compteur.
 - **Drag & drop : plus de bascule d'onglet au survol** (retour
   utilisateur) — glisser un bouton vers le canvas traversait la barre
   d'onglets et changeait de catégorie au passage. Le dépôt SUR un
