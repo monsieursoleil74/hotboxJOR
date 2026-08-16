@@ -1414,8 +1414,8 @@ def test_user_templates():
 
 def test_studio_location_restored_at_manager_launch():
     """La librairie studio mémorisée est active dès l'ouverture du
-    manager — sans devoir ouvrir un éditeur d'abord (le registre ƒ la
-    voyait seulement après la construction d'une première shelf)."""
+    manager — sans devoir ouvrir un éditeur (et sa shelf) d'abord :
+    badge, mode admin et boutons la voient immédiatement."""
     import tempfile
     from hotbox_designer import buttonlibrary as bl
     from hotbox_designer.manager import HotboxManager
@@ -1431,134 +1431,10 @@ def test_studio_location_restored_at_manager_launch():
         assert bl.studio_location() is None
         manager = HotboxManager(application)
         assert bl.studio_location() == studio  # restaurée par le manager
-        from hotbox_designer.commandregistry import registry_path
-        assert registry_path() == os.path.join(tmp, 'commands.json')
         manager.close()
     finally:
         bl.set_studio_location(None)
     print('librairie mémorisée restaurée au lancement du manager OK')
-
-
-def test_command_registry():
-    """Registre de commandes nommées : les boutons appellent
-    hotbox_designer.run('Nom'), le code vit dans commands.json à côté
-    de la librairie studio et s'update à un seul endroit."""
-    import tempfile
-    import hotbox_designer
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer import commandregistry as cr
-    from hotbox_designer.dialog import CommandRegistryDialog
-
-    # sans librairie studio : pas de registre
-    assert bl.studio_location() is None
-    assert cr.registry_path() is None
-    assert cr.load_registry() == {}
-
-    tmp = tempfile.mkdtemp()
-    studio = os.path.join(tmp, 'TAT.json')
-    bl.save_library(studio, [])
-    bl.set_studio_location(studio)
-    try:
-        # le registre vit à côté du json de la librairie
-        assert cr.registry_path() == os.path.join(tmp, 'commands.json')
-
-        # écrire, relire, exécuter
-        proof = {}
-        cr.save_registry({'TAT.Test': {
-            'language': 'python',
-            'command': 'import tests.test_editor as t;'
-                       't._REGISTRY_PROOF["ran"] = True'}})
-        import tests.test_editor as t
-        t._REGISTRY_PROOF = proof
-        hotbox_designer.run('TAT.Test')
-        assert proof.get('ran') is True
-
-        # mise à jour du registre = tous les boutons suivent (le code
-        # est relu à chaque exécution)
-        cr.save_registry({'TAT.Test': {
-            'language': 'python',
-            'command': 'import tests.test_editor as t;'
-                       't._REGISTRY_PROOF["ran"] = "v2"'}})
-        hotbox_designer.run('TAT.Test')
-        assert proof['ran'] == 'v2'
-
-        # commande absente : erreur claire
-        try:
-            hotbox_designer.run('TAT.Missing')
-            raise AssertionError('should have raised')
-        except ValueError:
-            pass
-
-        # le snippet posé sur un bouton
-        snippet = cr.run_snippet('TAT.Test')
-        assert "hotbox_designer.run('TAT.Test')" in snippet
-
-        # garde-fou : le snippet posé sur un clic resté en MEL (vieux
-        # bouton recyclé) s'exécute quand même en Python — fini le
-        # « Cannot find procedure "import" »
-        from hotbox_designer.languages import execute_code
-        execute_code('mel', snippet)
-        assert proof['ran'] == 'v2'  # la commande a bien tourné
-
-        # l'éditeur pose l'appel sur la sélection
-        data = {'general': dict(HOTBOX, name='reg', width=200, height=100),
-                'shapes': [dict(SQUARE_BUTTON)]}
-        editor = HotboxEditor(copy.deepcopy(data), Standalone(), parent=None)
-        editor.show()
-        APP.processEvents()
-        editor.shape_editor.selection.add([editor.shape_editor.shapes[0]])
-        editor.set_registry_command('TAT.Test')
-        options = editor.shape_editor.shapes[0].options
-        assert options['action.left'] is True
-        assert options['action.left.command'] == snippet
-
-        # une commande ajoutée au registre apparaît dans le menu SANS
-        # rouvrir l'éditeur (rechargé à l'ouverture du menu déroulant)
-        registry = cr.load_registry()
-        registry['TAT.New'] = {'language': 'python', 'command': 'pass'}
-        cr.save_registry(registry)
-        editor.attribute_editor.reload_registry()
-        combo = editor.attribute_editor.action._registry
-        names = [combo.itemText(i) for i in range(combo.count())]
-        assert 'TAT.New' in names
-        editor.close()
-
-        # commandes en FICHIERS : le dossier commands/ à côté du json,
-        # un .py ou .mel par commande, lisible et versionnable —
-        # fusionné avec le json, le fichier gagne en cas de doublon
-        folder = cr.commands_folder()
-        assert folder == os.path.join(tmp, 'commands')
-        os.makedirs(folder)
-        with open(os.path.join(folder, 'CAM.flip.py'), 'w') as f:
-            f.write('import tests.test_editor as t;'
-                    't._REGISTRY_PROOF["ran"] = "file"')
-        with open(os.path.join(folder, 'TAT.Test.py'), 'w') as f:
-            f.write('pass')  # doublon : le fichier gagne sur le json
-        registry = cr.load_registry()
-        assert registry['CAM.flip']['language'] == 'python'
-        assert registry['TAT.Test']['command'] == 'pass'
-        assert registry['TAT.Test'].get('file')
-        hotbox_designer.run('CAM.flip')
-        assert proof['ran'] == 'file'
-
-        # dialogue : liste + gating admin ; la sauvegarde ne recopie
-        # PAS les commandes-fichiers dans le json
-        dialog = CommandRegistryDialog(can_edit=True)
-        dialog.show()
-        APP.processEvents()
-        assert dialog.list.count() == 3  # TAT.Test(file) + TAT.New + CAM.flip
-        assert dialog.add_button.isVisibleTo(dialog)
-        dialog._save()
-        json_only = json.load(open(cr.registry_path()))
-        assert 'CAM.flip' not in json_only
-        assert 'file' not in (json_only.get('TAT.New') or {})
-        dialog.close()
-        dialog = CommandRegistryDialog(can_edit=False)
-        assert not dialog.add_button.isVisibleTo(dialog)
-        dialog.close()
-    finally:
-        bl.set_studio_location(None)
-    print('registre de commandes nommées OK')
 
 
 def test_shelf_filter():
@@ -2532,7 +2408,6 @@ if __name__ == '__main__':
     test_replace_from_library()
     test_user_templates()
     test_studio_location_restored_at_manager_launch()
-    test_command_registry()
     test_shelf_filter()
     test_hotkey_column()
     test_state_preview()

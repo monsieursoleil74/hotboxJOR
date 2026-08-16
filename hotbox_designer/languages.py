@@ -8,13 +8,6 @@ RUMBA_SCRIPT  = 'rumba script'
 
 
 def execute_code(language, code):
-    # garde-fou : l'appel généré par le registre de commandes
-    # (`hotbox_designer.run('Nom')`) est TOUJOURS du Python. Posé sur
-    # un clic resté en MEL (vieux bouton recyclé), il donnait un
-    # « Cannot find procedure "import" » incompréhensible — on
-    # l'exécute en Python quoi qu'il arrive.
-    if language == MEL and 'hotbox_designer.run(' in code:
-        language = PYTHON
     return EXECUTORS[language](code)
 
 

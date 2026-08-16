@@ -4,39 +4,16 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
-## 2026-08 — Registre de commandes nommées
+## 2026-08 — Registre de commandes : essayé puis retiré
 
-- **Correctif : la librairie studio mémorisée est restaurée dès le
-  lancement du manager** — le registre ƒ affichait « No studio library
-  configured » tant qu'aucun éditeur (et sa shelf) n'avait été ouvert.
-- **Les boutons appellent un NOM, plus du code en dur** :
-  `hotbox_designer.run('TAT.PrepaManager')`. Les commandes vivent dans
-  `commands.json` à côté de la librairie studio, relues à chaque clic —
-  mettre à jour la commande met à jour tous les boutons qui
-  l'appellent, partout, sans redistribuer les hotboxes.
-- **Bouton ƒ du manager** : voir le registre (tous), l'éditer
-  (Add/Edit/Delete, mode admin seulement) — nom, langage python/mel,
-  code avec coloration syntaxique.
-- **Garde-fou langage** : l'appel généré par le registre
-  (`hotbox_designer.run('Nom')`) s'exécute en Python même s'il a été
-  posé sur un clic resté en MEL (vieux bouton recyclé) — fini le
-  « Cannot find procedure "import" » incompréhensible.
-- **Commandes en vrais fichiers .py/.mel** : le sous-dossier
-  `commands/` à côté de la librairie — un fichier par commande
-  (`CAM.flipCam.py`), nom = nom du fichier, langage = extension.
-  Recommandé pour les longs scripts (lisible, éditable dans un vrai
-  éditeur, versionnable — fini le pavé illisible dans le json).
-  Fusionné avec `commands.json` (réservé aux petits snippets), le
-  fichier gagne en cas de doublon ; éditable aussi depuis ƒ.
-- **ƒ aussi dans la barre d'outils de l'éditeur** + le menu
-  « Registered command » se recharge à l'ouverture du déroulant — on
-  crée une commande et on la pose sur un bouton sans quitter
-  l'éditeur ni le rouvrir.
-- **Menu « Registered command »** dans la section Action de l'éditeur :
-  choisir une commande pose l'appel sur le clic gauche de la sélection,
-  comme le sous-menu fluide.
-- Format des hotboxes inchangé (l'appel est du Python ordinaire) —
-  compatible avec l'existant, Ctrl+H marche toujours dessus.
+- **Registre de commandes nommées essayé puis RETIRÉ** (choix
+  utilisateur) : les boutons appelaient `hotbox_designer.run('Nom')`
+  avec le code centralisé à côté de la librairie studio. Trop de
+  friction à l'usage — retour au code directement dans les boutons,
+  comme avant (Ctrl+H reste l'outil pour les changements en masse).
+- **Conservé de cette passe : la librairie studio mémorisée est
+  restaurée dès le lancement du manager** — le badge et le mode admin
+  la voient sans devoir ouvrir un éditeur d'abord.
 
 ## 2026-08 — Grille de templates, vignettes du manager, pastilles sobres
 

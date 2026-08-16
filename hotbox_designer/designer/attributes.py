@@ -14,20 +14,6 @@ SHAPE_LABELS = {
     'square': 'square', 'rounded_rect': 'rounded', 'round': 'round'}
 
 
-class ReloadingCombo(QtWidgets.QComboBox):
-    """Combo dont la liste est reconstruite À L'OUVERTURE du menu (via
-    un callback) : les commandes ajoutées au registre apparaissent
-    sans rouvrir l'éditeur."""
-
-    def __init__(self, reload_callback, parent=None):
-        super(ReloadingCombo, self).__init__(parent)
-        self._reload = reload_callback
-
-    def showPopup(self):
-        self._reload()
-        super(ReloadingCombo, self).showPopup()
-
-
 class StatePreview(QtWidgets.QWidget):
     """Aperçu en direct du bouton sélectionné dans ses trois états
     (normal / survol / clic) : chaque réglage — couleurs, bordure,
@@ -112,7 +98,6 @@ class AttributeEditor(QtWidgets.QWidget):
     placeImageToggled = QtCore.Signal(bool)
     centerImageRequested = QtCore.Signal()
     submenuChosen = QtCore.Signal(str)
-    registryChosen = QtCore.Signal(str)
 
     def __init__(self, application, parent=None):
         super(AttributeEditor, self).__init__(parent)
@@ -148,7 +133,6 @@ class AttributeEditor(QtWidgets.QWidget):
         self.action.set_languages(self.application.available_languages)
         self.action.optionSet.connect(self.optionSet.emit)
         self.action.submenuChosen.connect(self.submenuChosen.emit)
-        self.action.registryChosen.connect(self.registryChosen.emit)
         self.action_toggler = WidgetToggler('Action', self.action)
 
         self.layout = QtWidgets.QVBoxLayout(self.widget)
@@ -195,12 +179,6 @@ class AttributeEditor(QtWidgets.QWidget):
 
     def set_submenus(self, names):
         self.action.set_submenus(names)
-
-    def set_registry(self, names):
-        self.action.set_registry(names)
-
-    def reload_registry(self):
-        self.action.reload_registry()
 
     def image_modified(self, option, value):
         self.optionSet.emit(option, value)
@@ -464,7 +442,6 @@ class AppearenceSettings(QtWidgets.QWidget):
 class ActionSettings(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
     submenuChosen = QtCore.Signal(str)
-    registryChosen = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(ActionSettings, self).__init__(parent)
@@ -473,13 +450,6 @@ class ActionSettings(QtWidgets.QWidget):
         # sur le clic gauche (plus besoin d'écrire show('...') à la main)
         self._submenu = QtWidgets.QComboBox()
         self._submenu.currentIndexChanged.connect(self._submenu_chosen)
-        # commandes NOMMÉES du registre (commands.json de la librairie
-        # studio) : en choisir une pose hotbox_designer.run('Nom') sur
-        # le clic gauche — la commande s'update dans le registre, tous
-        # les boutons suivent. La liste se recharge à l'ouverture du
-        # menu : plus besoin de rouvrir l'éditeur après un ajout.
-        self._registry = ReloadingCombo(self.reload_registry)
-        self._registry.currentIndexChanged.connect(self._registry_chosen)
 
         self._lactive = BoolCombo(False)
         method = partial(self.optionSet.emit, 'action.left')
@@ -520,8 +490,6 @@ class ActionSettings(QtWidgets.QWidget):
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow(Title('Open sub-hotbox'))
         self.layout.addRow('Sub-menu', self._submenu)
-        self.layout.addRow(Title('Registered command'))
-        self.layout.addRow('Command', self._registry)
         self.layout.addRow(Title('Left click'))
         self.layout.addRow('Has command', self._lactive)
         self.layout.addRow('Close Hotbox', self._lclose)
@@ -566,35 +534,6 @@ class ActionSettings(QtWidgets.QWidget):
             self._submenu.blockSignals(True)
             self._submenu.setCurrentIndex(0)
             self._submenu.blockSignals(False)
-
-    def reload_registry(self):
-        """Relit le registre (commands.json de la librairie courante)."""
-        from hotbox_designer.commandregistry import load_registry
-        self.set_registry(sorted(load_registry()))
-
-    def set_registry(self, names):
-        """Peuple la liste des commandes nommées."""
-        self._registry.blockSignals(True)
-        self._registry.clear()
-        self._registry.addItem('— none —', '')
-        for name in names:
-            self._registry.addItem(name, name)
-        if not names:
-            self._registry.addItem('(empty registry)', '')
-            index = self._registry.count() - 1
-            model_item = self._registry.model().item(index)
-            if model_item is not None:
-                model_item.setEnabled(False)
-        self._registry.blockSignals(False)
-
-    def _registry_chosen(self, index):
-        name = self._registry.itemData(index)
-        if name:
-            self.registryChosen.emit(name)
-            # déclencheur, pas un état : retour sur « none »
-            self._registry.blockSignals(True)
-            self._registry.setCurrentIndex(0)
-            self._registry.blockSignals(False)
 
     def language_changed(self, side, *_):
         option = 'action.' + side + '.language'

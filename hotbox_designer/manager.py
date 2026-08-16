@@ -133,8 +133,6 @@ class HotboxManager(QtWidgets.QWidget):
         self.toolbar.exportRequested.connect(self._call_export)
         self.toolbar.saveTemplateRequested.connect(self._call_save_template)
         self.toolbar.manageHotkeysRequested.connect(self._call_manage_hotkeys)
-        self.toolbar.commandRegistryRequested.connect(
-            self._call_command_registry)
         setter_enabled = bool(application.available_set_hotkey_modes)
         self.toolbar.hotkeyset.setEnabled(setter_enabled)
 
@@ -429,20 +427,6 @@ class HotboxManager(QtWidgets.QWidget):
         self.application.remove_hotkey(name)
         self._refresh_hotkeys_display()
 
-    def _call_command_registry(self):
-        """Registre de commandes nommées : éditable en mode admin,
-        lecture seule sinon. Sans librairie studio, pas de registre."""
-        from hotbox_designer.buttonlibrary import (
-            is_studio_admin, studio_location)
-        from hotbox_designer.dialog import CommandRegistryDialog
-        if not studio_location():
-            return warning(
-                'Command registry',
-                'No studio library configured — the registry lives in '
-                'its folder (commands.json).')
-        dialog = CommandRegistryDialog(is_studio_admin(), parent=self)
-        dialog.exec_()
-
     def _call_export(self):
         hotbox = self.get_selected_hotbox()
         if not hotbox:
@@ -527,7 +511,6 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
     exportRequested = QtCore.Signal()
     saveTemplateRequested = QtCore.Signal()
     manageHotkeysRequested = QtCore.Signal()
-    commandRegistryRequested = QtCore.Signal()
 
     def __init__(self, parent=None):
         super(HotboxManagerToolbar, self).__init__(parent)
@@ -560,12 +543,6 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.hotkeyset = QtWidgets.QAction(icon('touch.png'), '', self)
         self.hotkeyset.setToolTip('Manage hotkeys')
         self.hotkeyset.triggered.connect(self.manageHotkeysRequested.emit)
-        self.registry = QtWidgets.QAction('ƒ', self)
-        self.registry.setToolTip(
-            'Command registry — named commands shared next to the '
-            'studio library, called by buttons via '
-            "hotbox_designer.run('Name')")
-        self.registry.triggered.connect(self.commandRegistryRequested.emit)
 
         self.addAction(self.new)
         self.addAction(self.edit)
@@ -579,7 +556,6 @@ class HotboxManagerToolbar(QtWidgets.QToolBar):
         self.addAction(self.savetemplate)
         self.addSeparator()
         self.addAction(self.hotkeyset)
-        self.addAction(self.registry)
 
 
 class HotboxTableView(QtWidgets.QTableView):
