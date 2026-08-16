@@ -6,6 +6,10 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Panneau Image allégé** : champs Width/Height retirés (la taille
+  se règle à la molette en mode « Place Image », plus lisible qu'une
+  valeur numérique) ; le bouton s'appelle « Place Image » et passe en
+  vert tant que le mode placement est actif.
 - **Infobulle du badge sans chemin pour les animateurs** : elle
   affiche juste « Studio library (read-only) » — le chemin complet
   reste visible en mode admin (et via « Open library folder »).

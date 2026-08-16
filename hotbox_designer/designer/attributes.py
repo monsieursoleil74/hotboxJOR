@@ -261,15 +261,8 @@ class ImageSettings(QtWidgets.QWidget):
         self.fit.valueSet.connect(partial(self.optionSet.emit, 'image.fit'))
         self.fit.valueSet.connect(self._update_placement_enabled)
 
-        self.width = FloatEdit()
-        method = partial(self.optionSet.emit, 'image.width')
-        self.width.valueSet.connect(method)
-
-        self.height = FloatEdit()
-        method = partial(self.optionSet.emit, 'image.height')
-        self.height.valueSet.connect(method)
-
-        # placement libre de l'image dans le bouton
+        # placement libre de l'image dans le bouton — c'est LÀ que la
+        # taille se règle (molette) : pas de champs Width/Height
         self.place = QtWidgets.QPushButton('Place Image')
         self.place.setCheckable(True)
         # vert tant que le mode placement est actif : on SAIT qu'on est
@@ -301,8 +294,6 @@ class ImageSettings(QtWidgets.QWidget):
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Path', self.path)
         self.layout.addRow('Fit to shape', self.fit)
-        self.layout.addRow('Width', self.width)
-        self.layout.addRow('Height', self.height)
         self.layout.addRow(self.placement_row)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
@@ -326,16 +317,6 @@ class ImageSettings(QtWidgets.QWidget):
         values = list({option['image.fit'] for option in options})
         value = str(values[0]) if len(values) == 1 else None
         self.fit.setCurrentText(value)
-
-        # tailles affichées en pixels ENTIERS — le float de précision
-        # interne (redimensionnement à la molette) n'a rien à faire ici
-        values = list({option['image.width'] for option in options})
-        value = str(int(round(values[0]))) if len(values) == 1 else None
-        self.width.setText(value)
-
-        values = list({option['image.height'] for option in options})
-        value = str(int(round(values[0]))) if len(values) == 1 else None
-        self.height.setText(value)
         self._update_placement_enabled()
 
 
