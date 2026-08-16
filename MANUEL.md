@@ -468,6 +468,32 @@ background — **librairie** / **enregistrer dans la librairie** — ordre :
 tout au fond / tout devant — alignements (6) — distributions
 (2).
 
+## Registre de commandes nommées (bouton ƒ du manager)
+
+Le réflexe pipeline : un bouton ne porte plus son code en dur, il
+appelle une **commande nommée** —
+
+    import hotbox_designer
+    hotbox_designer.run('TAT.PrepaManager')
+
+Les commandes vivent dans **`commands.json`, posé à côté de la
+librairie studio** (même dossier serveur). Le code est **relu à chaque
+clic** : mettre à jour une commande dans le registre met à jour tous
+les boutons qui l'appellent, dans toutes les hotboxes de tout le
+monde, sans rien redistribuer.
+
+- **Voir / éditer** : bouton **ƒ** de la barre d'outils du manager.
+  Liste des commandes + aperçu du code ; **Add / Edit / Delete en mode
+  admin**, lecture seule pour les animateurs. Écriture atomique.
+- **Poser sur un bouton** : dans l'éditeur, section **Action** →
+  menu **Registered command** — en choisir une écrit l'appel
+  `run('Nom')` sur le clic gauche du/des bouton(s) sélectionné(s)
+  (même principe que le sous-menu fluide). Le menu est caché si le
+  registre est vide.
+- Une commande **supprimée** du registre fait remonter une erreur
+  claire au clic (nom + chemin du registre) tant qu'elle n'est pas
+  recréée.
+
 ## Raccourcis clavier (gestionnaire)
 
 Le raccourci assigné à chaque hotbox s'affiche **directement dans les

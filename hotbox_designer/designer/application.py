@@ -127,6 +127,10 @@ class HotboxEditor(QtWidgets.QWidget):
         self.attribute_editor.centerImageRequested.connect(self.center_image)
         self.attribute_editor.submenuChosen.connect(self.set_submenu_opener)
         self.attribute_editor.set_submenus(self.submenu_names())
+        self.attribute_editor.registryChosen.connect(
+            self.set_registry_command)
+        from hotbox_designer.commandregistry import load_registry
+        self.attribute_editor.set_registry(sorted(load_registry()))
 
         # librairie intégrée en bas, façon shelf Maya
         from hotbox_designer.buttonlibrary import LibraryShelf
@@ -542,6 +546,28 @@ class HotboxEditor(QtWidgets.QWidget):
             shape.options['action.left.language'] = 'python'
             shape.options['action.left.command'] = command
             shape.options['action.left.close'] = False
+        self.selection_changed()
+        self.shape_editor.repaint()
+        self.set_data_modified()
+
+    def set_registry_command(self, name):
+        """Pose l'appel à la commande NOMMÉE `name` du registre sur le
+        clic gauche du/des bouton(s) sélectionné(s) : le bouton appelle
+        le nom, l'implémentation vit dans le registre et s'update à un
+        seul endroit."""
+        if not name:
+            return
+        shapes = list(self.shape_editor.selection)
+        if not shapes:
+            from hotbox_designer.dialog import warning
+            return warning(
+                'Registered command', 'Select at least one button first')
+        from hotbox_designer.commandregistry import run_snippet
+        command = run_snippet(name)
+        for shape in shapes:
+            shape.options['action.left'] = True
+            shape.options['action.left.language'] = 'python'
+            shape.options['action.left.command'] = command
         self.selection_changed()
         self.shape_editor.repaint()
         self.set_data_modified()

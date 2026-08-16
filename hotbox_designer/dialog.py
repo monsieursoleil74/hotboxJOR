@@ -462,3 +462,190 @@ class SearchReplaceDialog(QtWidgets.QDialog):
             self.in_left.isChecked(), self.in_right.isChecked(),
             self.in_labels.isChecked())
         self.result.setText('%d replacement(s) done' % count)
+
+
+class CommandEditDialog(QtWidgets.QDialog):
+    """Édition d'UNE commande nommée du registre : nom, langage, code."""
+
+    def __init__(self, name='', language='python', command='', parent=None):
+        super(CommandEditDialog, self).__init__(parent)
+        from hotbox_designer.theme import apply_dark_theme
+        from hotbox_designer.widgets import CommandTextEdit
+        apply_dark_theme(self)
+        self.setWindowTitle('Registered command')
+        self.name_edit = QtWidgets.QLineEdit(name)
+        self.name_edit.setPlaceholderText('TAT.MyCommand')
+        self.language_combo = QtWidgets.QComboBox()
+        self.language_combo.addItems(['python', 'mel'])
+        self.language_combo.setCurrentText(language)
+        self.command_edit = CommandTextEdit()
+        self.command_edit.setPlainText(command)
+        self.command_edit.setMinimumSize(460, 220)
+        self._highlighter = None
+        self._update_highlighter()
+        self.language_combo.currentIndexChanged.connect(
+            self._update_highlighter)
+
+        self.ok = QtWidgets.QPushButton('OK')
+        self.ok.setDefault(True)
+        self.ok.released.connect(self._validate)
+        self.cancel = QtWidgets.QPushButton('Cancel')
+        self.cancel.released.connect(self.reject)
+        buttons = QtWidgets.QHBoxLayout()
+        buttons.addStretch(1)
+        buttons.addWidget(self.ok)
+        buttons.addWidget(self.cancel)
+
+        form = QtWidgets.QFormLayout()
+        form.addRow('Name', self.name_edit)
+        form.addRow('Language', self.language_combo)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addLayout(form)
+        layout.addWidget(self.command_edit)
+        layout.addLayout(buttons)
+
+    def _update_highlighter(self, *_):
+        from hotbox_designer.designer.highlighter import get_highlighter
+        highlighter = get_highlighter(self.language_combo.currentText())
+        self._highlighter = highlighter(self.command_edit.document())
+
+    def _validate(self):
+        if not self.name_edit.text().strip():
+            return warning('Registry', 'Command name is empty', self)
+        self.accept()
+
+    def values(self):
+        return (
+            self.name_edit.text().strip(),
+            self.language_combo.currentText(),
+            self.command_edit.toPlainText())
+
+
+class CommandRegistryDialog(QtWidgets.QDialog):
+    """Le REGISTRE de commandes nommées (commands.json à côté de la
+    librairie studio) : les boutons appellent
+    `hotbox_designer.run('Nom')` — mettre la commande à jour ici met à
+    jour tous les boutons qui l'appellent, partout. Édition en mode
+    admin, lecture seule pour les animateurs."""
+
+    def __init__(self, can_edit, parent=None):
+        super(CommandRegistryDialog, self).__init__(parent)
+        from hotbox_designer.theme import apply_dark_theme
+        from hotbox_designer.commandregistry import (
+            load_registry, registry_path)
+        apply_dark_theme(self)
+        self.setWindowTitle('Command registry')
+        self.can_edit = can_edit
+        self.registry = load_registry()
+
+        self.hint = QtWidgets.QLabel(
+            'Buttons call these commands by NAME '
+            "(hotbox_designer.run('Name')) : update a command here and "
+            'every button using it is updated everywhere.\n%s'
+            % (registry_path() or ''))
+        self.hint.setWordWrap(True)
+        self.hint.setStyleSheet('color: #8c8c8c;')
+
+        self.list = QtWidgets.QListWidget()
+        self.list.itemSelectionChanged.connect(self._selection_changed)
+        self.list.itemDoubleClicked.connect(
+            lambda *_: self._edit() if self.can_edit else None)
+
+        self.preview = QtWidgets.QPlainTextEdit()
+        self.preview.setReadOnly(True)
+        self.preview.setFixedHeight(140)
+
+        self.add_button = QtWidgets.QPushButton('Add…')
+        self.add_button.released.connect(self._add)
+        self.edit_button = QtWidgets.QPushButton('Edit…')
+        self.edit_button.released.connect(self._edit)
+        self.delete_button = QtWidgets.QPushButton('Delete')
+        self.delete_button.released.connect(self._delete)
+        for button in (self.add_button, self.edit_button,
+                       self.delete_button):
+            button.setVisible(can_edit)
+        self.close_button = QtWidgets.QPushButton('Close')
+        self.close_button.released.connect(self.accept)
+
+        buttons = QtWidgets.QHBoxLayout()
+        buttons.addWidget(self.add_button)
+        buttons.addWidget(self.edit_button)
+        buttons.addWidget(self.delete_button)
+        buttons.addStretch(1)
+        buttons.addWidget(self.close_button)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(self.hint)
+        layout.addWidget(self.list)
+        layout.addWidget(self.preview)
+        layout.addLayout(buttons)
+        self.resize(520, 480)
+        self._populate()
+
+    def _populate(self):
+        self.list.clear()
+        for name in sorted(self.registry):
+            record = self.registry[name] or {}
+            item = QtWidgets.QListWidgetItem(
+                '%s   (%s)' % (name, record.get('language') or 'python'))
+            item.setData(QtCore.Qt.UserRole, name)
+            self.list.addItem(item)
+        self._selection_changed()
+
+    def _current_name(self):
+        items = self.list.selectedItems()
+        return items[0].data(QtCore.Qt.UserRole) if items else None
+
+    def _selection_changed(self):
+        name = self._current_name()
+        record = (self.registry.get(name) or {}) if name else {}
+        self.preview.setPlainText(record.get('command') or '')
+        self.edit_button.setEnabled(bool(name))
+        self.delete_button.setEnabled(bool(name))
+
+    def _save(self):
+        from hotbox_designer.commandregistry import save_registry
+        if not save_registry(self.registry):
+            warning('Registry', 'No studio library configured — '
+                    'the registry lives next to it.', self)
+
+    def _add(self):
+        dialog = CommandEditDialog(parent=self)
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+        name, language, command = dialog.values()
+        self.registry[name] = {'language': language, 'command': command}
+        self._save()
+        self._populate()
+
+    def _edit(self):
+        name = self._current_name()
+        if not name:
+            return
+        record = self.registry.get(name) or {}
+        dialog = CommandEditDialog(
+            name, record.get('language') or 'python',
+            record.get('command') or '', parent=self)
+        if dialog.exec_() != QtWidgets.QDialog.Accepted:
+            return
+        new_name, language, command = dialog.values()
+        if new_name != name:
+            del self.registry[name]
+        self.registry[new_name] = {
+            'language': language, 'command': command}
+        self._save()
+        self._populate()
+
+    def _delete(self):
+        name = self._current_name()
+        if not name:
+            return
+        result = QtWidgets.QMessageBox.question(
+            self, 'Registry',
+            "Delete '%s'?\nButtons calling it will raise an error "
+            'until it is recreated.' % name)
+        if result != QtWidgets.QMessageBox.Yes:
+            return
+        del self.registry[name]
+        self._save()
+        self._populate()

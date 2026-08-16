@@ -98,6 +98,7 @@ class AttributeEditor(QtWidgets.QWidget):
     placeImageToggled = QtCore.Signal(bool)
     centerImageRequested = QtCore.Signal()
     submenuChosen = QtCore.Signal(str)
+    registryChosen = QtCore.Signal(str)
 
     def __init__(self, application, parent=None):
         super(AttributeEditor, self).__init__(parent)
@@ -133,6 +134,7 @@ class AttributeEditor(QtWidgets.QWidget):
         self.action.set_languages(self.application.available_languages)
         self.action.optionSet.connect(self.optionSet.emit)
         self.action.submenuChosen.connect(self.submenuChosen.emit)
+        self.action.registryChosen.connect(self.registryChosen.emit)
         self.action_toggler = WidgetToggler('Action', self.action)
 
         self.layout = QtWidgets.QVBoxLayout(self.widget)
@@ -179,6 +181,9 @@ class AttributeEditor(QtWidgets.QWidget):
 
     def set_submenus(self, names):
         self.action.set_submenus(names)
+
+    def set_registry(self, names):
+        self.action.set_registry(names)
 
     def image_modified(self, option, value):
         self.optionSet.emit(option, value)
@@ -442,6 +447,7 @@ class AppearenceSettings(QtWidgets.QWidget):
 class ActionSettings(QtWidgets.QWidget):
     optionSet = QtCore.Signal(str, object)
     submenuChosen = QtCore.Signal(str)
+    registryChosen = QtCore.Signal(str)
 
     def __init__(self, parent=None):
         super(ActionSettings, self).__init__(parent)
@@ -450,6 +456,12 @@ class ActionSettings(QtWidgets.QWidget):
         # sur le clic gauche (plus besoin d'écrire show('...') à la main)
         self._submenu = QtWidgets.QComboBox()
         self._submenu.currentIndexChanged.connect(self._submenu_chosen)
+        # commandes NOMMÉES du registre (commands.json de la librairie
+        # studio) : en choisir une pose hotbox_designer.run('Nom') sur
+        # le clic gauche — la commande s'update dans le registre, tous
+        # les boutons suivent
+        self._registry = QtWidgets.QComboBox()
+        self._registry.currentIndexChanged.connect(self._registry_chosen)
 
         self._lactive = BoolCombo(False)
         method = partial(self.optionSet.emit, 'action.left')
@@ -490,6 +502,8 @@ class ActionSettings(QtWidgets.QWidget):
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow(Title('Open sub-hotbox'))
         self.layout.addRow('Sub-menu', self._submenu)
+        self.layout.addRow(Title('Registered command'))
+        self.layout.addRow('Command', self._registry)
         self.layout.addRow(Title('Left click'))
         self.layout.addRow('Has command', self._lactive)
         self.layout.addRow('Close Hotbox', self._lclose)
@@ -534,6 +548,30 @@ class ActionSettings(QtWidgets.QWidget):
             self._submenu.blockSignals(True)
             self._submenu.setCurrentIndex(0)
             self._submenu.blockSignals(False)
+
+    def set_registry(self, names):
+        """Peuple la liste des commandes nommées. Cachée si le registre
+        est vide ou absent (pas de librairie studio)."""
+        self._registry.blockSignals(True)
+        self._registry.clear()
+        self._registry.addItem('— none —', '')
+        for name in names:
+            self._registry.addItem(name, name)
+        self._registry.blockSignals(False)
+        has_names = bool(names)
+        self._registry.setVisible(has_names)
+        label = self.layout.labelForField(self._registry)
+        if label is not None:
+            label.setVisible(has_names)
+
+    def _registry_chosen(self, index):
+        name = self._registry.itemData(index)
+        if name:
+            self.registryChosen.emit(name)
+            # déclencheur, pas un état : retour sur « none »
+            self._registry.blockSignals(True)
+            self._registry.setCurrentIndex(0)
+            self._registry.blockSignals(False)
 
     def language_changed(self, side, *_):
         option = 'action.' + side + '.language'

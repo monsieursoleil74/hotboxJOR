@@ -1412,6 +1412,88 @@ def test_user_templates():
     print('templates utilisateur (save + liste + aperçu) OK')
 
 
+def test_command_registry():
+    """Registre de commandes nommées : les boutons appellent
+    hotbox_designer.run('Nom'), le code vit dans commands.json à côté
+    de la librairie studio et s'update à un seul endroit."""
+    import tempfile
+    import hotbox_designer
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer import commandregistry as cr
+    from hotbox_designer.dialog import CommandRegistryDialog
+
+    # sans librairie studio : pas de registre
+    assert bl.studio_location() is None
+    assert cr.registry_path() is None
+    assert cr.load_registry() == {}
+
+    tmp = tempfile.mkdtemp()
+    studio = os.path.join(tmp, 'TAT.json')
+    bl.save_library(studio, [])
+    bl.set_studio_location(studio)
+    try:
+        # le registre vit à côté du json de la librairie
+        assert cr.registry_path() == os.path.join(tmp, 'commands.json')
+
+        # écrire, relire, exécuter
+        proof = {}
+        cr.save_registry({'TAT.Test': {
+            'language': 'python',
+            'command': 'import tests.test_editor as t;'
+                       't._REGISTRY_PROOF["ran"] = True'}})
+        import tests.test_editor as t
+        t._REGISTRY_PROOF = proof
+        hotbox_designer.run('TAT.Test')
+        assert proof.get('ran') is True
+
+        # mise à jour du registre = tous les boutons suivent (le code
+        # est relu à chaque exécution)
+        cr.save_registry({'TAT.Test': {
+            'language': 'python',
+            'command': 'import tests.test_editor as t;'
+                       't._REGISTRY_PROOF["ran"] = "v2"'}})
+        hotbox_designer.run('TAT.Test')
+        assert proof['ran'] == 'v2'
+
+        # commande absente : erreur claire
+        try:
+            hotbox_designer.run('TAT.Missing')
+            raise AssertionError('should have raised')
+        except ValueError:
+            pass
+
+        # le snippet posé sur un bouton
+        snippet = cr.run_snippet('TAT.Test')
+        assert "hotbox_designer.run('TAT.Test')" in snippet
+
+        # l'éditeur pose l'appel sur la sélection
+        data = {'general': dict(HOTBOX, name='reg', width=200, height=100),
+                'shapes': [dict(SQUARE_BUTTON)]}
+        editor = HotboxEditor(copy.deepcopy(data), Standalone(), parent=None)
+        editor.show()
+        APP.processEvents()
+        editor.shape_editor.selection.add([editor.shape_editor.shapes[0]])
+        editor.set_registry_command('TAT.Test')
+        options = editor.shape_editor.shapes[0].options
+        assert options['action.left'] is True
+        assert options['action.left.command'] == snippet
+        editor.close()
+
+        # dialogue : liste + gating admin
+        dialog = CommandRegistryDialog(can_edit=True)
+        dialog.show()
+        APP.processEvents()
+        assert dialog.list.count() == 1
+        assert dialog.add_button.isVisibleTo(dialog)
+        dialog.close()
+        dialog = CommandRegistryDialog(can_edit=False)
+        assert not dialog.add_button.isVisibleTo(dialog)
+        dialog.close()
+    finally:
+        bl.set_studio_location(None)
+    print('registre de commandes nommées OK')
+
+
 def test_shelf_filter():
     """Le champ de filtre de la shelf cherche les boutons par nom,
     toutes catégories confondues, dans un onglet unique de résultats ;
@@ -2382,6 +2464,7 @@ if __name__ == '__main__':
     test_startup_framing()
     test_replace_from_library()
     test_user_templates()
+    test_command_registry()
     test_shelf_filter()
     test_hotkey_column()
     test_state_preview()

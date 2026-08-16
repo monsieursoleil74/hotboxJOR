@@ -4,6 +4,22 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-08 — Registre de commandes nommées
+
+- **Les boutons appellent un NOM, plus du code en dur** :
+  `hotbox_designer.run('TAT.PrepaManager')`. Les commandes vivent dans
+  `commands.json` à côté de la librairie studio, relues à chaque clic —
+  mettre à jour la commande met à jour tous les boutons qui
+  l'appellent, partout, sans redistribuer les hotboxes.
+- **Bouton ƒ du manager** : voir le registre (tous), l'éditer
+  (Add/Edit/Delete, mode admin seulement) — nom, langage python/mel,
+  code avec coloration syntaxique.
+- **Menu « Registered command »** dans la section Action de l'éditeur :
+  choisir une commande pose l'appel sur le clic gauche de la sélection,
+  comme le sous-menu fluide.
+- Format des hotboxes inchangé (l'appel est du Python ordinaire) —
+  compatible avec l'existant, Ctrl+H marche toujours dessus.
+
 ## 2026-08 — Grille de templates, vignettes du manager, pastilles sobres
 
 - **Zones de travail des templates d'origine recadrées** sur leurs
