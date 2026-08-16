@@ -1,5 +1,4 @@
 from hotbox_designer.vendor.Qt import QtGui, QtCore, QtWidgets
-from hotbox_designer.qtutils import icon
 
 
 # en-tête de section repliable : capitales espacées + tiret d'accent à
@@ -186,20 +185,18 @@ class HotkeyEdit(QtWidgets.QLineEdit):
 
 
 class CommandButton(QtWidgets.QWidget):
+    """Bouton « switch » du manager : affiche la commande à coller sur
+    un bouton de shelf Maya (le play de test a été retiré)."""
     released = QtCore.Signal()
-    playReleased = QtCore.Signal()
+
     def __init__(self, label, parent=None):
         super(CommandButton, self).__init__(parent)
         self.mainbutton = QtWidgets.QPushButton(label)
         self.mainbutton.released.connect(self.released.emit)
-        self.playbutton = QtWidgets.QPushButton(icon('play.png'), '')
-        self.playbutton.released.connect(self.playReleased.emit)
-        self.playbutton.setFixedSize(22, 22)
         self.layout = QtWidgets.QHBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(2)
         self.layout.addWidget(self.mainbutton)
-        self.layout.addWidget(self.playbutton)
 
 class ColorButton(QtWidgets.QPushButton):
     """Pastille de couleur façon Photoshop : le bouton EST la couleur,

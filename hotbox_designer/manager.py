@@ -140,8 +140,6 @@ class HotboxManager(QtWidgets.QWidget):
         self.edit.optionSet.connect(self._call_option_set)
         self.edit.setEnabled(False)
         self.edit.switch_command.released.connect(self._call_switch_command)
-        method = self._call_play_switch_command
-        self.edit.switch_command.playReleased.connect(method)
 
         self.personnal = QtWidgets.QWidget()
         self.hlayout = QtWidgets.QHBoxLayout(self.personnal)
@@ -160,8 +158,6 @@ class HotboxManager(QtWidgets.QWidget):
         self.infos = HotboxGeneralInfosWidget()
         self.infos.setEnabled(False)
         self.infos.switch_command.released.connect(self._call_switch_command)
-        method = self._call_play_switch_command
-        self.infos.switch_command.playReleased.connect(method)
 
         self.shared = QtWidgets.QWidget()
         self.hlayout2 = QtWidgets.QHBoxLayout(self.shared)
@@ -259,9 +255,6 @@ class HotboxManager(QtWidgets.QWidget):
 
     def _call_switch_command(self):
         CommandDisplayDialog(self._get_switch_command(), self).exec_()
-
-    def _call_play_switch_command(self):
-        exec(self._get_switch_command())
 
     def _call_edit(self):
         if self.tabwidget.currentIndex():

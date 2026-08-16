@@ -6,6 +6,9 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Play retiré du bouton switch du manager** : le bouton affiche la
+  commande à coller (bouton de shelf Maya), le petit play de test ne
+  servait à rien.
 - **Filtre de la shelf façon Outliner** (retour utilisateur) : simple
   champ « Search... », onglet de résultats sobre sans compteur.
 - **Drag & drop : plus de bascule d'onglet au survol** (retour
