@@ -6,6 +6,11 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Import dwpicker retiré** (choix utilisateur — pas de pickers
+  dwpicker à convertir) : le bouton Import du manager ne lit plus que
+  les hotboxes `.json` ; `dwpickerimport.py`, son test et sa section
+  du manuel sont supprimés. L'inspiration dwpicker côté éditeur
+  (viewport, ergonomie) ne change pas.
 - **Manuel en version wiki** : `MANUEL.html` — page unique autonome
   (double-clic → navigateur), sombre aux couleurs de l'outil, avec
   sommaire latéral, champ de recherche (filtre les sections par leur

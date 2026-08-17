@@ -320,7 +320,6 @@ footer {
   <div class="nav-group">
     <h3>Aller plus loin</h3>
     <a href="#templates">Templates</a>
-    <a href="#dwpicker">Import dwpicker</a>
     <a href="#raccourcis">Raccourcis clavier</a>
     <a href="#coulisses">Sous le capot</a>
   </div>
@@ -819,30 +818,6 @@ hotbox_designer.launch_manager('maya', studio_admin=True)</code></pre>
   <code>templates/</code> du dossier de données et apparaît dès lors dans la liste
   «&nbsp;From template&nbsp;», après les templates embarqués. Un template est une
   copie figée&nbsp;: modifier la hotbox d’origine ne le change pas.</p>
-</section>
-
-<!-- ================================================================ -->
-<section id="dwpicker">
-  <p class="eyebrow">Aller plus loin</p>
-  <h2>Import de pickers dwpicker</h2>
-  <p>Le bouton <strong>Import</strong> du manager accepte aussi les fichiers
-  <code>.json</code> de <strong>dwpicker</strong> — la détection est automatique, rien à
-  choisir&nbsp;:</p>
-  <ul>
-    <li>les <strong>targets de sélection</strong> (le cœur d’un picker) deviennent
-      une commande <code>cmds.select([...])</code> sur le clic gauche&nbsp;;</li>
-    <li>les <strong>commandes</strong> (nouveau format ≥ 0.11 comme l’ancien) sont
-      réparties sur les clics gauche/droite, langage conservé&nbsp;;</li>
-    <li>les shapes <code>rounded_rect</code>/<code>custom</code> deviennent des
-      rectangles (pas de chemins vectoriels côté hotbox)&nbsp;;</li>
-    <li>les <strong>fonds</strong> de picker arrivent <strong>verrouillés</strong>
-      (Unlock all pour les libérer)&nbsp;;</li>
-    <li>la <strong>zone</strong> est calculée automatiquement autour des shapes
-      (comme le bouton fit zone), le centre au milieu.</li>
-  </ul>
-  <div class="callout note"><span class="tag">Limites</span>
-  <p>Panneaux multiples fusionnés, layers de visibilité et menus contextuels
-  ignorés, une seule commande par clic (les surnuméraires sont ignorées).</p></div>
 </section>
 
 <!-- ================================================================ -->
