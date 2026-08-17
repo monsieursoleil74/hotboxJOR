@@ -155,7 +155,8 @@ affiché avec son vrai rendu en vignette.
   one set (keeps layout) »**. Cochée, la sélection devient **UN SEUL
   élément de librairie** qui garde la **disposition relative** des
   boutons (un kit main IK, une rangée de snaps…). Dans la shelf, le
-  set se reconnaît à sa **vignette groupée** et son badge **×N** ; au
+  set se reconnaît à sa **vignette groupée** (l'infobulle précise le
+  nombre de boutons) ; au
   **dépôt dans une hotbox**, les N boutons sont recréés d'un coup,
   disposés comme à l'origine et centrés sous le curseur. Un set se
   renomme, se range, se réordonne et se supprime comme un bouton

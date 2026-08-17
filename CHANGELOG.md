@@ -10,7 +10,8 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   sauvegardés comme **un seul élément de librairie** (case « Save the
   N buttons as one set » du dialogue 💾). Le set garde la
   **disposition relative** des boutons, s'affiche avec une **vignette
-  groupée + badge ×N** dans la shelf, et **se dépose d'un coup** dans
+  groupée** dans la shelf (le nombre de boutons est dans
+  l'infobulle), et **se dépose d'un coup** dans
   une hotbox (groupe centré sous le curseur). Rangement, renommage,
   réordonnancement, publication studio : comme un bouton simple.
 - **Panneau Image allégé** : champs Width/Height retirés (la taille

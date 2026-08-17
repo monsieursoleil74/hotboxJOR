@@ -547,8 +547,9 @@ def button_thumbnail(options, size=None):
 
 def set_thumbnail(shapes_options, size=None):
     """Icône d'un SET : les boutons dessinés dans leur disposition
-    relative + un badge « ×N » — on voit d'un coup d'œil que l'élément
-    dépose plusieurs boutons. Mise en cache comme les boutons simples."""
+    relative — la vignette groupée suffit à reconnaître un set (le
+    compte exact est dans l'infobulle). Mise en cache comme les
+    boutons simples."""
     thumb_width, thumb_height = size or (THUMB_SIZE * 2, THUMB_SIZE)
     geometry_keys = _THUMB_KEYS + (
         'shape.left', 'shape.top', 'shape.width', 'shape.height')
@@ -577,24 +578,6 @@ def set_thumbnail(shapes_options, size=None):
         painter.scale(scale, scale)
         for shape in shapes:
             draw_shape(painter, shape)
-        # badge « ×N » (repère du set), en coordonnées écran
-        painter.resetTransform()
-        painter.setRenderHint(QtGui.QPainter.Antialiasing)
-        text = '×%d' % len(shapes)
-        font = QtGui.QFont()
-        font.setPixelSize(10)
-        font.setBold(True)
-        painter.setFont(font)
-        metrics = QtGui.QFontMetrics(font)
-        badge_width = metrics.horizontalAdvance(text) + 8
-        badge = QtCore.QRectF(
-            thumb_width - badge_width - 1, thumb_height - 15,
-            badge_width, 14)
-        painter.setPen(QtCore.Qt.NoPen)
-        painter.setBrush(QtGui.QColor(0, 0, 0, 190))
-        painter.drawRoundedRect(badge, 4, 4)
-        painter.setPen(QtGui.QColor('white'))
-        painter.drawText(badge, QtCore.Qt.AlignCenter, text)
         painter.end()
     icon = QtGui.QIcon(pixmap)
     icon.addPixmap(pixmap, QtGui.QIcon.Selected)
