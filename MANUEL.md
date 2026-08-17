@@ -233,6 +233,24 @@ quotidiens des serveurs).
 
 ### Où c'est stocké
 
+Arborescence complète (côté artiste, dans les prefs Maya) :
+
+```
+Documents\maya\<version>\prefs\
+├─ hotboxes.json          TOUTES les hotboxes — emplacement de
+│                         l'original (compatibilité, retour arrière)
+└─ hotbox\                le dossier du fork (créé au 1er lancement ;
+   │                      l'ancien hotboxJOR est renommé tout seul)
+   ├─ button_library.json   librairie perso (boutons, sets, catégories)
+   ├─ hotbox_hotkey.json    registre des raccourcis (gestionnaire ⌨)
+   ├─ studio_settings.json  librairie studio mémorisée (courante + récentes)
+   └─ templates\            templates utilisateur (« Save hotbox as template »)
+```
+
+Côté studio (réseau, ex. `R:\pipeline\hotbox\`) : le `.json` de la
+librairie partagée (`TAT.json`…) + `studio_logo.png` (icône des
+onglets). Hors mode admin, l'outil n'écrit JAMAIS dans ce dossier.
+
 - **Perso** (modifiable) : `button_library.json` dans le **dossier du
   fork** — `Documents\maya\<version>\prefs\hotbox\` sous Maya
   (`~/.hotbox` en standalone). Le registre des raccourcis et les

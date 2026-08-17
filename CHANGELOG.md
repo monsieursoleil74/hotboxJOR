@@ -6,6 +6,12 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Manuel : arborescence des fichiers** — nouvelle section « Les
+  fichiers sur le disque » (wiki + MANUEL.md) : l'arborescence
+  `prefs\` dessinée et annotée (hotboxes.json, dossier hotbox\ et son
+  contenu, templates\), le dossier studio réseau, un tableau « qui
+  écrit quoi » et les trois garanties (studio jamais écrit hors admin,
+  écritures atomiques, migration auto).
 - **Import dwpicker retiré** (choix utilisateur — pas de pickers
   dwpicker à convertir) : le bouton Import du manager ne lit plus que
   les hotboxes `.json` ; `dwpickerimport.py`, son test et sa section
