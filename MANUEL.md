@@ -150,6 +150,19 @@ affiché avec son vrai rendu en vignette.
 - **Réutiliser** : **glisse-dépose** depuis la shelf vers le canvas
   juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
   Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.
+- **Sets de boutons** : avec **plusieurs boutons sélectionnés**, le
+  dialogue de sauvegarde propose une case **« Save the N buttons as
+  one set (keeps layout) »**. Cochée, la sélection devient **UN SEUL
+  élément de librairie** qui garde la **disposition relative** des
+  boutons (un kit main IK, une rangée de snaps…). Dans la shelf, le
+  set se reconnaît à sa **vignette groupée** et son badge **×N** ; au
+  **dépôt dans une hotbox**, les N boutons sont recréés d'un coup,
+  disposés comme à l'origine et centrés sous le curseur. Un set se
+  renomme, se range, se réordonne et se supprime comme un bouton
+  simple (et se publie vers la librairie studio pareil) ; seule
+  exception : « Replace with library button » demande un bouton
+  simple, pas un set. Case décochée (défaut) : comportement
+  historique, N boutons indépendants « nom, nom 2, nom 3… ».
 - **Renommer un bouton** : clic droit sur un bouton de la shelf →
   **Rename…** (perso toujours ; studio en mode admin). Le bouton garde
   son apparence et sa commande, seul son nom change.

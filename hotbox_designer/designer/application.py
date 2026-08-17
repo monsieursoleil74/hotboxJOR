@@ -175,13 +175,15 @@ class HotboxEditor(QtWidgets.QWidget):
         # remplacer le contenu du/des bouton(s) par un bouton de la
         # shelf, en gardant position et taille (idéal sur un template)
         entries = self.library_shelf.current_selected_entries()
-        if len(entries) == 1:
+        # un SET n'a pas de contenu unique : pas utilisable en Replace
+        single = len(entries) == 1 and 'options' in entries[0]
+        if single:
             label = 'Replace with "%s" (library)' % (
                 entries[0].get('name') or 'button')
         else:
             label = 'Replace with library button'
         replace = menu.addAction(label, self.replace_selection_from_library)
-        replace.setEnabled(has_selection and len(entries) == 1)
+        replace.setEnabled(has_selection and single)
         if not entries:
             replace.setToolTip('Select a button in the shelf below first')
         menu.exec_(global_pos)
@@ -208,19 +210,28 @@ class HotboxEditor(QtWidgets.QWidget):
         dialog = SaveToLibraryDialog(
             self.library_shelf.categories(),
             self.library_shelf.studio_categories(),
-            studio_available, default, self)
+            studio_available, default, self, count=len(shapes))
         dialog.category.setCurrentText(self.library_shelf.current_category())
         if dialog.exec_() == QtWidgets.QDialog.Rejected:
             return
         name = dialog.name.text() or 'button'
         category = dialog.category.currentText() or 'General'
-        entries = []
-        for index, shape in enumerate(shapes):
-            entry_name = name if index == 0 else '%s %d' % (name, index + 1)
-            entries.append({
-                'name': entry_name,
+        if dialog.save_as_set():
+            # UN SET : un seul élément de librairie qui garde la
+            # disposition relative des boutons et se dépose d'un coup
+            entries = [{
+                'name': name,
                 'category': category,
-                'options': dict(shape.options)})
+                'set': [dict(shape.options) for shape in shapes]}]
+        else:
+            entries = []
+            for index, shape in enumerate(shapes):
+                entry_name = (
+                    name if index == 0 else '%s %d' % (name, index + 1))
+                entries.append({
+                    'name': entry_name,
+                    'category': category,
+                    'options': dict(shape.options)})
         self.library_shelf.save_entries(entries, studio=dialog.is_studio())
         self.library_shelf.show()
 
@@ -237,10 +248,10 @@ class HotboxEditor(QtWidgets.QWidget):
         from hotbox_designer.dialog import warning
         entries = self.library_shelf.current_selected_entries()
         shapes = list(self.shape_editor.selection)
-        if len(entries) != 1:
+        if len(entries) != 1 or 'options' not in entries[0]:
             return warning(
                 'Replace button',
-                'Select exactly one button in the shelf below')
+                'Select exactly one button (not a set) in the shelf below')
         if not shapes:
             return warning('Replace button', 'No shape selected')
         source = entries[0]['options']

@@ -8,6 +8,37 @@ from hotbox_designer.painting import draw_editor, draw_editor_center
 from hotbox_designer.qtutils import get_cursor
 
 
+def shapes_from_drop(options_list, center):
+    """Shapes d'un drop de librairie, positionnées autour de `center`.
+
+    Chaque élément du payload est soit un dict d'options (bouton seul,
+    cascade de 10px entre éléments), soit une LISTE d'options (un SET :
+    la disposition relative des boutons est préservée, le groupe est
+    centré au point de dépôt)."""
+    from hotbox_designer.interactive import Shape
+    dropped = []
+    for index, options in enumerate(options_list):
+        offset = QtCore.QPointF(index * 10.0, index * 10.0)
+        if isinstance(options, list):
+            group = [Shape(dict(o)) for o in options]
+            if not group:
+                continue
+            bbox = QtCore.QRectF(group[0].rect)
+            for shape in group[1:]:
+                bbox = bbox.united(shape.rect)
+            delta = center + offset - bbox.center()
+            for shape in group:
+                shape.rect.translate(delta)
+        else:
+            group = [Shape(dict(options))]
+            group[0].rect.moveCenter(center + offset)
+        for shape in group:
+            shape.synchronize_rect()
+            shape.synchronize_image()
+            dropped.append(shape)
+    return dropped
+
+
 class ShapeEditArea(QtWidgets.QWidget):
     selectedShapesChanged = QtCore.Signal()
     increaseUndoStackRequested = QtCore.Signal()
@@ -369,7 +400,6 @@ class ShapeEditArea(QtWidgets.QWidget):
         """Dépose des boutons de la librairie à l'endroit du curseur."""
         import json
         from hotbox_designer.buttonlibrary import BUTTONS_MIME
-        from hotbox_designer.interactive import Shape
         data = event.mimeData().data(BUTTONS_MIME)
         if not data:
             return
@@ -380,15 +410,8 @@ class ShapeEditArea(QtWidgets.QWidget):
         position = getattr(event, 'position', None)
         point = position() if position else QtCore.QPointF(event.pos())
         center = self.viewport_mapper.to_units_coords(point)
-        dropped = []
-        for index, options in enumerate(options_list):
-            shape = Shape(dict(options))
-            offset = QtCore.QPointF(index * 10.0, index * 10.0)
-            shape.rect.moveCenter(center + offset)
-            shape.synchronize_rect()
-            shape.synchronize_image()
-            self.shapes.append(shape)
-            dropped.append(shape)
+        dropped = shapes_from_drop(options_list, center)
+        self.shapes.extend(dropped)
         if not dropped:
             return
         self.selection.replace(dropped)

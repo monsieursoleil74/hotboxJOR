@@ -232,7 +232,7 @@ def export_to_studio(entries):
     if not path:
         return -1
     existing = load_library_raw(path)
-    already = [e for e in existing if 'options' in e]
+    already = [e for e in existing if is_button_entry(e)]
     added = 0
     for entry in entries:
         if entry not in already:
@@ -245,6 +245,29 @@ def export_to_studio(entries):
         except OSError:
             return -1
     return added
+
+
+def is_button_entry(entry):
+    """Une entrée « bouton » de la librairie : bouton simple
+    (clé ``options``) OU set de boutons (clé ``set``)."""
+    return 'options' in entry or 'set' in entry
+
+
+def entry_shapes(entry):
+    """Les options de forme portées par une entrée : ``[options]`` pour
+    un bouton simple, la liste complète pour un set."""
+    if 'set' in entry:
+        return list(entry['set'])
+    return [entry['options']]
+
+
+def buttons_payload(entries):
+    """Payload BUTTONS_MIME d'un drag : un dict d'options par bouton
+    simple, une LISTE d'options pour un set (le drop la reconnaît et
+    préserve la disposition relative du groupe)."""
+    return [
+        entry['options'] if 'options' in entry else list(entry['set'])
+        for entry in entries]
 
 
 def load_library_raw(path):
@@ -261,8 +284,9 @@ def load_library_raw(path):
 
 
 def load_library(path):
-    """Retourne la liste des boutons [{'name', 'category', 'options'}]."""
-    return [e for e in load_library_raw(path) if 'options' in e]
+    """Retourne la liste des boutons ET des sets :
+    [{'name', 'category', 'options' OU 'set'}]."""
+    return [e for e in load_library_raw(path) if is_button_entry(e)]
 
 
 def load_extra_categories(path):
@@ -293,7 +317,7 @@ def parse_library_structure(path):
             if category not in by_category:
                 order.append(category)
                 by_category[category] = []
-        elif 'options' in entry:
+        elif is_button_entry(entry):
             category = entry.get('category') or DEFAULT_CATEGORY
             if category not in by_category:
                 order.append(category)
@@ -378,7 +402,7 @@ def rename_category_in(path, old, new):
         return False
     raw = load_library_raw(path)
     for entry in raw:
-        if 'options' in entry:
+        if is_button_entry(entry):
             if (entry.get('category') or DEFAULT_CATEGORY) == old:
                 entry['category'] = new
         elif entry.get(CATEGORY_KEY) == old:
@@ -407,7 +431,7 @@ def set_entries_category_in(path, entries, category):
     raw = load_library_raw(path)
     changed = 0
     for entry in raw:
-        if 'options' not in entry or entry not in entries:
+        if not is_button_entry(entry) or entry not in entries:
             continue
         if (entry.get('category') or DEFAULT_CATEGORY) != category:
             entry['category'] = category
@@ -426,7 +450,7 @@ def rename_entry_in(path, entry, new_name):
     raw = load_library_raw(path)
     renamed = False
     for candidate in raw:
-        if 'options' in candidate and candidate == entry:
+        if is_button_entry(candidate) and candidate == entry:
             candidate['name'] = new_name
             renamed = True
     if renamed:
@@ -521,6 +545,72 @@ def button_thumbnail(options, size=None):
     return icon
 
 
+def set_thumbnail(shapes_options, size=None):
+    """Icône d'un SET : les boutons dessinés dans leur disposition
+    relative + un badge « ×N » — on voit d'un coup d'œil que l'élément
+    dépose plusieurs boutons. Mise en cache comme les boutons simples."""
+    thumb_width, thumb_height = size or (THUMB_SIZE * 2, THUMB_SIZE)
+    geometry_keys = _THUMB_KEYS + (
+        'shape.left', 'shape.top', 'shape.width', 'shape.height')
+    key = ('set', thumb_width, thumb_height) + tuple(
+        tuple(options.get(k) for k in geometry_keys)
+        for options in shapes_options)
+    cached = _THUMB_CACHE.get(key)
+    if cached is not None:
+        return cached
+    pixmap = QtGui.QPixmap(thumb_width, thumb_height)
+    pixmap.fill(QtCore.Qt.transparent)
+    shapes = [Shape(dict(options)) for options in shapes_options]
+    if shapes:
+        bbox = QtCore.QRectF(shapes[0].rect)
+        for shape in shapes[1:]:
+            bbox = bbox.united(shape.rect)
+        painter = QtGui.QPainter(pixmap)
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
+        width = bbox.width() or 1.0
+        height = bbox.height() or 1.0
+        scale = min((thumb_width - 4) / width, (thumb_height - 4) / height)
+        painter.translate(
+            (thumb_width - width * scale) / 2 - bbox.left() * scale,
+            (thumb_height - height * scale) / 2 - bbox.top() * scale)
+        painter.scale(scale, scale)
+        for shape in shapes:
+            draw_shape(painter, shape)
+        # badge « ×N » (repère du set), en coordonnées écran
+        painter.resetTransform()
+        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        text = '×%d' % len(shapes)
+        font = QtGui.QFont()
+        font.setPixelSize(10)
+        font.setBold(True)
+        painter.setFont(font)
+        metrics = QtGui.QFontMetrics(font)
+        badge_width = metrics.horizontalAdvance(text) + 8
+        badge = QtCore.QRectF(
+            thumb_width - badge_width - 1, thumb_height - 15,
+            badge_width, 14)
+        painter.setPen(QtCore.Qt.NoPen)
+        painter.setBrush(QtGui.QColor(0, 0, 0, 190))
+        painter.drawRoundedRect(badge, 4, 4)
+        painter.setPen(QtGui.QColor('white'))
+        painter.drawText(badge, QtCore.Qt.AlignCenter, text)
+        painter.end()
+    icon = QtGui.QIcon(pixmap)
+    icon.addPixmap(pixmap, QtGui.QIcon.Selected)
+    if len(_THUMB_CACHE) > 512:
+        _THUMB_CACHE.clear()
+    _THUMB_CACHE[key] = icon
+    return icon
+
+
+def entry_thumbnail(entry, size=None):
+    """Icône d'une entrée de librairie, bouton simple ou set."""
+    if 'set' in entry:
+        return set_thumbnail(entry['set'], size)
+    return button_thumbnail(entry['options'], size)
+
+
 def hotbox_thumbnail(hotbox_data, width=190, height=120):
     """Mini-rendu d'une hotbox complète, pour l'aperçu du manager."""
     general = hotbox_data.get('general', {})
@@ -557,7 +647,8 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
     passer par General puis « Move to »."""
 
     def __init__(self, perso_categories, studio_categories=None,
-                 studio_available=False, default_name='', parent=None):
+                 studio_available=False, default_name='', parent=None,
+                 count=1):
         super(SaveToLibraryDialog, self).__init__(parent)
         self.setWindowTitle('Save button to library')
         self._perso_categories = sorted(perso_categories) or [DEFAULT_CATEGORY]
@@ -584,6 +675,13 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
         self.category = QtWidgets.QComboBox()
         self.category.setEditable(True)
 
+        # plusieurs boutons sélectionnés : proposer d'en faire UN SET —
+        # un seul élément de librairie qui garde la disposition relative
+        # et se dépose d'un coup dans une hotbox
+        self.as_set = QtWidgets.QCheckBox(
+            'Save the %d buttons as one set (keeps layout)' % count)
+        self.as_set.setVisible(count > 1)
+
         # assez large pour lire les noms de catégories en entier et
         # repérer le menu déroulant (avant : « ANIMATION » → « ATION »)
         self.setMinimumWidth(340)
@@ -599,6 +697,8 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
         if studio_available:
             layout.addRow('Library:', self.destination)
         layout.addRow('Category:', self.category)
+        if count > 1:
+            layout.addRow('', self.as_set)
         buttons = QtWidgets.QDialogButtonBox(
             QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -608,6 +708,9 @@ class SaveToLibraryDialog(QtWidgets.QDialog):
 
     def is_studio(self):
         return self.destination.currentData() == 'studio'
+
+    def save_as_set(self):
+        return self.as_set.isChecked()
 
     def _update_categories(self):
         keep = self.category.currentText()
@@ -736,8 +839,7 @@ class ShelfList(QtWidgets.QListWidget):
         if not entries:
             return
         mime = QtCore.QMimeData()
-        payload = json.dumps(
-            [entry['options'] for entry in entries]).encode('utf-8')
+        payload = json.dumps(buttons_payload(entries)).encode('utf-8')
         mime.setData(BUTTONS_MIME, QtCore.QByteArray(payload))
         # payload complet : permet le dépôt sur un onglet (changement de
         # catégorie) ou dans une liste (réordonnancement) — pas depuis
@@ -1138,12 +1240,14 @@ class LibraryShelf(QtWidgets.QWidget):
                       else ' (studio, read-only)')
         for entry in entries:  # ordre du fichier (réordonnable au drag)
             item = QtWidgets.QListWidgetItem(entry.get('name') or 'button')
-            item.setIcon(button_thumbnail(
-                entry['options'], (SHELF_THUMB_WIDTH, SHELF_THUMB_HEIGHT)))
+            item.setIcon(entry_thumbnail(
+                entry, (SHELF_THUMB_WIDTH, SHELF_THUMB_HEIGHT)))
             item.setData(QtCore.Qt.UserRole, entry)
+            name = entry.get('name') or 'button'
+            if 'set' in entry:
+                name = '%s (set of %d buttons)' % (name, len(entry['set']))
             item.setToolTip(
-                '%s — drag & drop into the hotbox%s' % (
-                    entry.get('name') or 'button', suffix))
+                '%s — drag & drop into the hotbox%s' % (name, suffix))
             shelf_list.addItem(item)
 
     def _add_tab(self, category, entries, current, readonly=False):
@@ -1598,7 +1702,7 @@ class LibraryShelf(QtWidgets.QWidget):
         entries = load_library_raw(self.path)
         # anti-doublon : on ne stocke pas deux fois un bouton identique
         # (même nom, catégorie ET options)
-        existing = [e for e in entries if 'options' in e]
+        existing = [e for e in entries if is_button_entry(e)]
         added = 0
         for entry in new_entries:
             if entry not in existing:

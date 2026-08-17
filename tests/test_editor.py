@@ -2401,6 +2401,93 @@ def test_hotkey_manager_dialog():
     print('gestionnaire de raccourcis (liste + Set/Clear) OK')
 
 
+def test_button_sets():
+    """Sets de boutons : une sélection multiple se sauvegarde comme UN
+    élément de librairie ({'set': [options…]}) qui garde la disposition
+    relative, se dépose d'un coup dans une hotbox, et survit aux
+    opérations de rangement (catégorie, renommage, réécriture)."""
+    import tempfile
+    from hotbox_designer import buttonlibrary as bl
+    from hotbox_designer.designer.editarea import shapes_from_drop
+
+    def opts(left, top, label):
+        options = dict(SQUARE_BUTTON)
+        options.update({
+            'shape.left': float(left), 'shape.top': float(top),
+            'text.content': label})
+        return options
+
+    set_entry = {
+        'name': 'SnapKit', 'category': 'TAT',
+        'set': [opts(0, 0, 'a'), opts(60, 40, 'b'), opts(120, 0, 'c')]}
+    single = {'name': 'Solo', 'category': 'TAT', 'options': opts(0, 0, 's')}
+
+    # helpers : reconnaissance, contenu, payload de drag
+    assert bl.is_button_entry(set_entry) and bl.is_button_entry(single)
+    assert len(bl.entry_shapes(set_entry)) == 3
+    assert len(bl.entry_shapes(single)) == 1
+    payload = bl.buttons_payload([single, set_entry])
+    assert isinstance(payload[0], dict)
+    assert isinstance(payload[1], list) and len(payload[1]) == 3
+
+    # persistance : le set traverse load/rangement/renommage INTACT —
+    # il ne doit jamais être perdu à la réécriture canonique du fichier
+    tmp = tempfile.mkdtemp()
+    path = os.path.join(tmp, 'button_library.json')
+    bl.save_library(path, [single, set_entry])
+    loaded = bl.load_library(path)
+    assert len(loaded) == 2
+    entry = [e for e in loaded if 'set' in e][0]
+    assert entry['set'] == set_entry['set']
+    assert bl.move_entries_to_category(path, [entry], 'LEAD') == 1
+    moved = [e for e in bl.load_library(path) if 'set' in e][0]
+    assert moved['category'] == 'LEAD' and len(moved['set']) == 3
+    assert bl.rename_entry_in(path, moved, 'Kit') is True
+    renamed = [e for e in bl.load_library(path) if 'set' in e][0]
+    assert renamed['name'] == 'Kit'
+    assert bl.rename_category_in(path, 'LEAD', 'DA') is True
+    after = [e for e in bl.load_library(path) if 'set' in e][0]
+    assert after['category'] == 'DA'
+
+    # vignette groupée (badge ×N) non vide
+    icon = bl.entry_thumbnail(after, (72, 36))
+    assert not icon.pixmap(72, 36).isNull()
+
+    # drop : bouton seul = centré au curseur ; set = disposition
+    # relative préservée, bbox du groupe centrée au point de dépôt
+    center = QtCore.QPointF(200.0, 150.0)
+    dropped = shapes_from_drop(bl.buttons_payload([single]), center)
+    assert len(dropped) == 1
+    assert near(dropped[0].rect.center().x(), 200)
+    assert near(dropped[0].rect.center().y(), 150)
+    group = shapes_from_drop(bl.buttons_payload([after]), center)
+    assert len(group) == 3
+    ax, ay = group[0].rect.left(), group[0].rect.top()
+    assert near(group[1].rect.left() - ax, 60)
+    assert near(group[1].rect.top() - ay, 40)
+    assert near(group[2].rect.left() - ax, 120)
+    bbox = QtCore.QRectF(group[0].rect)
+    for shape in group[1:]:
+        bbox = bbox.united(shape.rect)
+    assert near(bbox.center().x(), 200) and near(bbox.center().y(), 150)
+    # les options réécrites suivent la nouvelle géométrie
+    assert near(group[0].options['shape.left'], group[0].rect.left())
+
+    # dialogue de sauvegarde : la case « set » n'existe qu'à partir de
+    # 2 boutons, décochée par défaut (comportement historique conservé)
+    dialog = bl.SaveToLibraryDialog(['General'], count=3)
+    assert not dialog.as_set.isHidden()
+    assert dialog.save_as_set() is False
+    dialog.as_set.setChecked(True)
+    assert dialog.save_as_set() is True
+    dialog.close()
+    solo_dialog = bl.SaveToLibraryDialog(['General'], count=1)
+    assert solo_dialog.as_set.isHidden()
+    assert solo_dialog.save_as_set() is False
+    solo_dialog.close()
+    print('sets de boutons (sauvegarde groupée + dépôt disposé) OK')
+
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2451,4 +2538,5 @@ if __name__ == '__main__':
     test_hotkey_registry()
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()
+    test_button_sets()
     print('TOUT EST VERT')
