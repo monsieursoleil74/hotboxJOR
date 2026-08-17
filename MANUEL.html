@@ -1,0 +1,992 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manuel hotboxJOR</title>
+<style>
+/* ============================================================
+   Manuel hotboxJOR — wiki une-page, sombre comme l'outil.
+   Palette dérivée de hotbox_designer/theme.py (ACCENT #6d8c5e).
+   Fichier autonome : aucun asset externe, double-clic et ça marche.
+   ============================================================ */
+:root {
+  --ground:       #202220;
+  --panel:        #2a2d2a;
+  --panel-soft:   #262926;
+  --sidebar:      #1a1c1a;
+  --input:        #232623;
+  --raised:       #343834;
+  --border:       #3a3f3a;
+  --border-soft:  #2f332f;
+  --ink:          #d7dad3;
+  --ink-dim:      #949b90;
+  --ink-faint:    #6d746a;
+  --accent:       #8fb27c;   /* le vert sauge de l'app, éclairci pour le texte */
+  --accent-deep:  #6d8c5e;   /* l'ACCENT exact de theme.py, pour les fonds */
+  --accent-dim:   #4a5f3d;
+  --accent-wash:  rgba(109, 140, 94, 0.13);
+  --amber:        #c9a35f;   /* remarques / limites */
+  --amber-wash:   rgba(201, 163, 95, 0.10);
+  --kbd-bg:       #383d38;
+  --kbd-border:   #4c524b;
+  --mono: "Cascadia Code", "JetBrains Mono", ui-monospace, "Consolas", "SF Mono", monospace;
+  --sans: "Avenir Next", "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation: none !important; transition: none !important; }
+}
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15.5px;
+  line-height: 1.65;
+}
+
+/* ---------- structure : sidebar + contenu ---------- */
+.wrap { display: flex; min-height: 100vh; }
+nav {
+  width: 270px;
+  flex-shrink: 0;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border-soft);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  padding: 22px 18px 40px;
+}
+main {
+  flex: 1;
+  min-width: 0;
+  padding: 40px clamp(24px, 6vw, 88px) 120px;
+}
+.page { max-width: 78ch; }
+
+/* ---------- sidebar ---------- */
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.brand-mark {
+  width: 30px; height: 30px; border-radius: 7px;
+  background: linear-gradient(140deg, var(--accent-deep), var(--accent-dim));
+  display: grid; place-items: center;
+  font-family: var(--mono); font-size: 15px; font-weight: 700; color: #ffffff;
+}
+.brand-name { font-size: 17px; font-weight: 700; letter-spacing: 0.2px; }
+.brand-sub {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 3px;
+  color: var(--accent); margin: 0 0 18px 40px; font-weight: 600;
+}
+.search {
+  width: 100%;
+  background: var(--input);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink);
+  font: inherit; font-size: 13.5px;
+  padding: 7px 11px;
+  margin-bottom: 20px;
+}
+.search::placeholder { color: var(--ink-faint); }
+.search:focus { outline: none; border-color: var(--accent-dim); }
+.nav-group { margin-bottom: 18px; }
+.nav-group > h3 {
+  font-size: 10px; text-transform: uppercase; letter-spacing: 2.5px;
+  color: var(--ink-faint); font-weight: 700; margin: 0 0 6px 10px;
+}
+nav a {
+  display: block;
+  color: var(--ink-dim);
+  text-decoration: none;
+  font-size: 13.5px;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border-left: 2px solid transparent;
+}
+nav a:hover { color: var(--ink); background: var(--panel-soft); }
+nav a.active {
+  color: var(--accent);
+  background: var(--accent-wash);
+  border-left-color: var(--accent-deep);
+  font-weight: 600;
+}
+nav a.hit { color: var(--accent); }
+.no-result {
+  display: none; color: var(--ink-faint); font-size: 13px; padding: 4px 10px;
+}
+
+/* ---------- hero ---------- */
+header.hero { margin-bottom: 56px; }
+.hero h1 {
+  font-size: clamp(30px, 4.5vw, 40px);
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin: 0 0 10px;
+  text-wrap: balance;
+}
+.hero h1 .jor { color: var(--accent); }
+.hero p.lede { color: var(--ink-dim); font-size: 17px; max-width: 62ch; margin: 0 0 22px; }
+/* une fausse rangée de shelf, clin d'œil à l'outil */
+.hero-shelf { display: flex; gap: 7px; align-items: center; }
+.hero-shelf span {
+  height: 26px; border-radius: 5px;
+  padding: 0 12px; display: inline-flex; align-items: center;
+  font-family: var(--mono); font-size: 10.5px; color: rgba(255,255,255,0.88);
+}
+.hs-1 { background: #5a7a96; } .hs-2 { background: #7a5a96; }
+.hs-3 { background: #6d8c5e; } .hs-4 { background: #96755a; }
+.hs-more { color: var(--ink-faint); font-size: 12px; font-family: var(--mono); }
+
+/* ---------- sections ---------- */
+section { margin-bottom: 72px; scroll-margin-top: 24px; }
+.eyebrow {
+  font-size: 10.5px; text-transform: uppercase; letter-spacing: 3px;
+  color: var(--accent); font-weight: 700; margin: 0 0 6px;
+}
+section h2 {
+  font-size: 25px; font-weight: 700; letter-spacing: -0.3px;
+  margin: 0 0 14px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--border-soft);
+  text-wrap: balance;
+}
+section h3 {
+  font-size: 17px; font-weight: 700; margin: 34px 0 10px;
+}
+section h4 { font-size: 14.5px; font-weight: 700; margin: 22px 0 6px; }
+p { margin: 0 0 14px; }
+ul, ol { margin: 0 0 16px; padding-left: 22px; }
+li { margin-bottom: 7px; }
+li::marker { color: var(--accent-dim); }
+strong { color: #e8ebe4; font-weight: 650; }
+a { color: var(--accent); }
+a:focus-visible, .search:focus-visible, nav a:focus-visible {
+  outline: 2px solid var(--accent-deep); outline-offset: 2px;
+}
+
+/* ---------- tables de gestes ---------- */
+.tablewrap { overflow-x: auto; margin: 0 0 18px; }
+table {
+  border-collapse: collapse; width: 100%;
+  background: var(--panel-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px; overflow: hidden;
+  font-size: 14px;
+}
+th {
+  text-align: left; font-size: 10.5px; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--ink-faint);
+  padding: 9px 14px; background: var(--panel);
+  border-bottom: 1px solid var(--border-soft);
+}
+td { padding: 9px 14px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+tr:last-child td { border-bottom: none; }
+td:first-child { white-space: nowrap; width: 1%; }
+
+/* ---------- touches & code ---------- */
+kbd {
+  display: inline-block;
+  font-family: var(--mono); font-size: 11.5px;
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 7px 2px;
+  color: #e4e7e0;
+  white-space: nowrap;
+}
+code {
+  font-family: var(--mono); font-size: 0.86em;
+  background: var(--input);
+  border: 1px solid var(--border-soft);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: #cdd4c6;
+  overflow-wrap: anywhere;
+}
+pre {
+  background: var(--input);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--accent-dim);
+  border-radius: 8px;
+  padding: 14px 18px;
+  overflow-x: auto;
+  margin: 0 0 18px;
+}
+pre code { background: none; border: none; padding: 0; font-size: 13px; line-height: 1.6; }
+.comment { color: var(--ink-faint); }
+
+/* ---------- encadrés ---------- */
+.callout {
+  border-radius: 8px;
+  padding: 13px 17px;
+  margin: 0 0 18px;
+  font-size: 14.5px;
+  border: 1px solid var(--accent-dim);
+  background: var(--accent-wash);
+}
+.callout.note { border-color: #6a5f42; background: var(--amber-wash); }
+.callout .tag {
+  display: block; font-size: 10px; text-transform: uppercase;
+  letter-spacing: 2.5px; font-weight: 700; margin-bottom: 4px;
+  color: var(--accent);
+}
+.callout.note .tag { color: var(--amber); }
+.callout p:last-child { margin-bottom: 0; }
+
+/* badge STUDIO ADMIN — reproduit celui de l'app */
+.badge-admin {
+  display: inline-block;
+  background: var(--accent-deep);
+  color: #ffffff;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  border-radius: 4px;
+  padding: 3px 12px;
+  vertical-align: 1px;
+}
+.badge-lib {
+  display: inline-block;
+  background: var(--accent-deep);
+  color: #ffffff;
+  font-family: var(--mono);
+  font-size: 11px; font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 9px;
+}
+
+/* cartes des trois fenêtres */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin: 0 0 18px; }
+.card {
+  background: var(--panel-soft);
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  padding: 15px 17px;
+}
+.card h4 { margin: 0 0 5px; font-size: 15px; }
+.card p { margin: 0; font-size: 13.5px; color: var(--ink-dim); }
+
+footer {
+  margin-top: 80px; padding-top: 18px;
+  border-top: 1px solid var(--border-soft);
+  color: var(--ink-faint); font-size: 13px;
+}
+
+/* ---------- responsive ---------- */
+@media (max-width: 880px) {
+  .wrap { flex-direction: column; }
+  nav { position: static; width: 100%; height: auto; border-right: none;
+        border-bottom: 1px solid var(--border-soft); padding-bottom: 14px; }
+  main { padding-top: 28px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<nav id="nav">
+  <div class="brand">
+    <div class="brand-mark">⌗</div>
+    <div class="brand-name">hotboxJOR</div>
+  </div>
+  <div class="brand-sub">Manuel</div>
+  <input class="search" id="navsearch" type="search" placeholder="Search..." aria-label="Filtrer le sommaire">
+  <div class="no-result" id="noresult">Aucune section ne correspond.</div>
+
+  <div class="nav-group">
+    <h3>Prise en main</h3>
+    <a href="#demarrage">Vue d’ensemble</a>
+    <a href="#modes">Animateur / Admin studio</a>
+  </div>
+  <div class="nav-group">
+    <h3>Éditeur</h3>
+    <a href="#navigation">Navigation (viewport)</a>
+    <a href="#selection">Sélection</a>
+    <a href="#manipulation">Manipulation</a>
+    <a href="#clipboard">Copier, coller, remplacer</a>
+    <a href="#attributs">Panneau d’attributs</a>
+    <a href="#images">Images des boutons</a>
+    <a href="#toolbar">Barre d’outils</a>
+  </div>
+  <div class="nav-group">
+    <h3>Librairies</h3>
+    <a href="#librairie">Librairie de boutons</a>
+    <a href="#sets">Sets de boutons</a>
+    <a href="#studio">Librairie studio</a>
+  </div>
+  <div class="nav-group">
+    <h3>Aller plus loin</h3>
+    <a href="#templates">Templates</a>
+    <a href="#dwpicker">Import dwpicker</a>
+    <a href="#raccourcis">Raccourcis clavier</a>
+    <a href="#coulisses">Sous le capot</a>
+  </div>
+</nav>
+
+<main>
+<div class="page">
+
+<header class="hero">
+  <h1>Manuel <span class="jor">hotboxJOR</span></h1>
+  <p class="lede">Le mode d’emploi de l’éditeur de hotbox et de ses librairies
+  de boutons — fork de hotbox_designer taillé pour l’animation.
+  Installation&nbsp;: <code>README.md</code> · Historique&nbsp;: <code>CHANGELOG.md</code>.</p>
+  <div class="hero-shelf" aria-hidden="true">
+    <span class="hs-1">snap</span><span class="hs-2">mirror</span><span class="hs-3">ik/fk</span><span class="hs-4">reset</span><span class="hs-more">＋ ta librairie…</span>
+  </div>
+</header>
+
+<!-- ================================================================ -->
+<section id="demarrage">
+  <p class="eyebrow">Prise en main</p>
+  <h2>Vue d’ensemble</h2>
+  <p>Trois fenêtres, trois rôles&nbsp;:</p>
+  <div class="cards">
+    <div class="card"><h4>Manager</h4>
+      <p>La liste des hotboxes&nbsp;: créer, éditer, supprimer,
+      importer/exporter, gérer les raccourcis. La hotbox sélectionnée
+      s’affiche en vignette (mini-rendu de tous ses boutons) pour la
+      reconnaître d’un coup d’œil.</p></div>
+    <div class="card"><h4>Éditeur</h4>
+      <p>Là où on construit une hotbox. Plusieurs éditeurs peuvent être
+      ouverts en même temps (un par hotbox).</p></div>
+    <div class="card"><h4>Reader</h4>
+      <p>La hotbox en production&nbsp;: ce qui s’affiche sous le curseur
+      dans Maya. Non themé — son apparence, c’est ta hotbox.</p></div>
+  </div>
+  <p>Les hotboxes vivent dans <code>hotboxes.json</code> dans les préférences
+  Maya (<code>Documents\maya\&lt;version&gt;\prefs\</code>) — compatibles avec
+  l’original hotbox_designer, jamais altérées par une simple ouverture.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="modes">
+  <p class="eyebrow">Prise en main</p>
+  <h2>Deux modes de lancement — animateur / admin</h2>
+  <p>Le rôle se choisit <strong>au lancement du manager</strong> — chacun a son
+  bouton de shelf Maya&nbsp;:</p>
+<pre><code><span class="comment"># animateur : la librairie studio est une RÉFÉRENCE en lecture seule</span>
+import hotbox_designer
+hotbox_designer.launch_manager('maya')
+
+<span class="comment"># lead : mode ADMIN — la librairie officielle est éditable</span>
+import hotbox_designer
+hotbox_designer.launch_manager('maya', studio_admin=True)</code></pre>
+  <ul>
+    <li><strong>Mode animateur</strong> (par défaut)&nbsp;: on pioche les boutons
+      officiels par glisser-déposer et on gère librement <strong>sa</strong>
+      librairie perso (catégories, rename, delete). Les onglets studio sont
+      intouchables — pas de création de catégorie, pas d’envoi vers le studio.</li>
+    <li><strong>Mode admin</strong>&nbsp;: la shelf n’affiche <em>que</em> les onglets
+      de la librairie studio courante, et tout y est éditable. Un badge
+      <span class="badge-admin">Studio admin</span> s’affiche dans le bandeau du
+      manager et à droite de la barre d’outils de l’éditeur — on sait toujours
+      qu’on édite l’officiel. La fenêtre, elle, s’appelle toujours
+      «&nbsp;Hotbox Designer&nbsp;», quel que soit le mode.</li>
+    <li><strong>Changer de mode sans redémarrer Maya</strong>&nbsp;: relancer l’autre
+      commande dans le Script Editor — manager, badge et shelves déjà ouvertes
+      basculent immédiatement.</li>
+  </ul>
+  <div class="callout note"><span class="tag">Bon à savoir</span>
+  <p>C’est un garde-fou d’interface&nbsp;: le fichier de librairie reste
+  accessible sur le réseau. Pour un verrouillage dur, mettre aussi le dossier
+  studio en lecture seule au niveau des droits Windows pour les animateurs.</p></div>
+</section>
+
+<!-- ================================================================ -->
+<section id="navigation">
+  <p class="eyebrow">Éditeur</p>
+  <h2>Navigation (viewport)</h2>
+  <p>La zone de la hotbox est un <strong>plan de travail</strong> posé sur un fond
+  sombre infini, façon dwpicker / Figma.</p>
+  <div class="tablewrap"><table>
+    <tr><th>Geste</th><th>Action</th></tr>
+    <tr><td><kbd>Molette</kbd></td><td>Zoom vers le curseur (×0.1 à ×8)</td></tr>
+    <tr><td><kbd>+</kbd> / <kbd>−</kbd></td><td>Zoom au centre de la vue</td></tr>
+    <tr><td><kbd>Clic molette</kbd> maintenu</td><td>Pan (déplacer la vue)</td></tr>
+    <tr><td><kbd>Espace</kbd> + glisser</td><td>Pan aussi (façon Photoshop — curseur main)</td></tr>
+    <tr><td><kbd>F</kbd></td><td>Recadrer&nbsp;: sur la sélection s’il y en a une, sinon sur la hotbox</td></tr>
+  </table></div>
+  <p>À l’ouverture, la hotbox est <strong>cadrée automatiquement</strong> — et le
+  reste tant qu’on n’a pas zoomé/panné soi-même (redimensionner la fenêtre
+  recadre proprement). Dès qu’on navigue, la vue nous appartient et n’est plus
+  touchée. Les poignées du manipulateur et les traits d’interface gardent une
+  <strong>taille constante à l’écran</strong> quel que soit le zoom.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="selection">
+  <p class="eyebrow">Éditeur</p>
+  <h2>Sélection</h2>
+  <div class="tablewrap"><table>
+    <tr><th>Geste</th><th>Action</th></tr>
+    <tr><td>Presser un bouton</td><td>Le sélectionne immédiatement — le drag qui suit le <strong>déplace</strong> directement (façon dwpicker/Figma)</td></tr>
+    <tr><td>Clic sur un bouton d’une multi-sélection</td><td>Le sélectionne <strong>seul</strong></td></tr>
+    <tr><td>Glisser sur le fond</td><td>Rectangle de sélection multiple (zone vide ou shape verrouillée)</td></tr>
+    <tr><td><kbd>Maj</kbd> + clic/rectangle</td><td>Ajoute à la sélection</td></tr>
+    <tr><td><kbd>Ctrl</kbd> + clic/rectangle</td><td>Retire de la sélection</td></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>Maj</kbd> + clic/rectangle</td><td>Inverse</td></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>A</kbd></td><td>Tout sélectionner</td></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>D</kbd></td><td>Tout désélectionner</td></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>I</kbd></td><td>Inverser la sélection</td></tr>
+  </table></div>
+  <ul>
+    <li>Un rectangle de sélection <strong>n’attrape pas une shape qui l’englobe
+      entièrement</strong> — un background n’est pris que si on le balaie vraiment.
+      Pour sélectionner le fond, clique une zone nue.</li>
+    <li>Une shape portant l’option <code>lock</code> (données d’anciennes versions)
+      est transparente à la sélection.</li>
+  </ul>
+</section>
+
+<!-- ================================================================ -->
+<section id="manipulation">
+  <p class="eyebrow">Éditeur</p>
+  <h2>Manipulation</h2>
+  <div class="tablewrap"><table>
+    <tr><th>Geste</th><th>Action</th></tr>
+    <tr><td>Glisser la sélection</td><td>Déplacer (suit la souris jusqu’au relâchement, même en geste rapide)</td></tr>
+    <tr><td><kbd>Maj</kbd> pendant le déplacement</td><td>Contrainte à l’<strong>axe dominant</strong> (horizontal ou vertical, façon Photoshop)</td></tr>
+    <tr><td>Glisser un bord ou un coin</td><td>Redimensionner — <strong>tout le contour est saisissable</strong> (~8&nbsp;px), pas seulement les 8 poignées&nbsp;; <kbd>Maj</kbd> = carré</td></tr>
+    <tr><td><kbd>Alt</kbd> + glisser la sélection</td><td><strong>Dupliquer</strong>&nbsp;: les copies partent sous le curseur, les originaux restent</td></tr>
+    <tr><td><kbd>Flèches</kbd></td><td>Déplacer d’1 unité (<kbd>Maj</kbd> = 10)</td></tr>
+    <tr><td><kbd>Suppr</kbd></td><td>Supprimer la sélection</td></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>Z</kbd> / <kbd>Ctrl</kbd><kbd>Y</kbd></td><td>Undo / redo (tout est annulable)</td></tr>
+  </table></div>
+  <p>Le <strong>curseur annonce le geste</strong>&nbsp;: flèches de redimensionnement
+  (↔ ↕ ⤡ ⤢) sur les bords et coins, croix de déplacement à l’intérieur de la
+  sélection, main quand <kbd>Espace</kbd> est enfoncé.</p>
+
+  <h3>Snap (désactivé par défaut)</h3>
+  <p><strong>Aucun snap n’est actif par défaut.</strong> La grille s’active par le
+  bouton aimant rouge de la barre d’outils (+ pas x/y), comme dans l’original.</p>
+
+  <h3>Alignement / distribution</h3>
+  <p>Boutons en fin de barre d’outils (à partir de 2 shapes sélectionnées,
+  3 pour la distribution)&nbsp;:</p>
+  <ul>
+    <li><strong>Aligner</strong>&nbsp;: gauche, centres horizontaux, droite, haut,
+      centres verticaux, bas.</li>
+    <li><strong>Distribuer</strong>&nbsp;: horizontalement / verticalement — les
+      centres se répartissent régulièrement entre la première et la dernière shape.</li>
+  </ul>
+
+  <h3>Zone de travail («&nbsp;Fit zone&nbsp;»)</h3>
+  <p>La zone = la taille de la fenêtre du reader dans Maya. Plutôt que de
+  piloter les champs <code>size</code> à la main&nbsp;: pose tes boutons librement,
+  puis clique le bouton <strong>cadre</strong> (à côté des champs size) — la zone se
+  recadre sur la bounding box des boutons (marge 10), les shapes et le
+  <strong>centre</strong> sont recalés (la hotbox apparaîtra au même endroit relatif
+  sous le curseur), la vue est recadrée. Annulable.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="clipboard">
+  <p class="eyebrow">Éditeur</p>
+  <h2>Copier, coller, remplacer</h2>
+  <div class="tablewrap"><table>
+    <tr><th>Raccourci</th><th>Action</th></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>C</kbd> / <kbd>Ctrl</kbd><kbd>V</kbd></td>
+        <td>Copier/coller des <strong>boutons entiers</strong>. Passe par le
+        presse-papier système (JSON)&nbsp;: fonctionne <strong>entre hotboxes</strong>,
+        entre éditeurs, et même entre deux sessions Maya. Les shapes collées
+        sont sélectionnées.</td></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>C</kbd></td>
+        <td><strong>Copier le style</strong> d’une shape (une seule sélectionnée)</td></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>Maj</kbd><kbd>V</kbd></td>
+        <td><strong>Coller le style</strong> sur la sélection — un dialogue permet de
+        cocher quoi coller&nbsp;: forme, taille, couleurs &amp; bordure, style de
+        texte, contenu du texte, image, commandes. Par défaut&nbsp;: forme +
+        couleurs + style de texte.</td></tr>
+    <tr><td><kbd>Ctrl</kbd><kbd>H</kbd></td>
+        <td><strong>Recherche / remplacement</strong> de texte dans les commandes clic
+        gauche et/ou droit, et les labels (optionnel). Portée&nbsp;: la sélection
+        si elle existe, sinon toute la hotbox. Affiche le nombre de
+        remplacements, annulable. Usage type&nbsp;: renommer un namespace de rig
+        dans tous les boutons d’un coup.</td></tr>
+  </table></div>
+
+  <h3>Menu clic droit</h3>
+  <p>Réduit à l’essentiel — la librairie&nbsp;: <strong>Save selection to
+  library…</strong> et <strong>Replace with library button</strong>. (La recherche reste
+  sur <kbd>Ctrl</kbd><kbd>H</kbd>, le recadrage sur <kbd>F</kbd>&nbsp;; lock et magnet
+  ont été retirés.)</p>
+  <p><strong>Replace with library button</strong>&nbsp;: sélectionne UN bouton dans la
+  shelf du bas, puis clic droit sur un ou plusieurs boutons du canvas →
+  Replace. Le contenu (couleurs, texte, image, commandes…) vient de la
+  librairie, <strong>la position et la taille sont conservées</strong> — idéal pour
+  habiller un template sans replacer chaque bouton à la main. (Un
+  <a href="#sets">set</a> ne peut pas servir ici&nbsp;: il faut un bouton simple.)</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="attributs">
+  <p class="eyebrow">Éditeur</p>
+  <h2>Panneau d’attributs</h2>
+  <p>Le panneau de droite, refondu façon Photoshop&nbsp;:</p>
+  <ul>
+    <li><strong>Aperçu d’états en haut du panneau</strong>&nbsp;: le bouton
+      sélectionné rendu dans ses trois états (Normal / Hover / Click), mis à
+      jour en direct à chaque réglage — couleur, bordure, texte, image, forme —
+      sans avoir à survoler le vrai bouton dans le viewport. Section repliable
+      comme les autres.</li>
+    <li><strong>Couleurs = pastilles cliquables</strong>, les trois états sur une
+      seule ligne&nbsp;; le code hexa est dans l’infobulle. Un clic ouvre le
+      <strong>sélecteur de couleurs</strong> maison (façon Miro)&nbsp;: carré
+      saturation/valeur, teinte, hexa, couleurs prédéfinies, et la
+      <strong>pipette ⌖</strong> pour prélever une couleur n’importe où à l’écran
+      (clic = prélever, <kbd>Échap</kbd> = annuler). Si la sélection a des
+      couleurs différentes, la pastille affiche «&nbsp;…&nbsp;».</li>
+    <li><strong>Opacité = curseur 0–100&nbsp;%</strong> (une pour le fond, une pour la
+      bordure) — convertie vers la «&nbsp;transparence 0–255&nbsp;» historique du
+      JSON, rien ne change dans le format.</li>
+    <li><strong>Cases à cocher</strong> pour bordure visible / gras / italique
+      (état intermédiaire si la sélection est mixte).</li>
+    <li><strong>Épaisseur de bordure = un curseur</strong> (en px)&nbsp;: il pilote
+      les trois états d’un coup — survol ×1.25 et clic ×2 par rapport à la
+      valeur normale.</li>
+    <li>La section <strong>Dimensions a été retirée</strong> (tout se manipule au
+      viewport) — son champ «&nbsp;top&nbsp;» écrivait d’ailleurs dans
+      <code>shape.right</code> (bug de l’original).</li>
+    <li><strong>Sous-menu fluide</strong> — en haut de la section Action, le menu
+      «&nbsp;Open sub-hotbox&nbsp;» liste les hotboxes marquées «&nbsp;is
+      submenu&nbsp;» (dans le manager). En choisir une <strong>génère toute
+      seule</strong> la commande d’ouverture (<code>show('nom')</code>) sur le clic
+      gauche&nbsp;: plus besoin d’écrire une ligne de Python à la main pour
+      enchaîner deux hotboxes. La liste reste cachée tant qu’aucune hotbox
+      n’est marquée sous-menu.</li>
+  </ul>
+
+  <h3>Formes des boutons</h3>
+  <p>Trois formes&nbsp;: <strong>square</strong> (rectangle), <strong>rounded</strong>
+  (rectangle à coins arrondis, façon dwpicker — le rayon se règle dans le
+  champ «&nbsp;Corner&nbsp;») et <strong>round</strong> (ellipse). Le sélecteur est en
+  haut du panneau d’attributs.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="images">
+  <p class="eyebrow">Éditeur</p>
+  <h2>Images des boutons</h2>
+
+  <h3>Placer une image dans un bouton</h3>
+  <p>Quand un bouton a une image et que «&nbsp;Fit to shape&nbsp;» est sur
+  <strong>False</strong>, la section Image affiche deux boutons&nbsp;:</p>
+  <ul>
+    <li><strong>◈ Place Image</strong>&nbsp;: active le mode placement (le bouton
+      passe en vert tant qu’il est actif). On <strong>glisse l’image</strong> dans le
+      bouton pour la positionner, la <strong>molette</strong> la redimensionne, et
+      les <kbd>Flèches</kbd> la décalent d’1 unité (<kbd>Maj</kbd> = 10) pour un
+      réglage au pixel près. <kbd>Échap</kbd> (ou re-cliquer le bouton) termine.
+      Un contour vert en pointillés montre la position de l’image.</li>
+    <li><strong>Center</strong>&nbsp;: recentre l’image dans le bouton.</li>
+  </ul>
+  <p>Tout est annulable (<kbd>Ctrl</kbd><kbd>Z</kbd>). Le placement n’est possible
+  que sur un seul bouton à la fois.</p>
+
+  <h3>Chemins portables</h3>
+  <p>Les chemins d’images sont stockés en absolu dans le JSON&nbsp;; déplacer son
+  dossier d’icônes cassait tous les logos. Désormais, si le chemin ne mène plus
+  nulle part, l’image est <strong>retrouvée par son nom de fichier</strong> dans&nbsp;:</p>
+  <ol>
+    <li>le dossier pointé par la variable d’environnement
+      <code>HOTBOX_DESIGNER_ICONS</code> (recommandé)&nbsp;;</li>
+    <li>le dossier de préférences et son sous-dossier <code>icons/</code>&nbsp;;</li>
+    <li>les dossiers des hotboxes partagées.</li>
+  </ol>
+  <p>Le JSON n’est jamais réécrit — seule la résolution d’affichage change.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="toolbar">
+  <p class="eyebrow">Éditeur</p>
+  <h2>Barre d’outils, de gauche à droite</h2>
+  <p>Supprimer • copier • coller • copier style • coller style — undo / redo —
+  grille (aimant rouge) + pas x/y — champs <strong>size</strong> + <strong>fit
+  zone</strong> — édition du <strong>centre</strong> + coordonnées — ajout&nbsp;: bouton /
+  texte / background — <strong>librairie</strong> / <strong>enregistrer dans la
+  librairie</strong> — ordre&nbsp;: tout au fond / tout devant — alignements (6) —
+  distributions (2).</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="librairie">
+  <p class="eyebrow">Librairies</p>
+  <h2>Librairie de boutons 📚</h2>
+  <p>L’idée&nbsp;: configurer un bouton une fois (commande, couleurs, texte…),
+  le ranger, le réutiliser dans toutes ses hotboxes. La librairie est une
+  <strong>shelf en bas de l’éditeur</strong>, façon shelf Maya&nbsp;: un onglet par
+  catégorie, chaque bouton affiché avec son vrai rendu en vignette. Le bouton
+  librairie de la barre d’outils masque/affiche la shelf.</p>
+
+  <h3>Sauvegarder un bouton</h3>
+  <p>Sélectionne un ou plusieurs boutons → bouton 💾 de la barre d’outils (ou
+  clic droit → «&nbsp;Save selection to library…&nbsp;») → nom + catégorie. La
+  <strong>destination est fixée par le mode</strong>&nbsp;: en admin, le bouton part
+  dans la <strong>librairie studio courante</strong> (la ligne «&nbsp;Library&nbsp;»
+  rappelle laquelle, avec le logo)&nbsp;; en animateur, dans <strong>sa librairie
+  perso</strong>. La <strong>catégorie proposée est celle de l’onglet courant</strong>
+  de la shelf — on se met sur l’onglet voulu, 💾, OK&nbsp;: rapide. Le champ
+  Category reste un menu déroulant éditable — taper un nouveau nom crée la
+  catégorie. Toutes les shelves ouvertes se rafraîchissent.</p>
+
+  <h3>Réutiliser</h3>
+  <p><strong>Glisse-dépose</strong> depuis la shelf vers le canvas juste
+  au-dessus&nbsp;: le bouton atterrit sous le curseur, sélectionné.
+  Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.</p>
+
+  <h3>Organiser</h3>
+  <ul>
+    <li><strong>Renommer un bouton</strong>&nbsp;: clic droit → <strong>Rename…</strong>
+      (perso toujours&nbsp;; studio en mode admin). Le bouton garde son apparence
+      et sa commande, seul son nom change.</li>
+    <li><strong>Supprimer</strong>&nbsp;: clic droit → Delete.</li>
+    <li><strong>Ouvrir le dossier</strong> (JSON brut)&nbsp;: clic droit → «&nbsp;Open
+      library folder&nbsp;» — ouvre l’explorateur à l’emplacement du
+      <code>.json</code> (perso ou studio selon l’onglet&nbsp;; sur les onglets
+      studio, admin seulement).</li>
+    <li><strong>Catégories</strong> — clic droit sur un <strong>onglet</strong>&nbsp;:
+      <em>New category…</em> (persistée même vide), <em>Rename category…</em>
+      (tous les boutons sont ré-étiquetés), <em>Delete category</em> (seulement
+      si vide). Le bouton <strong>＋</strong> en haut à droite suit le mode&nbsp;:
+      catégorie studio en admin, perso en animateur. Sur les onglets studio,
+      ces actions demandent le mode admin.</li>
+    <li><strong>Ranger dans une autre catégorie</strong>&nbsp;: glisser-déposer le(s)
+      bouton(s) <strong>sur l’onglet</strong> visé (le survoler ne change pas
+      l’affichage — on peut traverser la barre vers le canvas sans changer de
+      catégorie) ou <strong>dans la liste</strong> à la position voulue&nbsp;; ou clic
+      droit → <em>Move to category…</em> Le drag reste dans la même librairie
+      (perso↔perso, studio↔studio).</li>
+    <li><strong>Réordonner</strong>&nbsp;: l’ordre affiché est celui du fichier — fini
+      l’alphabétique imposé. Glisser un bouton dans sa liste pour le
+      repositionner&nbsp;; glisser un onglet (admin) pour réordonner les
+      catégories. Tout est persisté dans le <code>.json</code>.</li>
+  </ul>
+
+  <h3>Palette flottante</h3>
+  <p><strong>Double-clic sur un onglet</strong> → la catégorie s’ouvre dans une
+  fenêtre <strong>toujours au-dessus</strong>, en grille multi-lignes (fini le
+  scroll dans la rangée pour une catégorie de 30 boutons). Elle reste ouverte
+  tant qu’on ne la ferme pas, suit les changements de la librairie, se ferme si
+  la catégorie disparaît, et tout y marche comme dans la shelf&nbsp;: glisser
+  vers une hotbox, réordonner, clic droit, mêmes droits admin/animateur.
+  Plusieurs palettes peuvent rester ouvertes côte à côte.</p>
+
+  <h3>Filtre de recherche</h3>
+  <p>Le champ «&nbsp;Search...&nbsp;» en haut à gauche de la shelf — taper un bout
+  de nom («&nbsp;snap&nbsp;») remplace les onglets par un onglet unique de
+  résultats, toutes catégories confondues (perso ET studio). Les résultats se
+  glissent vers la hotbox comme d’habitude&nbsp;; effacer le champ restaure les
+  onglets.</p>
+
+  <h3>Où c’est stocké</h3>
+  <ul>
+    <li><strong>Perso</strong> (modifiable)&nbsp;: <code>button_library.json</code> dans
+      le dossier du fork — <code>Documents\maya\&lt;version&gt;\prefs\hotbox\</code>
+      sous Maya (<code>~/.hotbox</code> en standalone). Le registre des raccourcis
+      et les templates utilisateur y vivent aussi&nbsp;; un fichier resté à la
+      racine des prefs (anciennes versions) est déplacé automatiquement.
+      <code>hotboxes.json</code>, lui, reste à la racine des prefs — l’emplacement
+      de l’original (compatibilité et retour arrière).</li>
+    <li><strong>Studio</strong> (partagée)&nbsp;: un fichier commun choisi via l’UI ou
+      désigné par la variable <code>HOTBOX_STUDIO_LIBRARY</code> — voir
+      <a href="#studio">Librairie studio</a>.</li>
+  </ul>
+  <div class="callout"><span class="tag">Écritures protégées</span>
+  <p>Chaque écriture d’un fichier de données (librairies,
+  <code>hotboxes.json</code>, raccourcis, réglages) est <strong>atomique</strong>&nbsp;:
+  le contenu part dans un fichier temporaire puis remplace l’original d’un seul
+  coup — un crash en pleine écriture ne peut pas corrompre le fichier. Aucun
+  fichier annexe n’est créé&nbsp;: les sauvegardes historiques restent à la
+  charge de l’utilisateur (copie manuelle) ou du studio (backups quotidiens).</p></div>
+</section>
+
+<!-- ================================================================ -->
+<section id="sets">
+  <p class="eyebrow">Librairies</p>
+  <h2>Sets de boutons</h2>
+  <p>Avec <strong>plusieurs boutons sélectionnés</strong>, le dialogue de sauvegarde
+  💾 propose une case <strong>«&nbsp;Save the N buttons as one set (keeps
+  layout)&nbsp;»</strong>.</p>
+  <ul>
+    <li><strong>Cochée</strong>&nbsp;: la sélection devient <strong>UN SEUL élément de
+      librairie</strong> qui garde la <strong>disposition relative</strong> des boutons
+      — un kit main IK, une rangée de snaps…</li>
+    <li><strong>Décochée</strong> (défaut)&nbsp;: comportement historique, N boutons
+      indépendants «&nbsp;nom, nom 2, nom 3…&nbsp;».</li>
+  </ul>
+  <p>Dans la shelf, le set se reconnaît à sa <strong>vignette groupée</strong>
+  (l’infobulle précise le nombre de boutons). Au <strong>dépôt dans une
+  hotbox</strong>, les N boutons sont recréés d’un coup, disposés comme à
+  l’origine et centrés sous le curseur.</p>
+  <p>Un set se renomme, se range, se réordonne et se supprime <strong>comme un
+  bouton simple</strong> — et se publie vers la librairie studio pareil. Seule
+  exception&nbsp;: «&nbsp;Replace with library button&nbsp;» demande un bouton
+  simple, pas un set.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="studio">
+  <p class="eyebrow">Librairies</p>
+  <h2>Librairie studio</h2>
+  <p>Une librairie <strong>partagée</strong> (les catégories officielles du studio),
+  affichée en tête de la shelf avec le <strong>logo du studio</strong> en icône
+  d’onglet. En mode animateur elle est une référence en lecture seule&nbsp;; en
+  mode admin elle est éditable.</p>
+
+  <h3>Choisir / changer de librairie (par projet)</h3>
+  <p>Dans le coin de la shelf, pour tout le monde (la librairie reste en
+  lecture seule hors mode admin)&nbsp;:</p>
+  <ul>
+    <li>Le <strong>badge vert</strong> <span class="badge-lib">ringo</span> affiche le
+      <strong>nom du fichier</strong> de la librairie courante et <strong>c’est lui le
+      sélecteur</strong>&nbsp;: cliquer dessus ouvre la liste des librairies
+      (récentes + courante cochée) pour switcher de projet. Une librairie dont
+      le fichier a disparu est marquée «&nbsp;(missing)&nbsp;» et non
+      cliquable&nbsp;; le sous-menu <em>Remove from list</em> retire une librairie
+      obsolète de la liste (le fichier n’est pas touché).</li>
+    <li>Le bouton <strong>page (new)</strong> — admin uniquement — <strong>crée</strong>
+      une librairie&nbsp;: dialogue «&nbsp;Enregistrer sous&nbsp;», nom du
+      <code>.json</code> libre (<code>ringo.json</code>, <code>projetX.json</code>…). À
+      la création, le logo courant est copié à côté du nouveau fichier — la
+      nouvelle librairie garde l’identité du studio. Choisir un fichier
+      existant l’ouvre, jamais d’écrasement.</li>
+    <li>Le bouton <strong>dossier</strong> — pour tout le monde — <strong>ouvre/charge</strong>
+      une librairie existante.</li>
+  </ul>
+  <p><strong>Aucune librairie par défaut</strong>&nbsp;: au tout premier lancement il
+  n’y en a pas (pas de badge, pas d’onglets studio) — on en crée/ouvre une
+  explicitement, et seules celles réellement chargées vivent dans la liste.
+  Le choix est <strong>mémorisé entre les sessions</strong>
+  (<code>studio_settings.json</code> dans <code>prefs/hotbox/</code>) et prend le pas
+  sur la variable d’environnement.</p>
+  <div class="callout"><span class="tag">Rafraîchissement automatique</span>
+  <p>La librairie courante est <strong>surveillée</strong>&nbsp;: quand le lead publie
+  un bouton, les shelves ouvertes des animateurs se rafraîchissent toutes
+  seules.</p></div>
+
+  <h3>Publier vers la librairie studio (mode admin)</h3>
+  <p>Clic droit sur un ou plusieurs boutons de la shelf → <strong>«&nbsp;Send to
+  studio library&nbsp;»</strong>, ou directement 💾 avec la destination Studio. Les
+  boutons sont copiés dans la librairie studio (dédupliqués) et les onglets se
+  rafraîchissent — pas de fichier à copier à la main. En mode animateur, ces
+  actions n’existent pas. Alternative manuelle&nbsp;: copier son
+  <code>button_library.json</code> dans le dossier studio.</p>
+
+  <h3>Mettre en place la librairie (workflow lead)</h3>
+  <ol>
+    <li>Lancer le manager en mode admin
+      (<code>launch_manager('maya', studio_admin=True)</code>).</li>
+    <li>Créer les catégories officielles (clic droit sur un onglet studio →
+      <em>New studio category…</em>) et y ranger les boutons (💾 destination
+      Studio, ou <em>Send to studio library</em> depuis la perso).</li>
+    <li>Chaque animateur voit automatiquement les onglets studio (logo) + ses
+      onglets perso. Pour pointer le chemin au déploiement&nbsp;: définir
+      <code>HOTBOX_STUDIO_LIBRARY</code> (variable d’environnement Windows, ou
+      dans le <code>userSetup.py</code> commun&nbsp;:
+      <code>os.environ['HOTBOX_STUDIO_LIBRARY'] = r"P:\pipeline\hotbox"</code> —
+      un <code>.json</code> direct, ou un dossier contenant
+      <code>button_library.json</code>).</li>
+  </ol>
+
+  <h3>Logo du studio</h3>
+  <p>Pose un <code>studio_logo.png</code> (ou <code>logo.png</code>) dans le dossier de
+  la librairie studio — il devient l’icône des onglets. On peut aussi pointer
+  un fichier précis via la variable <code>HOTBOX_STUDIO_LOGO</code>. Sans rien, un
+  logo par défaut est utilisé. Un logo différent par projet est possible.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="templates">
+  <p class="eyebrow">Aller plus loin</p>
+  <h2>Templates</h2>
+  <p>À la création d’une hotbox, les templates s’affichent en <strong>grille de
+  vignettes cliquables</strong>&nbsp;: tous visibles d’un coup (embarqués puis
+  persos), clic = sélectionner, <strong>double-clic = créer directement</strong> —
+  la vignette EST l’aperçu. «&nbsp;Duplicate existing&nbsp;» garde son menu, avec
+  un aperçu qui n’apparaît que quand cette option est cochée.</p>
+  <p>Les templates embarqués sont ceux hérités de l’original, plus le template
+  <strong>TAT</strong> (la hotbox de base du studio&nbsp;: grille de boutons prête à
+  câbler). Combinés à «&nbsp;Replace with library button&nbsp;», ils permettent de
+  monter une hotbox rapidement&nbsp;: créer depuis le template, puis remplacer
+  chaque bouton par un bouton de la shelf.</p>
+  <p><strong>Créer ses propres templates</strong>&nbsp;: sélectionne une hotbox dans
+  le manager → bouton <strong>Save hotbox as template</strong> (💾 de la barre
+  d’outils du manager, à côté d’export). Elle est copiée dans
+  <code>templates/</code> du dossier de données et apparaît dès lors dans la liste
+  «&nbsp;From template&nbsp;», après les templates embarqués. Un template est une
+  copie figée&nbsp;: modifier la hotbox d’origine ne le change pas.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="dwpicker">
+  <p class="eyebrow">Aller plus loin</p>
+  <h2>Import de pickers dwpicker</h2>
+  <p>Le bouton <strong>Import</strong> du manager accepte aussi les fichiers
+  <code>.json</code> de <strong>dwpicker</strong> — la détection est automatique, rien à
+  choisir&nbsp;:</p>
+  <ul>
+    <li>les <strong>targets de sélection</strong> (le cœur d’un picker) deviennent
+      une commande <code>cmds.select([...])</code> sur le clic gauche&nbsp;;</li>
+    <li>les <strong>commandes</strong> (nouveau format ≥ 0.11 comme l’ancien) sont
+      réparties sur les clics gauche/droite, langage conservé&nbsp;;</li>
+    <li>les shapes <code>rounded_rect</code>/<code>custom</code> deviennent des
+      rectangles (pas de chemins vectoriels côté hotbox)&nbsp;;</li>
+    <li>les <strong>fonds</strong> de picker arrivent <strong>verrouillés</strong>
+      (Unlock all pour les libérer)&nbsp;;</li>
+    <li>la <strong>zone</strong> est calculée automatiquement autour des shapes
+      (comme le bouton fit zone), le centre au milieu.</li>
+  </ul>
+  <div class="callout note"><span class="tag">Limites</span>
+  <p>Panneaux multiples fusionnés, layers de visibilité et menus contextuels
+  ignorés, une seule commande par clic (les surnuméraires sont ignorées).</p></div>
+</section>
+
+<!-- ================================================================ -->
+<section id="raccourcis">
+  <p class="eyebrow">Aller plus loin</p>
+  <h2>Raccourcis clavier (gestionnaire)</h2>
+  <p>Le raccourci assigné à chaque hotbox s’affiche <strong>directement dans les
+  listes du manager</strong> (en grisé, à droite du nom, onglets Personal et
+  Shared) — plus besoin d’ouvrir le gestionnaire juste pour vérifier.</p>
+  <p>Le bouton <strong>⌨</strong> de la barre d’outils du manager ouvre le
+  <strong>gestionnaire de raccourcis</strong>&nbsp;: un tableau qui liste toutes les
+  hotboxes avec la touche qui leur est assignée.</p>
+  <ul>
+    <li><strong>Voir</strong> — chaque ligne montre la hotbox et sa touche (ou
+      «&nbsp;—&nbsp;» si aucune).</li>
+    <li><strong>Set… / Change…</strong> — ouvre le sélecteur de touche&nbsp;: on
+      <strong>tape directement</strong> la combinaison (ex. <kbd>Maj</kbd><kbd>Q</kbd>)
+      dans le champ Shortcut et elle s’affiche telle quelle. Plus besoin de
+      cocher Ctrl/Alt/Shift&nbsp;: les modificateurs sont lus sur la frappe.
+      <kbd>Échap</kbd> efface. On choisit ensuite le type d’événement.</li>
+    <li><strong>Clear</strong> — retire le raccourci. Sous Maya, la touche est
+      réellement débranchée (press ET release), pas seulement oubliée.</li>
+  </ul>
+  <p>Sous le capot, un petit fichier <code>hotbox_hotkey.json</code> (dossier de
+  données du DCC) tient le registre des raccourcis, commun à tous les
+  backends — c’est lui qui alimente le tableau. Les raccourcis globaux
+  n’existent que dans un DCC (Maya, Nuke…)&nbsp;: hors DCC le tableau l’indique
+  et les boutons Set sont désactivés. Si le set de hotkeys Maya courant est
+  verrouillé (<code>Maya_Default</code>), l’éditeur de hotkeys de Maya s’ouvre pour
+  le changer.</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="coulisses">
+  <p class="eyebrow">Aller plus loin</p>
+  <h2>Sous le capot</h2>
+  <p>Pour s’y retrouver dans le code&nbsp;:</p>
+  <ul>
+    <li><strong>Coordonnées</strong>&nbsp;: les shapes vivent dans l’espace de la
+      hotbox («&nbsp;unités&nbsp;») — le JSON est identique à l’original. Le
+      viewport applique zoom + translation au rendu (<code>ViewportMapper</code>
+      dans <code>geometry.py</code>, adapté de dwpicker)&nbsp;; les événements
+      souris sont convertis en unités avant toute logique.</li>
+    <li><strong>Undo</strong>&nbsp;: modèle «&nbsp;snapshot&nbsp;» — chaque modification
+      pousse une copie profonde de la hotbox complète (<code>UndoManager</code>,
+      <code>designer/application.py</code>).</li>
+    <li><strong>Presse-papier</strong>&nbsp;: boutons et styles transitent par le
+      presse-papier système en JSON avec une clé marqueur — d’où le
+      fonctionnement inter-fenêtres et inter-sessions.</li>
+    <li><strong>Multi-éditeurs</strong>&nbsp;: le manager lie chaque fenêtre d’édition
+      à sa hotbox par identité d’objet (<code>_EditorLink</code>), pas par ligne
+      sélectionnée.</li>
+  </ul>
+
+  <h3>Fichiers clés</h3>
+  <div class="tablewrap"><table>
+    <tr><th>Fichier</th><th>Rôle</th></tr>
+    <tr><td><code>designer/editarea.py</code></td><td>Viewport + interactions</td></tr>
+    <tr><td><code>designer/application.py</code></td><td>Fenêtre d’édition, actions</td></tr>
+    <tr><td><code>designer/attributes.py</code></td><td>Panneau de droite</td></tr>
+    <tr><td><code>designer/menu.py</code></td><td>Barre d’outils</td></tr>
+    <tr><td><code>interactive.py</code></td><td>Shape, manipulateur</td></tr>
+    <tr><td><code>painting.py</code> / <code>geometry.py</code></td><td>Rendu / maths</td></tr>
+    <tr><td><code>buttonlibrary.py</code></td><td>Librairies perso/studio, sets, mode admin, vignettes</td></tr>
+    <tr><td><code>colorpicker.py</code></td><td>Sélecteur de couleurs + pipette</td></tr>
+    <tr><td><code>dialog.py</code></td><td>Dialogues (création, raccourcis…)</td></tr>
+    <tr><td><code>data.py</code> / <code>widgets.py</code></td><td>JSON &amp; templates / champs réutilisables</td></tr>
+    <tr><td><code>images.py</code> / <code>theme.py</code></td><td>Chemins portables / thème sombre</td></tr>
+    <tr><td><code>manager.py</code> / <code>reader.py</code></td><td>Manager / hotbox en production</td></tr>
+    <tr><td><code>applications.py</code></td><td>Backends Maya/standalone + registre des raccourcis</td></tr>
+  </table></div>
+
+  <h3>Tests</h3>
+  <p><code>QT_QPA_PLATFORM=offscreen python tests/test_editor.py</code> — une
+  cinquantaine de tests headless (interactions souris simulées pas à pas,
+  format JSON, reader, librairies, sets, raccourcis, templates…). Toute
+  nouvelle fonctionnalité ajoute les siens, et la suite se termine par
+  «&nbsp;TOUT EST VERT&nbsp;».</p>
+</section>
+
+<footer>
+  hotboxJOR — fork personnel de hotbox_designer (Lionel Brouyère, licence
+  Clear BSD). Ce manuel est tenu à jour à chaque fonctionnalité&nbsp;; la même
+  version texte vit dans <code>MANUEL.md</code>.
+</footer>
+
+</div>
+</main>
+</div>
+
+<script>
+// --- sommaire : filtre de recherche (comme la shelf : « Search... ») ---
+(function () {
+  var input = document.getElementById('navsearch');
+  var links = Array.prototype.slice.call(
+    document.querySelectorAll('nav .nav-group a'));
+  var groups = Array.prototype.slice.call(
+    document.querySelectorAll('nav .nav-group'));
+  var empty = document.getElementById('noresult');
+  // texte de la section associée à chaque lien, pour chercher dans le contenu
+  var haystacks = links.map(function (a) {
+    var section = document.querySelector(a.getAttribute('href'));
+    return (a.textContent + ' ' +
+            (section ? section.textContent : '')).toLowerCase();
+  });
+  input.addEventListener('input', function () {
+    var text = input.value.trim().toLowerCase();
+    var any = false;
+    links.forEach(function (a, i) {
+      var show = !text || haystacks[i].indexOf(text) !== -1;
+      a.style.display = show ? '' : 'none';
+      a.classList.toggle('hit', Boolean(text) && show);
+      if (show) { any = true; }
+    });
+    groups.forEach(function (g) {
+      var visible = Array.prototype.some.call(
+        g.querySelectorAll('a'),
+        function (a) { return a.style.display !== 'none'; });
+      g.style.display = visible ? '' : 'none';
+    });
+    empty.style.display = any ? 'none' : 'block';
+  });
+})();
+
+// --- sommaire : surligner la section visible (scrollspy) ---
+(function () {
+  var links = Array.prototype.slice.call(
+    document.querySelectorAll('nav .nav-group a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var sections = Array.prototype.slice.call(
+    document.querySelectorAll('main section'));
+  if (!('IntersectionObserver' in window)) { return; }
+  var current = null;
+  var observer = new IntersectionObserver(function (entries) {
+    entries.forEach(function (entry) {
+      if (!entry.isIntersecting) { return; }
+      if (current) { current.classList.remove('active'); }
+      current = byId[entry.target.id];
+      if (current) { current.classList.add('active'); }
+    });
+  }, {rootMargin: '-10% 0px -70% 0px'});
+  sections.forEach(function (section) { observer.observe(section); });
+})();
+</script>
+</body>
+</html>

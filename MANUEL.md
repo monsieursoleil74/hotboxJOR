@@ -4,6 +4,10 @@ Mode d'emploi de l'éditeur et des outils du fork. Tenu à jour à chaque
 fonctionnalité ajoutée. Pour l'installation : voir `README.md`. Pour
 l'historique des évolutions : voir `CHANGELOG.md`.
 
+> 💡 **Version wiki** : ouvre **`MANUEL.html`** (double-clic → navigateur)
+> pour la version mise en page — sommaire latéral, recherche, fiches de
+> raccourcis. Même contenu, tenu en phase avec ce fichier.
+
 ---
 
 ## Vue d'ensemble

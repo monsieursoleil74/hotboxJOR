@@ -6,6 +6,11 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Manuel en version wiki** : `MANUEL.html` — page unique autonome
+  (double-clic → navigateur), sombre aux couleurs de l'outil, avec
+  sommaire latéral, champ de recherche (filtre les sections par leur
+  contenu), tableaux de gestes avec touches, encadrés. Même contenu
+  que `MANUEL.md`, tenu en phase.
 - **Sets de boutons** : plusieurs boutons sélectionnés peuvent être
   sauvegardés comme **un seul élément de librairie** (case « Save the
   N buttons as one set » du dialogue 💾). Le set garde la
