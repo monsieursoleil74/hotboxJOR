@@ -5,8 +5,11 @@ fonctionnalité ajoutée. Pour l'installation : voir `README.md`. Pour
 l'historique des évolutions : voir `CHANGELOG.md`.
 
 > 💡 **Version wiki** : ouvre **`MANUEL.html`** (double-clic → navigateur)
-> pour la version mise en page — sommaire latéral, recherche, fiches de
-> raccourcis. Même contenu, tenu en phase avec ce fichier.
+> pour la version mise en page — sommaire latéral, recherche, **captures
+> d'écran commentées et schémas**. Même contenu que ce fichier, en plus
+> illustré. Les captures sont regénérées par
+> `python docs/make_manual_shots.py` (hors écran, incrustées dans le
+> HTML) : à relancer quand l'interface change.
 
 ---
 

@@ -6,6 +6,14 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Manuel illustré** : 16 **captures d'écran** commentées (manager,
+  éditeur annoté en 4 zones, panneau d'attributs, sélecteur de
+  couleurs, shelf, sets, palette flottante, dialogues, raccourcis,
+  hotbox en production) et 2 **schémas** (qui a le droit d'écrire où ;
+  publier → surveillance → rafraîchissement). Les images sont
+  **incrustées** dans `MANUEL.html` (data URI) : le wiki reste un seul
+  fichier autonome. Elles sont produites hors écran par
+  `docs/make_manual_shots.py`, à relancer quand l'UI change.
 - **Manuel : arborescence des fichiers** — nouvelle section « Les
   fichiers sur le disque » (wiki + MANUEL.md) : l'arborescence
   `prefs\` dessinée et annotée (hotboxes.json, dossier hotbox\ et son

@@ -6,8 +6,9 @@ moderniser l'éditeur en s'inspirant de
 [dwpicker](https://github.com/DreamWall-Animation/dwpicker) (DreamWall
 Animation), lui-même dérivé du même projet d'origine.
 
-**📖 Documentation** : [`MANUEL.md`](MANUEL.md) — mode d'emploi complet
-(souris, raccourcis, chaque outil et sa logique) ;
+**📖 Documentation** : [`MANUEL.html`](MANUEL.html) — le **wiki illustré**
+(double-clic → navigateur : sommaire, recherche, captures d'écran et
+schémas) ; [`MANUEL.md`](MANUEL.md) — le même mode d'emploi en texte ;
 [`CHANGELOG.md`](CHANGELOG.md) — historique de ce qui est implémenté,
 étape par étape. Les deux sont tenus à jour à chaque fonctionnalité.
 
