@@ -6,6 +6,18 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
+- **Manipulation des boutons nettement plus fluide** (lourdeur
+  signalée au studio) : à chaque frame d'un déplacement, l'éditeur
+  rechargeait l'image de TOUS les boutons depuis le disque (résolution
+  du chemin + décodage) — insupportable quand les icônes vivent sur un
+  disque réseau — et reconstruisait tout le panneau d'attributs, dont
+  l'aperçu d'états qui re-crée trois boutons. Trois correctifs :
+  images mises en CACHE (`images.image_pixmap`, vidé quand un dossier
+  d'icônes est enregistré), seules les shapes réellement déplacées sont
+  re-synchronisées, et le panneau se met à jour au relâchement au lieu
+  de chaque frame. La boucle sur toutes les shapes venait du
+  hotbox_designer d'origine ; l'aperçu d'états, lui, était de mon fait.
+  Test : `test_drag_performance`.
 - **Manuel illustré** : 16 **captures d'écran** commentées (manager,
   éditeur annoté en 4 zones, panneau d'attributs, sélecteur de
   couleurs, shelf, sets, palette flottante, dialogues, raccourcis,

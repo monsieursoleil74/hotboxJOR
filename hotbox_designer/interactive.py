@@ -1,4 +1,4 @@
-from hotbox_designer.vendor.Qt import QtCore, QtGui
+from hotbox_designer.vendor.Qt import QtCore
 
 from hotbox_designer.geometry import (
     DIRECTIONS, get_topleft_rect, get_bottomleft_rect, get_topright_rect,
@@ -191,9 +191,11 @@ class Shape():
         return False
 
     def synchronize_image(self):
-        from hotbox_designer.images import resolve_image_path
-        self.pixmap = QtGui.QPixmap(
-            resolve_image_path(self.options['image.path']))
+        # pixmap MIS EN CACHE : cette méthode est appelée à chaque frame
+        # d'un déplacement, et re-décoder l'image (a fortiori depuis un
+        # disque réseau) rendait la manipulation poussive
+        from hotbox_designer.images import image_pixmap
+        self.pixmap = image_pixmap(self.options['image.path'])
         if self.options['image.fit'] is True:
             self.image_rect = None
             return

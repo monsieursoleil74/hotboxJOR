@@ -206,11 +206,18 @@ class ShapeEditArea(QtWidgets.QWidget):
                 constrain=self.shit_pressed)
             self.apply_magnet()
             self.manipulator.update_geometries()
-        for shape in self.shapes:
+        # SEULES les shapes déplacées/redimensionnées sont
+        # re-synchronisées : la boucle sur TOUTES les shapes (héritée de
+        # l'original) refaisait le travail pour des boutons qui n'avaient
+        # pas bougé — coûteux dès qu'une hotbox porte beaucoup d'icônes.
+        for shape in self.selection:
             shape.synchronize_rect()
             shape.synchronize_image()
         self.increase_undo_on_release = True
-        self.selectedShapesChanged.emit()
+        # le panneau d'attributs n'est PAS reconstruit à chaque frame :
+        # il n'affiche ni position ni taille, et son aperçu d'états
+        # re-crée trois boutons (donc trois images) à chaque appel. Il se
+        # met à jour au relâchement — cf. mouseReleaseEvent.
         self.repaint()
 
     # curseur affiché selon la zone survolée du manipulateur
@@ -366,6 +373,12 @@ class ShapeEditArea(QtWidgets.QWidget):
                     self.manipulator.set_rect(get_combined_rects(rects))
                     self.selectedShapesChanged.emit()
         self.selection_square.release()
+
+        # fin d'un déplacement/redimensionnement : c'est ICI que le
+        # panneau d'attributs se resynchronise (pendant le geste, le
+        # reconstruire à chaque frame coûtait cher pour rien)
+        if self.manipulator_moved:
+            self.selectedShapesChanged.emit()
 
         if self.increase_undo_on_release:
             self.increaseUndoStackRequested.emit()

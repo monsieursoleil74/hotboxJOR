@@ -2400,6 +2400,91 @@ def test_button_sets():
     print('sets de boutons (sauvegarde groupée + dépôt disposé) OK')
 
 
+def test_drag_performance():
+    """Lourdeur signalée au studio : chaque frame d'un déplacement
+    rechargeait l'image de TOUS les boutons (accès disque + décodage,
+    catastrophique quand les icônes vivent sur un disque réseau) et
+    reconstruisait le panneau d'attributs (dont l'aperçu d'états, qui
+    re-crée trois boutons). Désormais : images en cache, seules les
+    shapes déplacées sont re-synchronisées, panneau mis à jour au
+    relâchement."""
+    import tempfile
+    from hotbox_designer import images
+    from hotbox_designer.images import image_pixmap, clear_image_cache
+
+    tmp = tempfile.mkdtemp()
+    icon = QtGui.QPixmap(8, 8)
+    icon.fill(QtGui.QColor('red'))
+    icon_path = os.path.join(tmp, 'icone.png')
+    icon.save(icon_path)
+
+    clear_image_cache()
+    # une image n'est DÉCODÉE qu'une fois : même objet à chaque appel
+    first = image_pixmap(icon_path)
+    assert image_pixmap(icon_path) is first
+    assert not first.isNull()
+    # ... et le chemin n'est résolu qu'une fois
+    calls = []
+    real_resolve = images._resolve_image_path
+    images._resolve_image_path = lambda p: (calls.append(p), real_resolve(p))[1]
+    try:
+        images.resolve_image_path(icon_path)
+        images.resolve_image_path(icon_path)
+        assert calls == [], 'chemin déjà en cache : aucune résolution'
+        clear_image_cache()
+        images.resolve_image_path(icon_path)
+        images.resolve_image_path(icon_path)
+        assert len(calls) == 1, 'une seule résolution après vidage'
+    finally:
+        images._resolve_image_path = real_resolve
+
+    # trois boutons avec image ; on en déplace UN
+    editor = make_editor([(100, 100, 'a'), (300, 200, 'b'), (100, 300, 'c')])
+    area = editor.shape_editor
+    for shape in area.shapes:
+        shape.options['image.path'] = icon_path
+        shape.synchronize_image()
+    a, b, c = area.shapes
+
+    # compteurs sur les shapes qui NE bougent pas
+    counts = {'a': 0, 'c': 0}
+
+    def counting(shape, key):
+        real = shape.synchronize_image
+
+        def wrapped():
+            counts[key] += 1
+            return real()
+        return wrapped
+
+    a.synchronize_image = counting(a, 'a')
+    c.synchronize_image = counting(c, 'c')
+
+    rebuilds = []
+    area.selectedShapesChanged.connect(lambda: rebuilds.append(1))
+
+    driver = Driver(area)
+    driver.pos = driver.units((360, 212))
+    driver.press()
+    # le clic change la sélection : cette mise à jour-là est normale
+    apres_le_clic = len(rebuilds)
+    for step in range(1, 21):
+        driver.pos = driver.units((360 + step * 2, 212 + step * 2))
+        driver.move()
+    pendant_le_geste = len(rebuilds) - apres_le_clic
+    driver.release()
+    au_relachement = len(rebuilds) - apres_le_clic
+
+    assert area.selection.shapes == [b]
+    assert counts == {'a': 0, 'c': 0}, (
+        'les boutons immobiles ne doivent pas être re-synchronisés')
+    assert pendant_le_geste == 0, (
+        'le panneau ne doit pas être reconstruit à chaque frame')
+    assert au_relachement == 1, 'panneau mis à jour une fois, au relâchement'
+    assert near(b.options['shape.left'], 340)
+    editor.close()
+    print('perf du déplacement (images en cache, panneau au relâchement) OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2450,4 +2535,5 @@ if __name__ == '__main__':
     test_hotkey_edit_capture()
     test_hotkey_manager_dialog()
     test_button_sets()
+    test_drag_performance()
     print('TOUT EST VERT')
