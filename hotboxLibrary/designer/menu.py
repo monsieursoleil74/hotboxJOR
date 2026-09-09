@@ -17,6 +17,7 @@ class MenuWidget(QtWidgets.QWidget):
     sizeChanged = QtCore.Signal()
     fitZoneRequested = QtCore.Signal()
     useSnapToggled = QtCore.Signal(bool)
+    lockBackgroundToggled = QtCore.Signal(bool)
     snapValuesChanged = QtCore.Signal()
     editCenterToggled = QtCore.Signal(bool)
     centerValuesChanged = QtCore.Signal(int, int)
@@ -122,6 +123,17 @@ class MenuWidget(QtWidgets.QWidget):
         self.addbg = QtWidgets.QAction(icon('addbg.png'), '', self)
         self.addbg.setToolTip('Add background shape')
         self.addbg.triggered.connect(self.addBackgroundRequested.emit)
+        # « lock background » (façon dwpicker) : coché, les shapes
+        # marquées Background sont transparentes à la sélection — on
+        # travaille par-dessus sans les attraper. Coché par défaut,
+        # comme l'éditeur.
+        self.lockbg = QtWidgets.QAction(icon('lock_bg.png'), '', self)
+        self.lockbg.setToolTip(
+            'Lock backgrounds — locked backgrounds cannot be selected '
+            'or moved (uncheck to edit them)')
+        self.lockbg.setCheckable(True)
+        self.lockbg.setChecked(True)
+        self.lockbg.toggled.connect(self.lockBackgroundToggled.emit)
 
         # ordre de superposition : uniquement « tout au fond » et « tout
         # devant » — les deux pas-à-pas de dwpicker ne servaient à rien
@@ -183,6 +195,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.addbutton)
         self.toolbar.addAction(self.addtext)
         self.toolbar.addAction(self.addbg)
+        self.toolbar.addAction(self.lockbg)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.library)
         self.toolbar.addAction(self.savetolibrary)

@@ -78,6 +78,14 @@ Logique particulière :
 - Un rectangle de sélection **n'attrape pas une shape qui l'englobe
   entièrement** — un background n'est pris que si on le balaie vraiment.
   Pour sélectionner le fond, clique une zone nue.
+- **Lock background** (façon dwpicker) : le **cadenas** de la barre
+  d'outils (coché par défaut) rend les shapes marquées **Background**
+  transparentes à la sélection — clic, rectangle, Ctrl+A passent au
+  travers, on travaille par-dessus sans jamais attraper le fond.
+  Décocher le cadenas pour déplacer/redimensionner un fond. Une shape
+  devient un fond par la case **Background** du panneau d'attributs
+  (section Shape) ; le bouton « Add background » la coche d'office.
+  En production, un fond ne réagit jamais (ni survol, ni clic).
 - Une shape portant l'option `lock` (données d'anciennes versions) est
   transparente à la sélection.
 
@@ -162,6 +170,14 @@ affiché avec son vrai rendu en vignette.
 - **Réutiliser** : **glisse-dépose** depuis la shelf vers le canvas
   juste au-dessus : le bouton atterrit sous le curseur, sélectionné.
   Multi-sélection possible. Ça marche aussi vers un AUTRE éditeur.
+- **Remplacer d'un geste** : glisser UN bouton de la shelf et le
+  **lâcher directement sur un bouton de la hotbox** — celui-ci se
+  surligne au survol, et au lâcher il prend le contenu du bouton de la
+  librairie (couleurs, texte, image, commandes) en **gardant sa
+  position et sa taille**. Même résultat que « Replace with library
+  button », sans clic droit. Un set ou une multi-sélection lâchés sur
+  un bouton s'ajoutent (pas de remplacement) ; un fond verrouillé n'est
+  jamais une cible.
 - **Sets de boutons** : avec **plusieurs boutons sélectionnés**, le
   dialogue de sauvegarde propose une case **« Save the N buttons as
   one set (keeps layout) »**. Cochée, la sélection devient **UN SEUL
@@ -445,6 +461,10 @@ Refondu façon Photoshop :
 - La section **Dimensions a été retirée** (tout se manipule au
   viewport) — son champ « top » écrivait d'ailleurs dans `shape.right`
   (bug de l'original).
+- **Background** (section Shape) : une case à cocher marque la shape
+  comme fond — ignorée en production, et transparente à la sélection
+  tant que le cadenas « lock background » de la barre d'outils est
+  coché.
 - **Sous-menu fluide** — en haut de la section **Action**, un menu
   déroulant « Open sub-hotbox » liste les autres hotboxes marquées
   « is submenu » (dans le manager). En choisir une **génère toute seule**
@@ -463,7 +483,9 @@ recadrage sur F ; lock et magnet ont été retirés.)
 du bas, puis clic droit sur un ou plusieurs boutons du canvas →
 Replace. Le contenu (couleurs, texte, image, commandes…) vient de la
 librairie, **la position et la taille sont conservées** — idéal pour
-habiller un template sans replacer chaque bouton à la main.
+habiller un template sans replacer chaque bouton à la main. Encore plus
+direct : **glisser le bouton de la shelf et le lâcher sur le bouton** à
+habiller (il se surligne au survol).
 
 ## Templates
 
@@ -492,7 +514,7 @@ hotbox d'origine ne le change pas.
 Supprimer • copier • coller • copier style • coller style — undo /
 redo — grille (aimant rouge) + pas x/y — champs **size** + **fit
 zone** — édition du **centre** + coordonnées — ajout : bouton / texte /
-background — **librairie** / **enregistrer dans la librairie** — ordre :
+background — **cadenas** lock background — **librairie** / **enregistrer dans la librairie** — ordre :
 tout au fond / tout devant — alignements (6) — distributions
 (2).
 

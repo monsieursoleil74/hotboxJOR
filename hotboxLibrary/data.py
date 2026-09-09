@@ -97,6 +97,8 @@ def ensure_old_data_compatible(data):
         # décalage manuel de l'image dans le bouton
         shape.setdefault('image.offsetx', 0)
         shape.setdefault('image.offsety', 0)
+        # fond verrouillable (« lock background », façon dwpicker)
+        shape.setdefault('background', False)
 
     return data
 

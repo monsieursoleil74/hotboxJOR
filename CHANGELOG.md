@@ -6,6 +6,25 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Lock background, façon dwpicker** : nouvelle option `background`
+  sur les shapes (case **Background** dans la section Shape du panneau
+  d'attributs ; « Add background » la coche d'office) et **cadenas**
+  dans la barre d'outils, coché par défaut : les fonds deviennent
+  transparents à la sélection (clic, rectangle, Ctrl+A / Ctrl+I) — on
+  travaille par-dessus sans jamais les attraper ; décocher pour les
+  éditer (re-cocher les sort de la sélection). En production, un fond
+  n'est jamais interactif (ni survol, ni clic, ni visée), même s'il
+  porte une commande. Anciennes hotboxes : `background` vaut False
+  par défaut, rien ne change pour elles. Test : `test_background_lock`.
+- **Glisser un bouton de la shelf SUR un bouton = le remplacer** : le
+  bouton survolé se surligne en accent, et au lâcher il prend le
+  contenu du bouton de la librairie en gardant position et taille —
+  le geste direct de « Replace with library button ». Seul un bouton
+  simple remplace ; set, multi-sélection ou lâcher dans le vide
+  ajoutent comme avant ; un fond verrouillé n'est jamais une cible.
+  La règle de remplacement est partagée (`replace_shape_content`).
+  Test : `test_drop_replaces_button`.
+
 - **Structure du dépôt : le paquet reste dans `hotboxLibrary/`** (la
   version « tout à la racine » a été annulée). Au studio, c'est ce
   sous-dossier qu'on pose sur R:\ — pas le dépôt entier : le dossier

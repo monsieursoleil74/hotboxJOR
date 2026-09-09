@@ -6,6 +6,8 @@ from hotboxLibrary.commands import OPEN_COMMAND
 
 from hotboxLibrary.align import align_shapes, arrange_shapes
 from hotboxLibrary.templates import SQUARE_BUTTON, TEXT, BACKGROUND
+from hotboxLibrary.designer.editarea import (
+    REPLACE_KEEP_KEYS, replace_shape_content)
 from hotboxLibrary.interactive import Shape
 from hotboxLibrary.geometry import get_combined_rects
 from hotboxLibrary.qtutils import icon, set_shortcut
@@ -84,6 +86,7 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.fitZoneRequested.connect(self.fit_zone_to_shapes)
         self.menu.editCenterToggled.connect(self.edit_center_mode_changed)
         self.menu.useSnapToggled.connect(self.use_snap)
+        self.menu.lockBackgroundToggled.connect(self.lock_background_changed)
         self.menu.snapValuesChanged.connect(self.snap_value_changed)
         self.menu.centerValuesChanged.connect(self.move_center)
         width, height = self.options['width'], self.options['height']
@@ -236,15 +239,14 @@ class HotboxEditor(QtWidgets.QWidget):
         self.library_shelf.show()
 
     # ce qui est conservé lors d'un « Replace with library button » :
-    # la géométrie du bouton remplacé (le reste vient de la librairie)
-    REPLACE_KEEP_KEYS = (
-        'shape.left', 'shape.top', 'shape.width', 'shape.height')
+    # la géométrie du bouton remplacé (le reste vient de la librairie) —
+    # même règle que le dépôt d'un bouton de la shelf SUR un bouton
+    REPLACE_KEEP_KEYS = REPLACE_KEEP_KEYS
 
     def replace_selection_from_library(self):
         """Remplace le CONTENU du/des bouton(s) sélectionné(s) par le
         bouton choisi dans la shelf, en gardant position et taille —
         pratique pour habiller un template sans replacer chaque bouton."""
-        from copy import deepcopy
         from hotboxLibrary.dialog import warning
         entries = self.library_shelf.current_selected_entries()
         shapes = list(self.shape_editor.selection)
@@ -256,12 +258,7 @@ class HotboxEditor(QtWidgets.QWidget):
             return warning('Replace button', 'No shape selected')
         source = entries[0]['options']
         for shape in shapes:
-            kept = {
-                key: shape.options[key] for key in self.REPLACE_KEEP_KEYS}
-            shape.options.clear()
-            shape.options.update(deepcopy(source))
-            shape.options.update(kept)
-            shape.synchronize_image()
+            replace_shape_content(shape, source)
         self.selection_changed()
         self.shape_editor.repaint()
         self.set_data_modified()
@@ -383,15 +380,33 @@ class HotboxEditor(QtWidgets.QWidget):
         self.shape_editor.update_selection()
         self.shape_editor.repaint()
 
+    def selectable_shapes(self):
+        """Les shapes qu'un geste peut attraper (backgrounds exclus quand
+        « lock background » est actif)."""
+        area = self.shape_editor
+        return [s for s in area.shapes if area.is_selectable(s)]
+
     def select_all(self):
-        self.shape_editor.selection.add(self.shape_editor.shapes)
+        self.shape_editor.selection.add(self.selectable_shapes())
         self.shape_editor.update_selection()
         self.shape_editor.repaint()
 
     def invert_selection(self):
-        self.shape_editor.selection.invert(self.shape_editor.shapes)
+        self.shape_editor.selection.invert(self.selectable_shapes())
         self.shape_editor.update_selection()
         self.shape_editor.repaint()
+
+    def lock_background_changed(self, locked):
+        """Bouton cadenas de la barre d'outils : verrouiller les
+        backgrounds les fait sortir de la sélection courante."""
+        area = self.shape_editor
+        area.lock_background = locked
+        if locked:
+            kept = [s for s in area.selection if area.is_selectable(s)]
+            if len(kept) != len(area.selection.shapes):
+                area.selection.set(kept or None)
+                area.update_selection()
+        area.repaint()
 
     def set_data_modified(self):
         self.undo_manager.set_data_modified(self.hotbox_data())

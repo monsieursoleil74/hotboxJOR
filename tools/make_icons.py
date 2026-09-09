@@ -47,6 +47,10 @@ ICONS = {
     'addbg': '<rect x="4" y="4" width="16" height="16" rx="2" %s/>'
              '<path d="M8 12 h8 M12 8 v8" stroke="%s" stroke-width="2" '
              'stroke-linecap="round" fill="none"/>' % (S, ACCENT),
+    # lock background : un cadenas fermé sur un fond
+    'lock_bg': '<rect x="4" y="4" width="16" height="16" rx="2" %s/>'
+               '<rect x="8" y="11" width="8" height="6" rx="1" %s/>'
+               '<path d="M9.5 11 V9 a2.5 2.5 0 0 1 5 0 v2" %s/>' % (S, FA, SA),
     'picker': '<rect x="4" y="4" width="7" height="7" rx="1" %s/>'
               '<rect x="13" y="4" width="7" height="7" rx="1" %s/>'
               '<rect x="4" y="13" width="7" height="7" rx="1" %s/>'

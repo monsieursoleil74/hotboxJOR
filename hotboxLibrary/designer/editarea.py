@@ -39,6 +39,48 @@ def shapes_from_drop(options_list, center):
     return dropped
 
 
+# ce qui est conservé quand un bouton est REMPLACÉ par un bouton de la
+# librairie (clic droit « Replace », ou bouton de la shelf lâché
+# directement SUR un bouton de la hotbox) : sa géométrie — tout le
+# reste (couleurs, texte, image, commandes) vient de la librairie
+REPLACE_KEEP_KEYS = (
+    'shape.left', 'shape.top', 'shape.width', 'shape.height')
+
+
+def replace_shape_content(shape, source_options):
+    """Habille `shape` avec `source_options` en gardant position et
+    taille."""
+    from copy import deepcopy
+    kept = {key: shape.options[key] for key in REPLACE_KEEP_KEYS}
+    shape.options.clear()
+    shape.options.update(deepcopy(source_options))
+    shape.options.update(kept)
+    shape.synchronize_image()
+
+
+def parse_drop_payload(mime):
+    """Payload BUTTONS_MIME d'un drag venu de la shelf, ou None."""
+    import json
+    from hotboxLibrary.buttonlibrary import BUTTONS_MIME
+    data = mime.data(BUTTONS_MIME)
+    if not data:
+        return None
+    try:
+        return json.loads(bytes(data).decode('utf-8'))
+    except ValueError:
+        return None
+
+
+def single_button_payload(options_list):
+    """Les options du bouton si le drag porte UN bouton simple (ni set,
+    ni multi-sélection) — le seul cas où le lâcher sur un bouton
+    existant le REMPLACE au lieu d'en ajouter un."""
+    if (isinstance(options_list, list) and len(options_list) == 1
+            and isinstance(options_list[0], dict)):
+        return options_list[0]
+    return None
+
+
 class ShapeEditArea(QtWidgets.QWidget):
     selectedShapesChanged = QtCore.Signal()
     increaseUndoStackRequested = QtCore.Signal()
@@ -90,9 +132,32 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.place_image_shape = None
         self.place_image_ref = None
         self.increase_undo_on_release = False
+        # « lock background » (façon dwpicker) : les shapes marquées
+        # background deviennent transparentes à la sélection — on
+        # travaille par-dessus sans jamais les attraper. ON par défaut,
+        # bouton cadenas de la barre d'outils pour libérer
+        self.lock_background = True
+        # bouton de la hotbox survolé pendant un drag venu de la shelf :
+        # le lâcher dessus REMPLACE son contenu (surligné en accent)
+        self.drop_target = None
 
         self.ctrl_pressed = False
         self.shit_pressed = False
+
+    def is_selectable(self, shape):
+        """Une shape verrouillée (option lock des anciennes données) ou
+        un background en mode « lock background » est transparente à la
+        sélection : le clic passe au travers."""
+        if shape.options.get('lock'):
+            return False
+        return not (self.lock_background and shape.options.get('background'))
+
+    def shape_at(self, cursor):
+        """La shape SÉLECTIONNABLE la plus haute sous le curseur."""
+        for shape in reversed(self.shapes):
+            if self.is_selectable(shape) and shape.rect.contains(cursor):
+                return shape
+        return None
 
     def hotbox_rect(self):
         """Le « plan de travail » : la zone de la hotbox en unités."""
@@ -282,13 +347,9 @@ class ShapeEditArea(QtWidgets.QWidget):
             self.transform.set_rect(rect)
             self.transform.reference_rect = QtCore.QRectF(rect)
 
-        self.clicked_shape = None
-        for shape in reversed(self.shapes):
-            if shape.options.get('lock'):
-                continue  # une shape verrouillée ne se sélectionne pas
-            if shape.rect.contains(cursor):
-                self.clicked_shape = shape
-                break
+        # les backgrounds verrouillés et les shapes « lock » sont
+        # transparents : le clic passe au bouton du dessous, ou au vide
+        self.clicked_shape = self.shape_at(cursor)
 
         # presser une shape non sélectionnée la sélectionne tout de
         # suite : le drag qui suit la déplace directement (avant, ça
@@ -364,7 +425,7 @@ class ShapeEditArea(QtWidgets.QWidget):
                 # pas été « balayée » : on ne la prend pas
                 shapes = [
                     s for s in self.shapes
-                    if not s.options.get('lock')
+                    if self.is_selectable(s)
                     and s.rect.intersects(square)
                     and not s.rect.contains(square)]
                 if shapes:
@@ -404,25 +465,52 @@ class ShapeEditArea(QtWidgets.QWidget):
         if event.mimeData().hasFormat(BUTTONS_MIME):
             event.acceptProposedAction()
 
-    def dragMoveEvent(self, event):
-        from hotboxLibrary.buttonlibrary import BUTTONS_MIME
-        if event.mimeData().hasFormat(BUTTONS_MIME):
-            event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        """Dépose des boutons de la librairie à l'endroit du curseur."""
-        import json
-        from hotboxLibrary.buttonlibrary import BUTTONS_MIME
-        data = event.mimeData().data(BUTTONS_MIME)
-        if not data:
-            return
-        try:
-            options_list = json.loads(bytes(data).decode('utf-8'))
-        except ValueError:
-            return
+    def _drop_point(self, event):
+        """Position d'un événement de drag/drop, en unités de hotbox."""
         position = getattr(event, 'position', None)
         point = position() if position else QtCore.QPointF(event.pos())
-        center = self.viewport_mapper.to_units_coords(point)
+        return self.viewport_mapper.to_units_coords(point)
+
+    def dragMoveEvent(self, event):
+        from hotboxLibrary.buttonlibrary import BUTTONS_MIME
+        if not event.mimeData().hasFormat(BUTTONS_MIME):
+            return
+        event.acceptProposedAction()
+        # UN bouton simple survolant un bouton de la hotbox : on le
+        # surligne — le lâcher là remplacera son contenu
+        target = None
+        if single_button_payload(parse_drop_payload(event.mimeData())):
+            target = self.shape_at(self._drop_point(event))
+        if target is not self.drop_target:
+            self.drop_target = target
+            self.repaint()
+
+    def dragLeaveEvent(self, event):
+        if self.drop_target is not None:
+            self.drop_target = None
+            self.repaint()
+
+    def dropEvent(self, event):
+        """Dépose des boutons de la librairie à l'endroit du curseur —
+        ou, pour UN bouton lâché SUR un bouton existant, remplace le
+        contenu de celui-ci (position et taille conservées), comme le
+        clic droit « Replace with library button » mais d'un geste."""
+        self.drop_target = None
+        options_list = parse_drop_payload(event.mimeData())
+        if options_list is None:
+            self.repaint()
+            return
+        center = self._drop_point(event)
+        single = single_button_payload(options_list)
+        target = self.shape_at(center) if single is not None else None
+        if target is not None:
+            replace_shape_content(target, single)
+            self.selection.replace([target])
+            self.update_selection()
+            self.increaseUndoStackRequested.emit()
+            self.repaint()
+            event.acceptProposedAction()
+            return
         dropped = shapes_from_drop(options_list, center)
         self.shapes.extend(dropped)
         if not dropped:
@@ -644,6 +732,8 @@ class ShapeEditArea(QtWidgets.QWidget):
         draw_editor(painter, self.hotbox_rect(), snap=self.transform.snap)
         for shape in self.shapes:
             shape.draw(painter)
+        if self.drop_target is not None:
+            self._draw_drop_target(painter)
         self.draw_magnet_guides(painter)
         self.manipulator.draw(painter, self.units_cursor())
         self.selection_square.draw(painter, self.viewport_mapper.zoom)
@@ -653,6 +743,20 @@ class ShapeEditArea(QtWidgets.QWidget):
         if self.place_image_shape is not None:
             self._draw_place_image_hint(painter)
         painter.restore()
+
+    def _draw_drop_target(self, painter):
+        """Surlignage accent du bouton qui sera remplacé au lâcher."""
+        from hotboxLibrary.theme import ACCENT
+        zoom = self.viewport_mapper.zoom or 1.0
+        pen = QtGui.QPen(QtGui.QColor(ACCENT))
+        pen.setWidthF(3.0 / zoom)
+        painter.setPen(pen)
+        fill = QtGui.QColor(ACCENT)
+        fill.setAlpha(70)
+        painter.setBrush(QtGui.QBrush(fill))
+        margin = 2.0 / zoom
+        painter.drawRect(
+            self.drop_target.rect.adjusted(-margin, -margin, margin, margin))
 
     def _draw_place_image_hint(self, painter):
         shape = self.place_image_shape

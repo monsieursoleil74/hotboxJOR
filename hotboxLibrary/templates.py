@@ -6,6 +6,7 @@ SQUARE_BUTTON = {
     'shape.height': 25.0,
     'shape.cornersx': 8,
     'shape.cornersy': 8,
+    'background': False,  # fond : transparent au clic si « lock background »
     'border': True,
     'borderwidth.normal': 1.0,
     'borderwidth.hovered': 1.25,
@@ -49,6 +50,7 @@ TEXT = {
     'shape.height': 50.0,
     'shape.cornersx': 8,
     'shape.cornersy': 8,
+    'background': False,  # fond : transparent au clic si « lock background »
     'border': False,
     'borderwidth.normal': 0,
     'borderwidth.hovered': 0,
@@ -92,6 +94,7 @@ BACKGROUND = {
     'shape.height': 400.0,
     'shape.cornersx': 8,
     'shape.cornersy': 8,
+    'background': True,  # fond : transparent au clic si « lock background »
     'border': False,
     'borderwidth.normal': 0,
     'borderwidth.hovered': 0,

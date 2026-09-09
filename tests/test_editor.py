@@ -337,7 +337,11 @@ def test_selection_ignores_background():
     assert area.selection.shapes == [button], [
         s.options['text.content'] for s in area.selection.shapes]
 
-    # clic sur le fond nu : le fond est sélectionnable normalement
+    # clic sur le fond nu : cadenas coché (défaut), le fond est
+    # transparent — rien ; cadenas décoché, il se sélectionne normalement
+    driver.click((520, 380))
+    assert area.selection.shapes == []
+    editor.menu.lockbg.setChecked(False)
     driver.click((520, 380))
     assert area.selection.shapes == [background]
 
@@ -2536,6 +2540,170 @@ def test_admin_shelf_without_library():
             os.environ[bl.STUDIO_ENV_VARIABLE] = saved_env
     print('shelf admin sans librairie (onglet d attente, + guidé) OK')
 
+def test_background_lock():
+    """« Lock background » façon dwpicker : une shape marquée Background
+    est transparente à la sélection (clic, rectangle, Ctrl+A) tant que
+    le cadenas de la barre d'outils est coché — on travaille par-dessus
+    sans l'attraper ; décoché, elle redevient une shape comme les
+    autres. En production, un background ne réagit jamais."""
+    from hotboxLibrary.templates import BACKGROUND
+    from hotboxLibrary.reader import set_shapes_hovered
+
+    editor = make_editor([(200, 150, 'btn')])
+    area = editor.shape_editor
+    editor.create_shape(BACKGROUND, before=True)   # comme le bouton addbg
+    background, button = area.shapes
+    assert background.options['background'] is True
+    assert button.options['background'] is False
+    assert area.lock_background is True and editor.menu.lockbg.isChecked()
+    bw, bh = button.rect.width(), button.rect.height()
+    assert background.rect.contains(QtCore.QPointF(110, 20))
+
+    driver = Driver(area)
+    # clic sur le fond (loin du bouton) : rien n'est sélectionné
+    driver.click((110, 20))
+    assert area.selection.shapes == []
+    # rectangle qui balaie fond ET bouton (en partant HORS du fond, pour
+    # que la règle « un fond qui englobe le rectangle » ne joue pas)
+    driver.drag((50, 120), (200 + bw + 20, 150 + bh + 20))
+    assert area.selection.shapes == [button]
+    # Ctrl+A : le fond reste dehors
+    area.selection.clear()
+    editor.select_all()
+    assert area.selection.shapes == [button]
+
+    # cadenas décoché : le fond redevient une shape ordinaire
+    editor.menu.lockbg.setChecked(False)
+    assert area.lock_background is False
+    driver.click((110, 20))
+    assert area.selection.shapes == [background]
+    editor.select_all()
+    assert set(area.selection.shapes) == {background, button}
+    # re-verrouiller sort le fond de la sélection courante
+    editor.menu.lockbg.setChecked(True)
+    assert area.selection.shapes == [button]
+
+    # panneau d'attributs : la case Background pilote l'option
+    area.selection.set([button])
+    area.update_selection()
+    editor.selection_changed()
+    panel = editor.attribute_editor.shape.background
+    assert panel.isChecked() is False
+    panel.click()
+    APP.processEvents()
+    assert button.options['background'] is True
+    # ... et le bouton devenu fond n'est plus attrapable (cadenas coché)
+    center = (button.rect.center().x(), button.rect.center().y())
+    driver.click(center)
+    assert area.selection.shapes == []
+
+    # production : un fond n'est jamais interactif — le reader l'exclut
+    # des shapes survolables/cliquables, même s'il porte une commande
+    from hotboxLibrary.reader import HotboxWidget
+    background.options['action.left'] = True
+    assert background.is_interactive() is False
+    widget = HotboxWidget()
+    widget.set_hotbox_data(editor.hotbox_data())
+    assert not any(
+        s.options.get('background') for s in widget.interactive_shapes)
+    background.hovered = False   # (l'éditeur l'avait survolé plus haut)
+    set_shapes_hovered([background], QtCore.QPointF(110, 20), False)
+    assert background.hovered is False
+    editor.close()
+    print('lock background (clic/rectangle/Ctrl+A, case, production) OK')
+
+
+def test_drop_replaces_button():
+    """Glisser UN bouton de la shelf SUR un bouton de la hotbox le
+    remplace (contenu de la librairie, géométrie conservée) au lieu d'en
+    ajouter un — avec surlignage de la cible au survol. Un set, une
+    multi-sélection ou un lâcher dans le vide ajoutent comme avant ; un
+    background verrouillé n'est pas une cible."""
+    from hotboxLibrary.buttonlibrary import BUTTONS_MIME, buttons_payload
+    from hotboxLibrary.templates import BACKGROUND
+
+    editor = make_editor([(100, 100, 'a'), (300, 200, 'b')])
+    area = editor.shape_editor
+    a, b = area.shapes
+
+    lib = dict(SQUARE_BUTTON)
+    lib.update({
+        'text.content': 'LIB', 'bgcolor.normal': '#ff0000',
+        'action.left': True, 'action.left.command': 'print("lib")',
+        'shape.left': 0.0, 'shape.top': 0.0,
+        'shape.width': 40.0, 'shape.height': 20.0})
+    entry = {'name': 'LibBtn', 'category': 'General', 'options': lib}
+
+    class FakeDrop:
+        def __init__(self, entries, point):
+            self.mime = QtCore.QMimeData()
+            payload = json.dumps(buttons_payload(entries)).encode('utf-8')
+            self.mime.setData(BUTTONS_MIME, QtCore.QByteArray(payload))
+            self._point = point
+            self.accepted = False
+
+        def mimeData(self):
+            return self.mime
+
+        def position(self):
+            return QtCore.QPointF(self._point)
+
+        def acceptProposedAction(self):
+            self.accepted = True
+
+    driver = Driver(area)
+
+    def over(shape):
+        return driver.units(
+            (shape.rect.center().x(), shape.rect.center().y()))
+
+    # survol : b est désigné comme cible (surlignée)
+    move = FakeDrop([entry], over(b))
+    area.dragMoveEvent(move)
+    assert area.drop_target is b and move.accepted
+    area.dragLeaveEvent(None)
+    assert area.drop_target is None
+
+    # lâcher sur b : b est habillé, sa géométrie intacte, aucune shape
+    # en plus, b sélectionné
+    keys = ('shape.left', 'shape.top', 'shape.width', 'shape.height')
+    geometry = tuple(b.options[k] for k in keys)
+    drop = FakeDrop([entry], over(b))
+    area.dropEvent(drop)
+    assert drop.accepted and len(area.shapes) == 2
+    assert b.options['text.content'] == 'LIB'
+    assert b.options['bgcolor.normal'] == '#ff0000'
+    assert b.options['action.left.command'] == 'print("lib")'
+    assert tuple(b.options[k] for k in keys) == geometry
+    assert area.selection.shapes == [b]
+
+    # dans le vide : ajout, comme avant
+    area.dropEvent(FakeDrop([entry], driver.units((550, 380))))
+    assert len(area.shapes) == 3
+
+    # deux boutons, ou un set, lâchés sur a : ajout, a n'est pas touché
+    area.dropEvent(FakeDrop([entry, entry], over(a)))
+    assert len(area.shapes) == 5 and a.options['text.content'] == 'a'
+    kit = {'name': 'kit', 'category': 'General',
+           'set': [dict(lib), dict(lib)]}
+    area.dropEvent(FakeDrop([kit], over(a)))
+    assert len(area.shapes) == 7 and a.options['text.content'] == 'a'
+
+    # un background verrouillé n'est pas une cible : lâcher dessus ajoute
+    editor.create_shape(BACKGROUND, before=True)
+    background = area.shapes[0]
+    count = len(area.shapes)
+    corner = driver.units(
+        (background.rect.left() + 5, background.rect.top() + 5))
+    move = FakeDrop([entry], corner)
+    area.dragMoveEvent(move)
+    assert area.drop_target is None
+    area.dropEvent(FakeDrop([entry], corner))
+    assert len(area.shapes) == count + 1
+    assert background.options['text.content'] == ''
+    editor.close()
+    print('dépôt d un bouton SUR un bouton = remplacement OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2588,4 +2756,6 @@ if __name__ == '__main__':
     test_button_sets()
     test_drag_performance()
     test_admin_shelf_without_library()
+    test_background_lock()
+    test_drop_replaces_button()
     print('TOUT EST VERT')

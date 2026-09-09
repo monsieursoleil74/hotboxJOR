@@ -209,6 +209,16 @@ class ShapeSettings(QtWidgets.QWidget):
         corners_layout.addWidget(self.corners)
         corners_layout.addStretch(1)
 
+        # fond : une shape marquée Background est ignorée en production
+        # (ni survol ni clic) et, dans l'éditeur, transparente à la
+        # sélection tant que « lock background » est coché
+        self.background = BoolCheckBox(False)
+        self.background.setToolTip(
+            'Background shape: never reacts in the hotbox, and cannot be '
+            'selected in the editor while backgrounds are locked')
+        self.background.valueSet.connect(
+            partial(self.optionSet.emit, 'background'))
+
         self.layout = QtWidgets.QFormLayout(self)
         self.layout.setSpacing(4)
         self.layout.setContentsMargins(8, 6, 8, 10)
@@ -216,6 +226,7 @@ class ShapeSettings(QtWidgets.QWidget):
         self.layout.addRow('Shape', self.shape)
         self.corners_label = QtWidgets.QLabel('Corner')
         self.layout.addRow(self.corners_label, self.corners_row)
+        self.layout.addRow('Background', self.background)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
@@ -244,6 +255,10 @@ class ShapeSettings(QtWidgets.QWidget):
 
         radii = list({option.get('shape.cornersx', 8) for option in options})
         self.corners.setText(str(radii[0]) if len(radii) == 1 else None)
+
+        flags = list({bool(option.get('background')) for option in options})
+        self.background.setCurrentText(
+            str(flags[0]) if len(flags) == 1 else None)
 
 
 class ImageSettings(QtWidgets.QWidget):

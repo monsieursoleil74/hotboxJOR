@@ -177,6 +177,10 @@ class Shape():
         execute_code(language, code)
 
     def is_interactive(self):
+        # un fond (« background ») ne réagit jamais : ni survol, ni
+        # clic, ni visée — même s'il porte une commande par erreur
+        if self.options.get('background'):
+            return False
         return any([self.options['action.right'], self.options['action.left']])
 
     def autoclose(self, left=False, right=False):
