@@ -1114,6 +1114,10 @@ hotboxLibrary.launch_manager('maya', studio_admin=True)</code></pre>
   <p><strong>Aucune librairie par défaut</strong>&nbsp;: au tout premier lancement il
   n’y en a pas (pas de badge, pas d’onglets studio) — on en crée/ouvre une
   explicitement, et seules celles réellement chargées vivent dans la liste.
+  En <strong>mode admin</strong> sans librairie chargée, la shelf affiche un
+  onglet d’attente «&nbsp;No studio library&nbsp;» avec la marche à suivre
+  (＋ est grisé) — les boutons <strong>créer / ouvrir</strong> restent à droite,
+  c’est par eux qu’on commence.
   Le choix est <strong>mémorisé entre les sessions</strong>
   (<code>studio_settings.json</code> dans <code>prefs/hotbox/</code>) et prend le pas
   sur la variable d’environnement.</p>

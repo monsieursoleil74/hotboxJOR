@@ -6,6 +6,14 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Shelf vide en mode admin corrigée** (bug remonté au studio) : sans
+  librairie studio chargée sur le poste, le mode admin n'avait AUCUN
+  onglet — et Qt masque alors aussi le coin (badge / créer / ouvrir /
+  ＋) : bande vide, plus aucun moyen de charger une librairie depuis la
+  shelf. Désormais un onglet d'attente « No studio library » porte la
+  consigne, les boutons créer / ouvrir restent visibles, et ＋ est
+  grisé avec « Load a studio library first ». Tout revient dès qu'une
+  librairie est chargée. Test : `test_admin_shelf_without_library`.
 - **Le paquet s'appelle désormais `hotboxLibrary`** (demande du pipe
   studio) : il **cohabite sans conflit** avec le `hotbox_designer`
   d'origine déjà déployé, au lieu de devoir le remplacer. Les deux

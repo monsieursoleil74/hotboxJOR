@@ -1142,7 +1142,15 @@ class LibraryShelf(QtWidgets.QWidget):
         # différer par projet)
         self._update_library_badge()
         self.create_library_button.setVisible(is_studio_admin())
-        if is_studio_admin() and studio_location():
+        # admin SANS librairie chargée : ＋ n'a rien où créer (les onglets
+        # perso sont cachés dans ce mode) — on le désactive et on
+        # oriente vers les boutons créer / ouvrir une librairie
+        no_library = is_studio_admin() and not studio_location()
+        self.add_button.setEnabled(not no_library)
+        if no_library:
+            self.add_button.setToolTip(
+                'Load a studio library first (new / open buttons)')
+        elif is_studio_admin():
             self.add_button.setToolTip(
                 'Create a category in %s' % studio_library_label())
         else:
@@ -1165,12 +1173,19 @@ class LibraryShelf(QtWidgets.QWidget):
         self.tabs.tabBar().setMovable(is_studio_admin())
         for category in studio:  # ordre du FICHIER, plus d'alphabétique
             self._add_tab(category, studio[category], current, readonly=True)
-        # librairie toute neuve (aucune catégorie) en admin : un onglet
-        # « General » vide garde la shelf vivante — sans AUCUN onglet,
-        # Qt cache aussi le coin (badge / dossier / ＋) et tout semble
-        # avoir disparu
-        if is_studio_admin() and not studio and studio_location():
-            self._add_tab(DEFAULT_CATEGORY, [], current, readonly=True)
+        # en admin, la shelf ne montre QUE le studio : sans AUCUN onglet,
+        # Qt cache aussi le coin (badge / créer / ouvrir / ＋) et tout
+        # semble avoir disparu — cul-de-sac, plus aucun moyen de charger
+        # une librairie depuis la shelf. Deux cas :
+        # - librairie toute neuve (aucune catégorie) : un onglet
+        #   « General » vide garde la shelf vivante ;
+        # - AUCUNE librairie chargée sur ce poste : un onglet d'attente
+        #   qui dit quoi faire.
+        if is_studio_admin() and not studio:
+            if studio_location():
+                self._add_tab(DEFAULT_CATEGORY, [], current, readonly=True)
+            else:
+                self._add_placeholder_tab()
 
         # 2) onglets perso (modifiables) — CACHÉS en mode admin : on y
         # gère l'OFFICIEL, le perso appartient au mode animateur (c'est
@@ -1232,6 +1247,30 @@ class LibraryShelf(QtWidgets.QWidget):
             item.setToolTip(
                 '%s — drag & drop into the hotbox%s' % (name, suffix))
             shelf_list.addItem(item)
+
+    PLACEHOLDER_TAB = 'No studio library'
+
+    def _add_placeholder_tab(self):
+        """Mode admin sans librairie studio : un onglet d'attente, avec
+        la consigne écrite dedans, à la place du vide. Rien n'y est
+        déposable ni glissable — il n'existe que pour garder le coin de
+        la shelf (créer / ouvrir une librairie) visible."""
+        placeholder = ShelfList()
+        placeholder.readonly = True
+        placeholder.reorderable = False
+        placeholder.shelf = self
+        placeholder.category = None
+        placeholder.setAcceptDrops(False)
+        placeholder.setContextMenuPolicy(QtCore.Qt.NoContextMenu)
+        hint = QtWidgets.QListWidgetItem(
+            'No studio library loaded — create one (new) or open one '
+            '(folder) with the buttons on the right →')
+        hint.setFlags(QtCore.Qt.NoItemFlags)  # ni sélection, ni drag
+        placeholder.addItem(hint)
+        placeholder.setToolTip(
+            'Admin mode shows the studio library only. Load one to '
+            'start filling it.')
+        self.tabs.addTab(placeholder, self.PLACEHOLDER_TAB)
 
     def _add_tab(self, category, entries, current, readonly=False):
         shelf_list = ShelfList()

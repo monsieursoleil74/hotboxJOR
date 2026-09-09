@@ -316,7 +316,10 @@ hotboxLibrary.launch_manager('maya', studio_admin=True)
   **Aucune librairie par défaut** : au tout premier lancement il n'y en
   a pas (pas de badge, pas d'onglets studio) — on en crée/ouvre une
   explicitement, et seules celles qu'on a réellement chargées vivent
-  dans la liste. La librairie courante est **surveillée** : quand le
+  dans la liste. En **mode admin** sans librairie chargée, la shelf
+  affiche un onglet d'attente « No studio library » avec la marche à
+  suivre (＋ est grisé) — les boutons **créer / ouvrir** restent à
+  droite, c'est par eux qu'on commence. La librairie courante est **surveillée** : quand le
   lead publie un bouton, les shelves ouvertes des animateurs se
   **rafraîchissent automatiquement**. Le choix est **mémorisé entre les
   sessions**

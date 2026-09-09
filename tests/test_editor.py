@@ -2485,6 +2485,57 @@ def test_drag_performance():
     editor.close()
     print('perf du déplacement (images en cache, panneau au relâchement) OK')
 
+def test_admin_shelf_without_library():
+    """Bug remonté au studio : en mode admin SANS librairie studio
+    chargée, la shelf était une bande vide — zéro onglet, et Qt masque
+    alors aussi le coin (badge / créer / ouvrir / ＋) : plus aucun moyen
+    de charger une librairie. Désormais un onglet d'attente garde la
+    shelf vivante, ＋ est désactivé avec une consigne, et tout revient
+    dès qu'une librairie est chargée."""
+    import tempfile
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    saved_env = os.environ.pop(bl.STUDIO_ENV_VARIABLE, None)
+    bl.set_studio_location(None)
+    bl.set_studio_admin(True)
+    try:
+        shelf = LibraryShelf(application)
+        shelf.show()
+        APP.processEvents()
+        # un onglet d'attente, pas une shelf vide
+        assert shelf.tabs.count() == 1
+        assert shelf.tabs.tabText(0) == LibraryShelf.PLACEHOLDER_TAB
+        placeholder = shelf.tabs.widget(0)
+        assert placeholder.count() == 1  # la consigne, écrite dedans
+        assert not (placeholder.item(0).flags() & QtCore.Qt.ItemIsSelectable)
+        assert placeholder.readonly and not placeholder.reorderable
+        # ＋ n'a rien où créer : désactivé, avec une consigne
+        assert not shelf.add_button.isEnabled()
+        assert 'Load a studio library' in shelf.add_button.toolTip()
+        # le coin reste accessible : créer / ouvrir une librairie
+        assert shelf.create_library_button.isVisibleTo(shelf)
+        assert shelf.open_library_button.isVisibleTo(shelf)
+
+        # une librairie chargée -> l'onglet d'attente disparaît
+        studio = os.path.join(tmp, 'TAT.json')
+        bl.save_library(studio, [{bl.CATEGORY_KEY: 'ANIMATION'}])
+        bl.set_studio_location(studio)
+        shelf.refresh()
+        names = [shelf._tab_name(i) for i in range(shelf.tabs.count())]
+        assert names == ['ANIMATION']
+        assert shelf.add_button.isEnabled()
+        shelf.close()
+    finally:
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)
+        if saved_env is not None:
+            os.environ[bl.STUDIO_ENV_VARIABLE] = saved_env
+    print('shelf admin sans librairie (onglet d attente, + guidé) OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2536,4 +2587,5 @@ if __name__ == '__main__':
     test_hotkey_manager_dialog()
     test_button_sets()
     test_drag_performance()
+    test_admin_shelf_without_library()
     print('TOUT EST VERT')
