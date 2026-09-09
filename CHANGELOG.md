@@ -6,6 +6,16 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Le dépôt EST le paquet** (retour du déploiement studio) : le
+  pipe pose le dépôt tel quel sur R:\ sous le nom `hotboxLibrary` —
+  avec l'ancienne structure (`hotboxLibrary/hotboxLibrary/…`) Python
+  tombait sur le dossier extérieur, sans `__init__.py`, et
+  `launch_manager` n'existait pas. Les fichiers du paquet
+  (`__init__.py`, `manager.py`, `designer/`, `vendor/`, `resources/`…)
+  vivent désormais **à la racine du dépôt**, la doc et les tests à
+  côté. Plus rien à configurer : le dossier posé, `import hotboxLibrary`
+  marche. Tests, générateur de captures et CI suivent (le CI clone
+  dans un dossier nommé `hotboxLibrary`, comme au studio).
 - **Shelf vide en mode admin corrigée** (bug remonté au studio) : sans
   librairie studio chargée sur le poste, le mode admin n'avait AUCUN
   onglet — et Qt masque alors aussi le coin (badge / créer / ouvrir /

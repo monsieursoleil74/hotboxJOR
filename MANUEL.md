@@ -30,7 +30,10 @@ hotbox_designer, jamais altérées par une simple ouverture.
 Le paquet Python s'appelle **`hotboxLibrary`** (et non
 `hotbox_designer`) : l'outil **cohabite sans conflit** avec un
 hotbox_designer déjà installé dans le pipeline — les deux peuvent vivre
-côte à côte et lisent les mêmes hotboxes.
+côte à côte et lisent les mêmes hotboxes. **Le dépôt EST le paquet** :
+on le pose tel quel, nommé `hotboxLibrary`, dans un dossier de scripts
+Maya, et `import hotboxLibrary` fonctionne — le manuel et la doc à côté
+des `.py` ne gênent pas.
 
 Le manager se lance en **deux modes** : animateur (par défaut — la
 librairie studio est une référence en lecture seule) ou **admin studio**
