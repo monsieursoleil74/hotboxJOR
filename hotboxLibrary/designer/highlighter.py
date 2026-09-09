@@ -1,6 +1,6 @@
 import keyword
-from hotbox_designer.vendor.Qt import QtGui, QtCore
-from hotbox_designer.languages import PYTHON, MEL, RUMBA_SCRIPT
+from hotboxLibrary.vendor.Qt import QtGui, QtCore
+from hotboxLibrary.languages import PYTHON, MEL, RUMBA_SCRIPT
 
 
 

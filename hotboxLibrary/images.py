@@ -98,7 +98,7 @@ def image_pixmap(path):
 
     Toutes les shapes qui pointent la même image partagent le même
     pixmap : il n'est jamais modifié, seulement dessiné."""
-    from hotbox_designer.vendor.Qt import QtGui
+    from hotboxLibrary.vendor.Qt import QtGui
     if not path:
         return QtGui.QPixmap()
     pixmap = _pixmaps.get(path)

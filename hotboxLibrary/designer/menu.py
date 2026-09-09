@@ -1,7 +1,7 @@
 from functools import partial
 
-from hotbox_designer.vendor.Qt import QtGui, QtWidgets, QtCore
-from hotbox_designer.qtutils import icon
+from hotboxLibrary.vendor.Qt import QtGui, QtWidgets, QtCore
+from hotboxLibrary.qtutils import icon
 
 
 class MenuWidget(QtWidgets.QWidget):
@@ -198,7 +198,7 @@ class MenuWidget(QtWidgets.QWidget):
 
         # badge « STUDIO ADMIN » calé à droite : rappel visuel du mode
         # de lancement — les animateurs ne le voient jamais
-        from hotbox_designer.theme import ACCENT
+        from hotboxLibrary.theme import ACCENT
         spacer = QtWidgets.QWidget()
         spacer.setSizePolicy(
             QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Preferred)
@@ -220,7 +220,7 @@ class MenuWidget(QtWidgets.QWidget):
         bretelles (action + widget) : sous certaines versions de Qt,
         masquer seulement l'action d'un widget de toolbar ne masque pas
         le widget — le badge restait visible en mode animateur."""
-        from hotbox_designer.buttonlibrary import is_studio_admin
+        from hotboxLibrary.buttonlibrary import is_studio_admin
         visible = is_studio_admin()
         self.admin_badge_action.setVisible(visible)
         self.admin_badge.setVisible(visible)

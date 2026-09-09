@@ -1,11 +1,11 @@
 from functools import partial
-from hotbox_designer.vendor.Qt import QtCore, QtGui, QtWidgets
+from hotboxLibrary.vendor.Qt import QtCore, QtGui, QtWidgets
 
-from hotbox_designer.qtutils import VALIGNS, HALIGNS
-from hotbox_designer.widgets import (
+from hotboxLibrary.qtutils import VALIGNS, HALIGNS
+from hotboxLibrary.widgets import (
     Title, BoolCombo, WidgetToggler, FloatEdit, BrowseEdit,
     ColorButton, OpacitySlider, ValueSlider, BoolCheckBox, CommandTextEdit)
-from hotbox_designer.designer.highlighter import get_highlighter
+from hotboxLibrary.designer.highlighter import get_highlighter
 
 
 LEFT_CELL_WIDTH = 95
@@ -42,7 +42,7 @@ class StatePreview(QtWidgets.QWidget):
         self._rebuild()
 
     def _rebuild(self):
-        from hotbox_designer.interactive import Shape
+        from hotboxLibrary.interactive import Shape
         if not self._options:
             self._shapes = None
             self.update()
@@ -267,7 +267,7 @@ class ImageSettings(QtWidgets.QWidget):
         self.place.setCheckable(True)
         # vert tant que le mode placement est actif : on SAIT qu'on est
         # dedans, re-cliquer rend la main (retour gris)
-        from hotbox_designer.theme import ACCENT, ACCENT_DIM
+        from hotboxLibrary.theme import ACCENT, ACCENT_DIM
         self.place.setObjectName('placeImage')
         self.place.setStyleSheet(
             'QPushButton#placeImage:checked {background: %s;'

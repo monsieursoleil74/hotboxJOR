@@ -1,8 +1,8 @@
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
-from hotbox_designer.interactive import Shape
-from hotbox_designer.qtutils import get_cursor
-from hotbox_designer.painting import draw_aiming, draw_aiming_background
-from hotbox_designer.geometry import distance, segment_cross_rect
+from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui
+from hotboxLibrary.interactive import Shape
+from hotboxLibrary.qtutils import get_cursor
+from hotboxLibrary.painting import draw_aiming, draw_aiming_background
+from hotboxLibrary.geometry import distance, segment_cross_rect
 
 
 class HotboxWidget(QtWidgets.QWidget):

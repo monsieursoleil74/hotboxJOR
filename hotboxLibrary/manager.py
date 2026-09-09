@@ -1,19 +1,19 @@
 
 import os
 from functools import partial
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
+from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui
 
-from hotbox_designer.commands import OPEN_COMMAND, CLOSE_COMMAND, SWITCH_COMMAND
-from hotbox_designer.reader import HotboxReader
-from hotbox_designer.designer.application import HotboxEditor
-from hotbox_designer.applications import (
+from hotboxLibrary.commands import OPEN_COMMAND, CLOSE_COMMAND, SWITCH_COMMAND
+from hotboxLibrary.reader import HotboxReader
+from hotboxLibrary.designer.application import HotboxEditor
+from hotboxLibrary.applications import (
     Nuke, Maya, Houdini, Rumba, Standalone)
-from hotbox_designer.widgets import BoolCombo, Title, CommandButton
-from hotbox_designer.qtutils import icon
-from hotbox_designer.dialog import (
+from hotboxLibrary.widgets import BoolCombo, Title, CommandButton
+from hotboxLibrary.qtutils import icon
+from hotboxLibrary.dialog import (
     import_hotbox, export_hotbox, import_hotbox_link, CreateHotboxDialog,
     CommandDisplayDialog, HotkeySetter, HotkeyManagerDialog, warning)
-from hotbox_designer.data import (
+from hotboxLibrary.data import (
     get_valid_name, TRIGGERING_TYPES, save_datas, load_hotboxes_datas,
     hotbox_data_to_html, load_json, ensure_old_data_compatible,
     save_hotbox_as_template)
@@ -34,7 +34,7 @@ def launch_manager(application, studio_admin=False):
     studio devient éditable (catégories officielles, envoi de boutons).
     Sans le paramètre (les animateurs), elle est en lecture seule et
     chacun travaille dans sa librairie perso."""
-    from hotbox_designer.buttonlibrary import (
+    from hotboxLibrary.buttonlibrary import (
         set_studio_admin, refresh_shelves)
     global hotbox_manager
     set_studio_admin(studio_admin)
@@ -57,7 +57,7 @@ def initialize(application):
 
 
 def load_hotboxes(application):
-    from hotbox_designer.images import register_image_root
+    from hotboxLibrary.images import register_image_root
     hotboxes_datas = load_hotboxes_datas(application.local_file)
     file_ = application.shared_file
     links = load_json(file_)
@@ -103,8 +103,8 @@ class HotboxManager(QtWidgets.QWidget):
     def __init__(self, application):
         parent = application.main_window
         super(HotboxManager, self).__init__(parent, QtCore.Qt.Tool)
-        from hotbox_designer.theme import apply_dark_theme
-        from hotbox_designer.buttonlibrary import restore_studio_location
+        from hotboxLibrary.theme import apply_dark_theme
+        from hotboxLibrary.buttonlibrary import restore_studio_location
         apply_dark_theme(self)
         self.application = application
         # la librairie studio mémorisée est active dès le manager (le
@@ -289,7 +289,7 @@ class HotboxManager(QtWidgets.QWidget):
         rapatriés fichier par fichier (on ne déplace pas le dossier en
         bloc : un `templates/` à la racine des prefs pourrait appartenir
         à un autre outil)."""
-        from hotbox_designer.applications import migrate_legacy_file
+        from hotboxLibrary.applications import migrate_legacy_file
         folder = os.path.join(
             self.application.get_fork_folder(), 'templates')
         legacy = os.path.join(
@@ -473,7 +473,7 @@ class _ManagerHeader(QtWidgets.QWidget):
 
     def __init__(self, parent=None):
         super(_ManagerHeader, self).__init__(parent)
-        from hotbox_designer.theme import ACCENT
+        from hotboxLibrary.theme import ACCENT
         self.setFixedHeight(32)
         # sans WA_StyledBackground, un QWidget sous-classé ne peint pas
         # le fond défini par stylesheet
@@ -490,7 +490,7 @@ class _ManagerHeader(QtWidgets.QWidget):
         self.refresh()
 
     def refresh(self):
-        from hotbox_designer.buttonlibrary import is_studio_admin
+        from hotboxLibrary.buttonlibrary import is_studio_admin
         self.setVisible(is_studio_admin())
 
 
@@ -761,7 +761,7 @@ class HotboxGeneralSettingWidget(QtWidgets.QWidget):
         self.layout.addRow(self.switch_command)
 
     def set_preview(self, hotbox_data):
-        from hotbox_designer.buttonlibrary import hotbox_thumbnail
+        from hotboxLibrary.buttonlibrary import hotbox_thumbnail
         self.preview.setPixmap(hotbox_thumbnail(hotbox_data))
 
     def _triggering_changed(self, _):

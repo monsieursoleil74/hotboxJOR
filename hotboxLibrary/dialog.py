@@ -1,11 +1,11 @@
 import os
 import json
 from functools import partial
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
-from hotbox_designer.data import (
+from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui
+from hotboxLibrary.data import (
     get_new_hotbox, get_valid_name, copy_hotbox_data, load_templates,
     ensure_old_data_compatible)
-from hotbox_designer.widgets import HotkeyEdit
+from hotboxLibrary.widgets import HotkeyEdit
 
 
 def warning(title, message, parent=None):
@@ -58,7 +58,7 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 
     def __init__(self, hotboxes, parent=None, templates_folder=None):
         super(CreateHotboxDialog, self).__init__(parent)
-        from hotbox_designer.theme import apply_dark_theme
+        from hotboxLibrary.theme import apply_dark_theme
         apply_dark_theme(self)  # même look, parenté ou non
         self.setWindowTitle("Create new hotbox")
         self.setMinimumWidth(470)
@@ -86,7 +86,7 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 
         # grille de templates : chaque template en vignette + nom,
         # tous visibles d'un coup (fini le menu déroulant aveugle)
-        from hotbox_designer.buttonlibrary import hotbox_thumbnail
+        from hotboxLibrary.buttonlibrary import hotbox_thumbnail
         self.template_grid = QtWidgets.QListWidget()
         self.template_grid.setViewMode(QtWidgets.QListView.IconMode)
         self.template_grid.setResizeMode(QtWidgets.QListView.Adjust)
@@ -192,7 +192,7 @@ class CreateHotboxDialog(QtWidgets.QDialog):
         return None
 
     def update_preview(self, *_):
-        from hotbox_designer.buttonlibrary import hotbox_thumbnail
+        from hotboxLibrary.buttonlibrary import hotbox_thumbnail
         data = self._source_data() if self.duplicate.isChecked() else None
         if data is None:
             self.preview.setPixmap(QtGui.QPixmap())
@@ -216,7 +216,7 @@ class CreateHotboxDialog(QtWidgets.QDialog):
 class CommandDisplayDialog(QtWidgets.QDialog):
     def __init__(self, command, parent=None):
         super(CommandDisplayDialog, self).__init__(parent)
-        from hotbox_designer.theme import apply_dark_theme
+        from hotboxLibrary.theme import apply_dark_theme
         apply_dark_theme(self)
         self.setWindowTitle("Command")
         self.text = QtWidgets.QTextEdit()
@@ -239,7 +239,7 @@ class CommandDisplayDialog(QtWidgets.QDialog):
 class HotkeySetter(QtWidgets.QDialog):
     def __init__(self, modes, parent=None):
         super(HotkeySetter, self).__init__(parent)
-        from hotbox_designer.theme import apply_dark_theme
+        from hotboxLibrary.theme import apply_dark_theme
         apply_dark_theme(self)
         self.setWindowTitle("Set hotkey")
         # une seule zone de capture : on tape la combinaison (ex. Maj+Q)
@@ -294,7 +294,7 @@ class HotkeyManagerDialog(QtWidgets.QDialog):
             self, names, load_hotkeys, can_set, assign_cb, clear_cb,
             parent=None):
         super(HotkeyManagerDialog, self).__init__(parent)
-        from hotbox_designer.theme import apply_dark_theme
+        from hotboxLibrary.theme import apply_dark_theme
         apply_dark_theme(self)
         self.setWindowTitle('Hotkeys')
         self.names = list(names)

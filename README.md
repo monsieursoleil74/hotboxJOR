@@ -112,16 +112,16 @@ ce fork.
 1. Récupérer le code : bouton « Code → Download ZIP » sur GitHub, ou
    `git clone https://github.com/monsieursoleil74/hotboxJOR.git`
    (un `git pull` suffira ensuite pour les mises à jour).
-2. Copier le dossier **`hotbox_designer`** (le dossier intérieur, celui
+2. Copier le dossier **`hotboxLibrary`** (le dossier intérieur, celui
    qui contient `manager.py`) dans le dossier de scripts Maya :
-   `C:\Users\<toi>\Documents\maya\scripts\hotbox_designer`.
-   S'il y avait déjà le hotbox_designer d'origine, le remplacer — les
-   hotboxes ne sont pas dedans (voir plus bas), rien n'est perdu.
+   `C:\Users\<toi>\Documents\maya\scripts\hotboxLibrary`.
+   Le paquet portant un nom distinct, il **cohabite sans conflit** avec
+   un `hotbox_designer` déjà installé (voir « Cohabitation » plus bas).
 3. Lancer, dans le Script Editor (onglet Python) :
 
    ```python
-   import hotbox_designer
-   hotbox_designer.launch_manager('maya')
+   import hotboxLibrary
+   hotboxLibrary.launch_manager('maya')
    ```
 
    Glisser ces deux lignes sur la shelf avec le clic molette pour en
@@ -132,61 +132,53 @@ Variante sans copier (le dépôt reste où il est) :
 ```python
 import sys
 sys.path.insert(0, r"D:\chemin\vers\hotboxJOR")
-import hotbox_designer
-hotbox_designer.launch_manager('maya')
+import hotboxLibrary
+hotboxLibrary.launch_manager('maya')
 ```
 
-## Migration depuis le hotbox_designer original (déjà déployé)
+## Cohabitation avec le hotbox_designer d'origine
 
-Si le studio utilise déjà le hotbox_designer de Lionel Brouyère, la
-mise à niveau est un **remplacement de dossier** — le fork garde le
-même nom de package (`hotbox_designer`) et la même API publique
-(`launch_manager` / `initialize` / `show` / `hide` / `switch`) :
+Le paquet de ce fork s'appelle **`hotboxLibrary`**, pas
+`hotbox_designer` : les deux outils peuvent donc être installés **côte à
+côte**, sur le même `sys.path`, sans se marcher dessus. C'est la
+configuration retenue pour le déploiement studio (demande du pipe :
+aucun risque pour l'outil déjà en place).
 
-- **Remplacer** l'ancien dossier `hotbox_designer` par celui du fork,
-  au même endroit (scripts Maya ou chemin pipeline). Ne PAS faire
-  coexister les deux : un seul `hotbox_designer` sur le `sys.path`.
-- **Les hotboxes existantes marchent telles quelles** : même
-  `hotboxes.json` dans les préférences Maya, jamais réécrit à
-  l'ouverture (les vieux formats sont convertis à la volée en
-  mémoire). Les hotboxes partagées (`shared_hotboxes.json`) aussi.
-- **Les hotkeys déjà posés continuent de fonctionner** : les
-  nameCommands enregistrés dans Maya par l'ancien outil appellent
-  `hotbox_designer.show('nom')` — exactement ce que le fork expose.
-  Rien à refaire côté animateurs.
-- Si un `userSetup.py` charge l'outil au démarrage
-  (`initialize(Maya())`), il reste valable sans modification.
+- **Rien à retirer** : le `hotbox_designer` du pipeline reste où il est
+  et continue de fonctionner. On ajoute simplement le dossier
+  `hotboxLibrary` à côté.
+- **Les hotboxes sont les mêmes des deux côtés** : les deux outils
+  lisent le même `hotboxes.json` des préférences Maya (et le même
+  `shared_hotboxes.json`), au même format, jamais réécrit à
+  l'ouverture. On peut donc passer de l'un à l'autre librement.
+- **Les données propres au fork** (librairie de boutons, registre de
+  raccourcis, réglages studio, templates) vivent dans
+  `prefs/hotbox/` — l'outil d'origine ne les voit pas et n'y touche
+  pas.
+- **Les hotkeys Maya déjà posés** par l'ancien outil appellent
+  `hotbox_designer.show('nom')` : ils continuent d'ouvrir les hotboxes
+  via l'ancien outil. Pour qu'un raccourci passe par `hotboxLibrary`,
+  le réassigner une fois depuis le gestionnaire de raccourcis (⌨ →
+  Set…), ce qui réécrit la commande avec le nouveau nom.
 
-**Cas courant : l'outil est lancé par un bouton de la shelf** (pas de
-userSetup). Deux options de bascule :
+Bouton de shelf recommandé (il porte AUSSI la config de la librairie
+studio — pas besoin de variable d'environnement système ni de
+userSetup) :
 
-- **Option A — remplacement sur place** : remplacer le contenu du
-  dossier `hotbox_designer` à l'endroit que le bouton de shelf référence
-  déjà. Aucun bouton à modifier, bascule invisible.
-- **Option B — nouveau chemin** : déposer le fork ailleurs et mettre à
-  jour le script du bouton de shelf. Bouton recommandé (il porte AUSSI
-  la config de la librairie studio — pas besoin de variable
-  d'environnement système ni de userSetup) :
+```python
+# bouton shelf ANIMATEUR
+import os, sys
+path = r"\\serveur\pipeline\hotboxJOR"
+if path not in sys.path:
+    sys.path.insert(0, path)
+os.environ['HOTBOX_STUDIO_LIBRARY'] = r"\\serveur\pipeline\hotbox"
+import hotboxLibrary
+hotboxLibrary.launch_manager('maya')
+```
 
-  ```python
-  # bouton shelf ANIMATEUR
-  import os, sys
-  path = r"\\serveur\pipeline\hotboxJOR"
-  if path not in sys.path:
-      sys.path.insert(0, path)
-  os.environ['HOTBOX_STUDIO_LIBRARY'] = r"\\serveur\pipeline\hotbox"
-  import hotbox_designer
-  hotbox_designer.launch_manager('maya')
-  ```
+Le bouton du lead est identique avec
+`launch_manager('maya', studio_admin=True)`.
 
-  Le bouton du lead est identique avec
-  `launch_manager('maya', studio_admin=True)`.
-
-Seule nuance : le **gestionnaire de raccourcis** du fork tient un
-registre (`hotbox_hotkey.json`) que l'ancien outil n'avait pas — les
-hotkeys posés AVANT la migration fonctionnent mais s'affichent « — »
-dans la liste tant qu'on ne les a pas réassignés une fois (Set…), ce
-qui les enregistre au passage.
 
 **Prérequis** : Maya 2022+ (Python 3 ; PySide2 et PySide6 gérés via le
 shim Qt.py embarqué). L'original tournait aussi sur des Maya plus
@@ -194,55 +186,28 @@ anciens — vérifier le parc avant bascule.
 
 ### Tester le fork AVANT le déploiement (sans toucher l'installation)
 
-Le fork peut être essayé **par-dessus** l'installation studio, dans sa
-session Maya seulement — redémarrer Maya ramène à l'original, rien
-n'est modifié sur le poste ni sur le réseau.
+Depuis que le paquet s'appelle `hotboxLibrary`, l'essai ne demande plus
+aucune précaution : les deux outils sont des modules DIFFÉRENTS, ils ne
+peuvent pas se remplacer l'un l'autre.
 
-1. **Sauvegarder ses données** (une fois, par prudence — l'outil ne
-   réécrit jamais les fichiers à l'ouverture, mais on va éditer) :
-
-   ```python
-   import os, shutil
-   from maya import cmds
-   prefs = cmds.internalVar(userPrefDir=True)
-   for f in ('hotboxes.json', 'button_library.json',
-             'hotbox_hotkey.json'):
-       src = os.path.join(prefs, f)
-       if os.path.exists(src):
-           shutil.copy(src, src + '.backup')
-   ```
-
-2. **Charger le fork en priorité** (Script Editor, onglet Python).
-   La purge des modules n'est nécessaire que si l'original a déjà été
-   lancé dans la session (bouton de shelf cliqué, userSetup…) — elle
-   est de toute façon inoffensive, autant la garder :
+1. Déposer le dossier `hotboxLibrary` où l'on veut (par exemple
+   `D:\test\hotboxJOR\hotboxLibrary`).
+2. Lancer, dans le Script Editor (onglet Python) :
 
    ```python
-   import sys
-   # 1) purger l'original déjà importé dans la session
-   for name in list(sys.modules):
-       if name == 'hotbox_designer' or name.startswith(
-               'hotbox_designer.'):
-           del sys.modules[name]
-   # 2) le fork passe DEVANT sur le sys.path (session seulement)
+   import os, sys
    sys.path.insert(0, r"D:\test\hotboxJOR")
-   # 3) config studio locale pour l'essai + lancement admin
-   import os
-   os.environ['HOTBOX_STUDIO_LIBRARY'] = (
-       r"C:\Users\ortzj\Desktop\JOR\hotbox")
-   import hotbox_designer
-   hotbox_designer.launch_manager('maya', studio_admin=True)
+   # config studio locale pour l'essai (optionnel)
+   os.environ['HOTBOX_STUDIO_LIBRARY'] = r"R:\...\TAT.json"
+   import hotboxLibrary
+   hotboxLibrary.launch_manager('maya')
    ```
 
-   Bonus : une fois les modules purgés et le fork en tête de path, même
-   les **hotkeys existants** (posés par l'ancien outil) exécutent le
-   fork à la prochaine pression — on teste donc aussi la chaîne
-   nameCommand → fork en conditions réelles.
-
-3. **Revenir en arrière** : fermer Maya, le rouvrir. L'installation
-   déployée reprend la main (le `sys.path.insert` et la purge ne
-   vivaient que dans la session). Les `.backup` restent disponibles au
-   besoin.
+L'installation studio n'est ni modifiée, ni masquée, ni déchargée : le
+bouton de shelf habituel continue d'ouvrir l'outil du pipeline pendant
+tout l'essai. Les hotboxes affichées sont les mêmes des deux côtés
+(`hotboxes.json` des préférences Maya), et le fork range ses propres
+données dans `prefs/hotbox/`, à part.
 
 ### Images des boutons (chemins portables)
 
@@ -296,13 +261,13 @@ Le rôle se choisit **au lancement** — deux boutons de shelf possibles :
 ```python
 # animateur : librairie studio en RÉFÉRENCE (lecture seule),
 # librairie perso libre
-import hotbox_designer
-hotbox_designer.launch_manager('maya')
+import hotboxLibrary
+hotboxLibrary.launch_manager('maya')
 
 # lead : mode ADMIN — librairie officielle éditable (catégories,
 # envoi/renommage/rangement de boutons), badge « STUDIO ADMIN »
-import hotbox_designer
-hotbox_designer.launch_manager('maya', studio_admin=True)
+import hotboxLibrary
+hotboxLibrary.launch_manager('maya', studio_admin=True)
 ```
 
 Voir `MANUEL.md` § « Librairie de boutons » pour le fonctionnement
@@ -317,9 +282,9 @@ Pour que les hotkeys fonctionnent sans lancer le manager, dans
 from maya import utils
 
 def _load_hotboxes():
-    import hotbox_designer
-    from hotbox_designer.applications import Maya
-    hotbox_designer.initialize(Maya())
+    import hotboxLibrary
+    from hotboxLibrary.applications import Maya
+    hotboxLibrary.initialize(Maya())
 
 utils.executeDeferred(_load_hotboxes)
 ```
@@ -327,7 +292,7 @@ utils.executeDeferred(_load_hotboxes)
 ## Lancement hors Maya (standalone)
 
 `pip install PySide6` puis, depuis le dossier du dépôt :
-`python -m hotbox_designer` — les données standalone vivent dans
+`python -m hotboxLibrary` — les données standalone vivent dans
 `~/.hotbox`, séparées de celles de Maya.
 
 ## Tests

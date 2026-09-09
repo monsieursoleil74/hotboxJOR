@@ -1,11 +1,11 @@
 """Alignement et distribution des shapes sélectionnées.
 
 Adapté de dwpicker (DreamWall Animation, licence MIT), ramené au Shape
-de hotbox_designer : le rect est la seule géométrie, on resynchronise
+de hotboxLibrary : le rect est la seule géométrie, on resynchronise
 options et image après chaque déplacement.
 """
-from hotbox_designer.vendor.Qt import QtCore
-from hotbox_designer.geometry import split_line
+from hotboxLibrary.vendor.Qt import QtCore
+from hotboxLibrary.geometry import split_line
 
 
 def align_shapes(shapes, direction):

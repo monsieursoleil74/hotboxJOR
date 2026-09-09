@@ -7,7 +7,7 @@
 <style>
 /* ============================================================
    Manuel hotboxJOR — wiki une-page, sombre comme l'outil.
-   Palette dérivée de hotbox_designer/theme.py (ACCENT #6d8c5e).
+   Palette dérivée de hotboxLibrary/theme.py (ACCENT #6d8c5e).
    Fichier autonome : aucun asset externe, double-clic et ça marche.
    ============================================================ */
 :root {
@@ -544,15 +544,21 @@ footer {
 <section id="modes">
   <p class="eyebrow">Prise en main</p>
   <h2>Deux modes de lancement — animateur / admin</h2>
+  <div class="callout"><span class="tag">Nom du paquet</span>
+  <p>Le module s'appelle <code>hotboxLibrary</code> (et non
+  <code>hotbox_designer</code>)&nbsp;: l'outil <strong>cohabite sans
+  conflit</strong> avec un hotbox_designer déjà installé dans le pipeline.
+  Les deux lisent les mêmes hotboxes.</p></div>
+
   <p>Le rôle se choisit <strong>au lancement du manager</strong> — chacun a son
   bouton de shelf Maya&nbsp;:</p>
 <pre><code><span class="comment"># animateur : la librairie studio est une RÉFÉRENCE en lecture seule</span>
-import hotbox_designer
-hotbox_designer.launch_manager('maya')
+import hotboxLibrary
+hotboxLibrary.launch_manager('maya')
 
 <span class="comment"># lead : mode ADMIN — la librairie officielle est éditable</span>
-import hotbox_designer
-hotbox_designer.launch_manager('maya', studio_admin=True)</code></pre>
+import hotboxLibrary
+hotboxLibrary.launch_manager('maya', studio_admin=True)</code></pre>
   <ul>
     <li><strong>Mode animateur</strong> (par défaut)&nbsp;: on pioche les boutons
       officiels par glisser-déposer et on gère librement <strong>sa</strong>

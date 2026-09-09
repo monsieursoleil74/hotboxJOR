@@ -1,17 +1,17 @@
 
 import json
 from functools import partial
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore
-from hotbox_designer.commands import OPEN_COMMAND
+from hotboxLibrary.vendor.Qt import QtWidgets, QtCore
+from hotboxLibrary.commands import OPEN_COMMAND
 
-from hotbox_designer.align import align_shapes, arrange_shapes
-from hotbox_designer.templates import SQUARE_BUTTON, TEXT, BACKGROUND
-from hotbox_designer.interactive import Shape
-from hotbox_designer.geometry import get_combined_rects
-from hotbox_designer.qtutils import icon, set_shortcut
-from hotbox_designer.theme import apply_dark_theme
-from hotbox_designer.data import copy_hotbox_data
-from hotbox_designer.arrayutils import (
+from hotboxLibrary.align import align_shapes, arrange_shapes
+from hotboxLibrary.templates import SQUARE_BUTTON, TEXT, BACKGROUND
+from hotboxLibrary.interactive import Shape
+from hotboxLibrary.geometry import get_combined_rects
+from hotboxLibrary.qtutils import icon, set_shortcut
+from hotboxLibrary.theme import apply_dark_theme
+from hotboxLibrary.data import copy_hotbox_data
+from hotboxLibrary.arrayutils import (
     move_elements_to_array_end, move_elements_to_array_begin)
 
 from .editarea import ShapeEditArea
@@ -21,8 +21,8 @@ from .attributes import AttributeEditor
 
 # marqueur du presse-papier système : permet le copier-coller de shapes
 # entre deux éditeurs (même entre deux sessions de l'application)
-SHAPES_CLIPBOARD_KEY = 'hotbox_designer_shapes'
-STYLE_CLIPBOARD_KEY = 'hotbox_designer_style'
+SHAPES_CLIPBOARD_KEY = 'hotboxLibrary_shapes'
+STYLE_CLIPBOARD_KEY = 'hotboxLibrary_style'
 
 # groupes proposés au collage de style : (libellé, clés, coché par défaut)
 STYLE_GROUPS = [
@@ -129,7 +129,7 @@ class HotboxEditor(QtWidgets.QWidget):
         self.attribute_editor.set_submenus(self.submenu_names())
 
         # librairie intégrée en bas, façon shelf Maya
-        from hotbox_designer.buttonlibrary import LibraryShelf
+        from hotboxLibrary.buttonlibrary import LibraryShelf
         self.library_shelf = LibraryShelf(self.application)
 
         self.hlayout = QtWidgets.QHBoxLayout()
@@ -196,9 +196,9 @@ class HotboxEditor(QtWidgets.QWidget):
     def save_selection_to_library(self):
         """Range les boutons sélectionnés dans la shelf (nom +
         catégorie), pour les glisser-déposer dans d'autres hotboxes."""
-        from hotbox_designer.buttonlibrary import (
+        from hotboxLibrary.buttonlibrary import (
             SaveToLibraryDialog, studio_write_path, is_studio_admin)
-        from hotbox_designer.dialog import warning
+        from hotboxLibrary.dialog import warning
         shapes = list(self.shape_editor.selection)
         if not shapes:
             return warning('Button library', 'No shape selected')
@@ -245,7 +245,7 @@ class HotboxEditor(QtWidgets.QWidget):
         bouton choisi dans la shelf, en gardant position et taille —
         pratique pour habiller un template sans replacer chaque bouton."""
         from copy import deepcopy
-        from hotbox_designer.dialog import warning
+        from hotboxLibrary.dialog import warning
         entries = self.library_shelf.current_selected_entries()
         shapes = list(self.shape_editor.selection)
         if len(entries) != 1 or 'options' not in entries[0]:
@@ -267,7 +267,7 @@ class HotboxEditor(QtWidgets.QWidget):
         self.set_data_modified()
 
     def open_search_replace(self):
-        from hotbox_designer.dialog import SearchReplaceDialog
+        from hotboxLibrary.dialog import SearchReplaceDialog
         SearchReplaceDialog(self.replace_in_shapes, self).exec_()
 
     def replace_in_shapes(
@@ -302,7 +302,7 @@ class HotboxEditor(QtWidgets.QWidget):
         """Copie les options de la shape sélectionnée (une seule)."""
         shapes = list(self.shape_editor.selection)
         if len(shapes) != 1:
-            from hotbox_designer.dialog import warning
+            from hotboxLibrary.dialog import warning
             return warning(
                 'Copy style', 'Select exactly one shape to copy its style')
         text = json.dumps({STYLE_CLIPBOARD_KEY: dict(shapes[0].options)})
@@ -318,7 +318,7 @@ class HotboxEditor(QtWidgets.QWidget):
 
     def paste_style(self):
         """Colle des groupes d'options choisis sur la sélection."""
-        from hotbox_designer.dialog import PasteStyleDialog, warning
+        from hotboxLibrary.dialog import PasteStyleDialog, warning
         style = self.clipboard_style()
         if style is None:
             return warning('Paste style', 'No style in clipboard')
@@ -543,7 +543,7 @@ class HotboxEditor(QtWidgets.QWidget):
             return
         shapes = list(self.shape_editor.selection)
         if not shapes:
-            from hotbox_designer.dialog import warning
+            from hotboxLibrary.dialog import warning
             return warning(
                 'Sub-menu', 'Select at least one button first')
         command = OPEN_COMMAND.format(

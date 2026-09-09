@@ -24,10 +24,10 @@ import shutil
 import subprocess
 import sys
 
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
-from hotbox_designer.interactive import Shape
-from hotbox_designer.painting import draw_shape
-from hotbox_designer.qtutils import icon
+from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui
+from hotboxLibrary.interactive import Shape
+from hotboxLibrary.painting import draw_shape
+from hotboxLibrary.qtutils import icon
 
 LIBRARY_FILENAME = 'button_library.json'
 BUTTONS_MIME = 'application/x-hotbox-designer-buttons'
@@ -117,7 +117,7 @@ def restore_studio_location(application):
 
 
 def save_studio_settings(application, settings):
-    from hotbox_designer.data import atomic_write_json
+    from hotboxLibrary.data import atomic_write_json
     try:
         atomic_write_json(studio_settings_path(application), settings)
     except OSError:
@@ -128,7 +128,7 @@ def library_path(application):
     """Librairie perso : dans le dossier du fork (`prefs/hotbox/`
     sous Maya). Un fichier resté à la racine des prefs (versions
     antérieures) est déplacé une fois pour toutes."""
-    from hotbox_designer.applications import migrate_legacy_file
+    from hotboxLibrary.applications import migrate_legacy_file
     path = os.path.join(application.get_fork_folder(), LIBRARY_FILENAME)
     migrate_legacy_file(
         os.path.join(application.get_data_folder(), LIBRARY_FILENAME), path)
@@ -297,7 +297,7 @@ def load_extra_categories(path):
 
 def save_library(path, entries):
     # écriture atomique : anti-corruption, pas de fichier en plus
-    from hotbox_designer.data import atomic_write_json
+    from hotboxLibrary.data import atomic_write_json
     atomic_write_json(path, entries)
 
 
@@ -512,7 +512,7 @@ def button_thumbnail(options, size=None):
     painter.setRenderHint(QtGui.QPainter.Antialiasing)
     painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
 
-    from hotbox_designer.images import resolve_image_path
+    from hotboxLibrary.images import resolve_image_path
     image_path = resolve_image_path(options.get('image.path') or '')
     image = QtGui.QPixmap(image_path) if image_path else QtGui.QPixmap()
     if not image.isNull():
@@ -733,7 +733,7 @@ class ShelfList(QtWidgets.QListWidget):
         # états visuels francs : cadre accent + fond teinté sur TOUTE la
         # vignette (icône comprise) — le simple surlignage du texte ne se
         # voyait pas
-        from hotbox_designer.theme import ACCENT
+        from hotboxLibrary.theme import ACCENT
         color = QtGui.QColor(ACCENT)
         r, g, b = color.red(), color.green(), color.blue()
         # le style peint aussi un voile « Highlight » (bleu système) sur
@@ -852,7 +852,7 @@ class CategoryPalette(QtWidgets.QWidget):
         super(CategoryPalette, self).__init__(
             shelf.window(),
             QtCore.Qt.Tool | QtCore.Qt.WindowStaysOnTopHint)
-        from hotbox_designer.theme import apply_dark_theme
+        from hotboxLibrary.theme import apply_dark_theme
         apply_dark_theme(self)
         self.shelf = shelf
         self.category = category
@@ -1067,7 +1067,7 @@ class LibraryShelf(QtWidgets.QWidget):
         """Badge-bouton = nom du json courant, toujours vert : c'est le
         repère d'environnement (la librairie), pas un indicateur de
         rôle. Clic = menu de switch. Infobulle = chemin complet + rôle."""
-        from hotbox_designer.theme import ACCENT
+        from hotboxLibrary.theme import ACCENT
         location = studio_location()
         self.library_badge.setVisible(bool(location))
         self.library_badge.setText(studio_library_label())

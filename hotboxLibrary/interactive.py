@@ -1,12 +1,12 @@
-from hotbox_designer.vendor.Qt import QtCore
+from hotboxLibrary.vendor.Qt import QtCore
 
-from hotbox_designer.geometry import (
+from hotboxLibrary.geometry import (
     DIRECTIONS, get_topleft_rect, get_bottomleft_rect, get_topright_rect,
     get_bottomright_rect, get_left_side_rect, get_right_side_rect,
     get_top_side_rect, get_bottom_side_rect, proportional_rect)
-from hotbox_designer.painting import (
+from hotboxLibrary.painting import (
     draw_selection_square, draw_manipulator, get_hovered_path, draw_shape)
-from hotbox_designer.languages import execute_code
+from hotboxLibrary.languages import execute_code
 
 
 class SelectionSquare():
@@ -194,7 +194,7 @@ class Shape():
         # pixmap MIS EN CACHE : cette méthode est appelée à chaque frame
         # d'un déplacement, et re-décoder l'image (a fortiori depuis un
         # disque réseau) rendait la manipulation poussive
-        from hotbox_designer.images import image_pixmap
+        from hotboxLibrary.images import image_pixmap
         self.pixmap = image_pixmap(self.options['image.path'])
         if self.options['image.fit'] is True:
             self.image_rect = None

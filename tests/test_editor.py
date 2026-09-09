@@ -16,20 +16,20 @@ import sys
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
+from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui
 
 APP = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
-from hotbox_designer.applications import Standalone
-from hotbox_designer.data import ensure_old_data_compatible
-from hotbox_designer.designer.application import HotboxEditor
-from hotbox_designer.reader import HotboxReader
-from hotbox_designer.templates import SQUARE_BUTTON, HOTBOX
-import hotbox_designer.designer.editarea as editarea_mod
+from hotboxLibrary.applications import Standalone
+from hotboxLibrary.data import ensure_old_data_compatible
+from hotboxLibrary.designer.application import HotboxEditor
+from hotboxLibrary.reader import HotboxReader
+from hotboxLibrary.templates import SQUARE_BUTTON, HOTBOX
+import hotboxLibrary.designer.editarea as editarea_mod
 
 
 HUMAN = os.path.join(
-    os.path.dirname(__file__), '..', 'hotbox_designer', 'resources',
+    os.path.dirname(__file__), '..', 'hotboxLibrary', 'resources',
     'templates', 'human.json')
 
 
@@ -319,14 +319,14 @@ def test_selection_ignores_background():
     """Cliquer un bouton posé sur un background ne doit sélectionner QUE
     le bouton ; un rectangle de sélection n'attrape pas le fond qui
     l'englobe."""
-    from hotbox_designer.templates import BACKGROUND
+    from hotboxLibrary.templates import BACKGROUND
     editor = make_editor([(100, 100, 'btn'), (300, 200, 'btn2')])
     area = editor.shape_editor
     driver = Driver(area)
     background_options = dict(BACKGROUND)
     background_options.update({'shape.left': 0.0, 'shape.top': 0.0,
                                'shape.width': 600.0, 'shape.height': 400.0})
-    from hotbox_designer.interactive import Shape
+    from hotboxLibrary.interactive import Shape
     background = Shape(background_options)
     area.shapes.insert(0, background)
     area.repaint()
@@ -373,7 +373,7 @@ def test_copy_paste_style():
     assert style is not None
     # collage : couleurs + texte (style) mais PAS contenu/commandes/taille
     keys = []
-    from hotbox_designer.designer.application import STYLE_GROUPS
+    from hotboxLibrary.designer.application import STYLE_GROUPS
     for label, group_keys, _ in STYLE_GROUPS:
         if label in ('Colors & border', 'Text style'):
             keys.extend(group_keys)
@@ -461,7 +461,7 @@ def test_search_replace():
 
 def test_button_library():
     import tempfile
-    from hotbox_designer.buttonlibrary import (
+    from hotboxLibrary.buttonlibrary import (
         load_library, LibraryShelf, BUTTONS_MIME)
 
     editor = make_editor([(100, 100, 'ikfk_switch')])
@@ -565,7 +565,7 @@ def test_button_library():
 def test_attribute_panel():
     """Nouveau panneau : pastilles couleur, opacité 0-100 %, cases à
     cocher — le tout branché sur les mêmes clés d'options."""
-    from hotbox_designer.widgets import (
+    from hotboxLibrary.widgets import (
         ColorButton, OpacitySlider, BoolCheckBox)
 
     # conversion opacité <-> transparence (0-255 inversée)
@@ -664,11 +664,11 @@ def test_image_path_resolution():
     """Un dossier d'icônes déplacé ne casse plus les logos : l'image
     est retrouvée par son nom de fichier dans les dossiers connus."""
     import tempfile
-    from hotbox_designer import images
-    from hotbox_designer.images import (
+    from hotboxLibrary import images
+    from hotboxLibrary.images import (
         register_image_root, resolve_image_path, ICONS_ENV_VARIABLE)
-    from hotbox_designer.interactive import Shape
-    from hotbox_designer.templates import SQUARE_BUTTON
+    from hotboxLibrary.interactive import Shape
+    from hotboxLibrary.templates import SQUARE_BUTTON
 
     tmp = tempfile.mkdtemp()
     pixmap = QtGui.QPixmap(8, 8)
@@ -750,8 +750,8 @@ def test_checkboxes_apply_options():
 
 
 def test_create_hotbox_dialog():
-    from hotbox_designer.dialog import CreateHotboxDialog
-    from hotbox_designer.data import load_templates
+    from hotboxLibrary.dialog import CreateHotboxDialog
+    from hotboxLibrary.data import load_templates
 
     existing = [
         {'general': {'name': 'ma_hotbox'}, 'shapes': []},
@@ -793,9 +793,9 @@ def test_create_hotbox_dialog():
 
 
 def test_rounded_rect():
-    from hotbox_designer.interactive import Shape
-    from hotbox_designer.painting import draw_shape
-    from hotbox_designer.data import ensure_old_data_compatible
+    from hotboxLibrary.interactive import Shape
+    from hotboxLibrary.painting import draw_shape
+    from hotboxLibrary.data import ensure_old_data_compatible
 
     # rendu : un rounded_rect ne remplit pas les coins (fond visible)
     options = dict(SQUARE_BUTTON)
@@ -824,7 +824,7 @@ def test_rounded_rect():
 
 
 def test_color_picker():
-    from hotbox_designer.colorpicker import ColorPickerDialog
+    from hotboxLibrary.colorpicker import ColorPickerDialog
 
     dialog = ColorPickerDialog('#3388ff')
     assert dialog.color_name().lower() == '#3388ff'
@@ -846,7 +846,7 @@ def test_color_picker():
 
 def test_studio_library():
     import tempfile
-    from hotbox_designer.buttonlibrary import (
+    from hotboxLibrary.buttonlibrary import (
         LibraryShelf, STUDIO_ENV_VARIABLE, load_library)
 
     def entry(name, category):
@@ -887,7 +887,7 @@ def test_studio_library():
         assert all(e['name'] != 'IK/FK' for e in load_library(shelf.path))
 
         # export vers la librairie studio depuis la perso
-        from hotbox_designer.buttonlibrary import (
+        from hotboxLibrary.buttonlibrary import (
             export_to_studio, load_studio_library)
         perso_entry = entry('MyTool', 'Perso')
         added = export_to_studio([perso_entry])
@@ -903,7 +903,7 @@ def test_studio_library():
 
 def test_thumbnail_cache_and_dedup():
     import tempfile
-    from hotbox_designer.buttonlibrary import (
+    from hotboxLibrary.buttonlibrary import (
         hotbox_thumbnail, button_thumbnail, LibraryShelf, _THUMB_CACHE)
 
     # vignette de hotbox : pixmap à la taille demandée, non vide
@@ -947,7 +947,7 @@ def test_thumbnail_cache_and_dedup():
     entry = {'name': 'IK', 'category': 'Rig', 'options': dict(SQUARE_BUTTON)}
     assert shelf.add_entries([entry]) == 1
     assert shelf.add_entries([dict(entry)]) == 0  # doublon ignoré
-    from hotbox_designer.buttonlibrary import load_library
+    from hotboxLibrary.buttonlibrary import load_library
     assert len(load_library(shelf.path)) == 1
     shelf.close()
     print('cache vignettes + anti-doublon librairie OK')
@@ -1052,7 +1052,7 @@ def test_submenu_opener():
     """Sous-menu fluide : choisir une hotbox « is submenu » dans le
     panneau Action doit générer la commande d'ouverture sur le clic
     gauche du/des bouton(s) sélectionné(s), sans écrire de code."""
-    from hotbox_designer.commands import OPEN_COMMAND
+    from hotboxLibrary.commands import OPEN_COMMAND
 
     # deux hotboxes existent : la courante et une marquée « is submenu »
     sub = {'general': dict(HOTBOX, name='outils', submenu=True),
@@ -1108,7 +1108,7 @@ def test_library_category_ops():
     pour la librairie perso et la librairie studio (fonctions par
     chemin)."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
+    from hotboxLibrary import buttonlibrary as bl
 
     tmp = tempfile.mkdtemp()
     path = os.path.join(tmp, 'button_library.json')
@@ -1151,7 +1151,7 @@ def test_library_category_ops():
 def test_manipulation_ergonomics():
     """Manipulation allégée : bords entièrement saisissables, curseurs
     contextuels, Maj = contrainte d'axe, Espace = pan, zoom +/-."""
-    from hotbox_designer.geometry import Transform
+    from hotboxLibrary.geometry import Transform
 
     # contrainte d'axe (Maj) : le déplacement se verrouille sur l'axe
     # dominant du geste
@@ -1172,7 +1172,7 @@ def test_manipulation_ergonomics():
 
     # TOUT le bord est saisissable (pas seulement les 8 poignées) :
     # points sur les bords d'un grand rectangle, loin des poignées
-    from hotbox_designer.interactive import Manipulator
+    from hotboxLibrary.interactive import Manipulator
     manip = Manipulator()
     manip.zoom_factor = 1.0
     manip.set_rect(QtCore.QRectF(0, 0, 200, 100))
@@ -1229,7 +1229,7 @@ def test_replace_from_library():
     """Clic droit → « Replace with library button » : le contenu du
     bouton vient de la shelf, position et taille sont conservées."""
     import tempfile
-    from hotbox_designer.templates import HOTBOX as HOTBOX_T
+    from hotboxLibrary.templates import HOTBOX as HOTBOX_T
 
     tmp = tempfile.mkdtemp()
     application = Standalone()
@@ -1282,10 +1282,10 @@ def test_user_templates():
     dossier de données, load_templates les liste après les embarqués,
     et le dialogue de création les propose avec un aperçu."""
     import tempfile
-    from hotbox_designer.data import (
+    from hotboxLibrary.data import (
         load_templates, save_hotbox_as_template)
-    from hotbox_designer.dialog import CreateHotboxDialog
-    from hotbox_designer.templates import HOTBOX as HOTBOX_T
+    from hotboxLibrary.dialog import CreateHotboxDialog
+    from hotboxLibrary.templates import HOTBOX as HOTBOX_T
 
     tmp = tempfile.mkdtemp()
     builtin_count = len(load_templates())
@@ -1329,8 +1329,8 @@ def test_studio_location_restored_at_manager_launch():
     manager — sans devoir ouvrir un éditeur (et sa shelf) d'abord :
     badge, mode admin et boutons la voient immédiatement."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.manager import HotboxManager
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.manager import HotboxManager
 
     tmp = tempfile.mkdtemp()
     application = Standalone()
@@ -1354,8 +1354,8 @@ def test_shelf_filter():
     toutes catégories confondues, dans un onglet unique de résultats ;
     l'effacer restaure les onglets normaux."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.buttonlibrary import LibraryShelf, save_library
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf, save_library
 
     tmp = tempfile.mkdtemp()
     application = Standalone()
@@ -1394,8 +1394,8 @@ def test_shelf_filter():
 def test_hotkey_column():
     """Les listes du manager affichent le raccourci assigné en 2e
     colonne (grisé, aligné à droite) — visible sans ouvrir le dialogue."""
-    from hotbox_designer.manager import HotboxPersonalTableModel
-    from hotbox_designer.vendor.Qt import QtCore as QC
+    from hotboxLibrary.manager import HotboxPersonalTableModel
+    from hotboxLibrary.vendor.Qt import QtCore as QC
 
     hotbox = {'general': dict(HOTBOX, name='ma_hotbox'), 'shapes': []}
     model = HotboxPersonalTableModel([hotbox])
@@ -1411,7 +1411,7 @@ def test_hotkey_column():
 def test_state_preview():
     """L'aperçu d'états en haut du panneau d'attributs suit la
     sélection et les réglages en direct (normal / survol / clic)."""
-    from hotbox_designer.designer.attributes import AttributeEditor
+    from hotboxLibrary.designer.attributes import AttributeEditor
     attr = AttributeEditor(Standalone())
     attr.show()
     APP.processEvents()
@@ -1437,7 +1437,7 @@ def test_builtin_templates():
     """Templates embarqués : ceux d'origine + le template TAT (base
     studio fournie par l'utilisateur) — les anciens templates maison
     ont été retirés. Le TAT s'ouvre dans l'éditeur sans erreur."""
-    from hotbox_designer.data import load_templates
+    from hotboxLibrary.data import load_templates
 
     templates = load_templates()
     assert templates, 'aucun template embarqué chargé'
@@ -1460,8 +1460,8 @@ def test_builtin_templates():
 def test_color_picker_pipette():
     """La pipette du sélecteur de couleurs prélève la couleur sous le
     curseur (screen_color_at simulé hors écran)."""
-    from hotbox_designer import colorpicker
-    from hotbox_designer.colorpicker import ColorPickerDialog
+    from hotboxLibrary import colorpicker
+    from hotboxLibrary.colorpicker import ColorPickerDialog
 
     dialog = ColorPickerDialog('#112233')
     dialog.show()
@@ -1530,8 +1530,8 @@ def test_library_rename_and_save_studio():
     """Renommer un bouton déjà rangé, et sauvegarder directement dans la
     librairie studio (sans passer par General + Move to)."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.buttonlibrary import (
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import (
         LibraryShelf, SaveToLibraryDialog, STUDIO_ENV_VARIABLE,
         load_studio_library)
 
@@ -1591,8 +1591,8 @@ def test_studio_admin_mode():
     studio est en lecture seule (pas de badge, pas d'édition) ; en mode
     admin tout s'ouvre (badge visible, onglets studio éditables)."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.buttonlibrary import LibraryShelf
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf
 
     tmp = tempfile.mkdtemp()
     application = Standalone()
@@ -1637,7 +1637,7 @@ def test_studio_admin_mode():
 
         # badge « STUDIO ADMIN » de la barre d'outils de l'éditeur :
         # visible en mode admin, jamais pour les animateurs
-        from hotbox_designer.designer.menu import MenuWidget
+        from hotboxLibrary.designer.menu import MenuWidget
         menu = MenuWidget()
         assert menu.admin_badge_action.isVisible() is True
         bl.set_studio_admin(False)
@@ -1658,7 +1658,7 @@ def test_studio_admin_mode():
         # bandeau du manager : barre verte pleine largeur en mode
         # lead, ENTIÈREMENT masqué en mode animateur (plus de bande
         # vide), bascule via refresh()
-        from hotbox_designer.manager import _ManagerHeader
+        from hotboxLibrary.manager import _ManagerHeader
         header = _ManagerHeader()  # admin False à ce stade
         assert header.isHidden() is True
         bl.set_studio_admin(True)
@@ -1677,8 +1677,8 @@ def test_studio_library_switch():
     par projet, création du json manquant, récents mémorisés, retour au
     défaut, persistance entre sessions."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.buttonlibrary import LibraryShelf
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf
 
     prefs = tempfile.mkdtemp()
     application = Standalone()
@@ -1810,8 +1810,8 @@ def test_plus_button_follows_mode():
     DANS la librairie studio courante (onglet TAT) ; animateur →
     catégorie perso (façon shelf Maya)."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.buttonlibrary import LibraryShelf
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf
 
     prefs = tempfile.mkdtemp()
     application = Standalone()
@@ -1877,8 +1877,8 @@ def test_shelf_drag_organization():
     move_entries_to_category, ordre des onglets via set_category_order,
     onglets déplaçables en admin seulement."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.buttonlibrary import LibraryShelf
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf
 
     prefs = tempfile.mkdtemp()
     application = Standalone()
@@ -1978,8 +1978,8 @@ def test_category_palette():
     au-dessus, réutilisée si déjà ouverte, synchronisée au refresh,
     fermée si la catégorie disparaît (switch de librairie)."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.buttonlibrary import LibraryShelf
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf
 
     prefs = tempfile.mkdtemp()
     application = Standalone()
@@ -2044,8 +2044,8 @@ def test_atomic_write():
     écriture interrompue, et aucun fichier annexe ne traîne — pas de
     backups (le studio a les siens, l'utilisateur fait les siens)."""
     import tempfile
-    from hotbox_designer.data import atomic_write_json
-    from hotbox_designer import buttonlibrary as bl
+    from hotboxLibrary.data import atomic_write_json
+    from hotboxLibrary import buttonlibrary as bl
 
     tmp = tempfile.mkdtemp()
     path = os.path.join(tmp, 'TAT.json')
@@ -2068,8 +2068,8 @@ def test_studio_watcher():
     json courant et déclenche refresh_shelves (débouncé)."""
     import tempfile
     import time
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.buttonlibrary import LibraryShelf
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf
 
     prefs = tempfile.mkdtemp()
     application = Standalone()
@@ -2121,7 +2121,7 @@ def test_fork_folder_migration():
     Maya) ; les fichiers restés à la racine des prefs sont migrés
     automatiquement, hotboxes.json reste où il est."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
+    from hotboxLibrary import buttonlibrary as bl
 
     root = tempfile.mkdtemp()
     fork = os.path.join(root, 'hotbox')
@@ -2165,7 +2165,7 @@ def test_fork_folder_migration():
         solo_root, 'button_library.json')
     # renommage hotboxJOR -> hotbox : l'ancien dossier est repris
     # tel quel au premier lancement (vraie classe Maya-like)
-    from hotbox_designer.applications import (
+    from hotboxLibrary.applications import (
         FORK_FOLDER_NAME, LEGACY_FORK_FOLDER_NAME)
     assert FORK_FOLDER_NAME == 'hotbox'
     root2 = tempfile.mkdtemp()
@@ -2179,7 +2179,7 @@ def test_fork_folder_migration():
             return root2
         # get_fork_folder de Maya, réutilisé tel quel
         get_fork_folder = __import__(
-            'hotbox_designer.applications', fromlist=['Maya']
+            'hotboxLibrary.applications', fromlist=['Maya']
         ).Maya.get_fork_folder
 
     app2 = MayaLike2()
@@ -2196,7 +2196,7 @@ def test_hotkey_registry():
     RETIRER un raccourci — ce que l'ancien Maya ne permettait pas (pose
     directe dans cmds.hotkey, sans trace)."""
     import tempfile
-    from hotbox_designer.applications import Standalone
+    from hotboxLibrary.applications import Standalone
 
     tmp = tempfile.mkdtemp()
 
@@ -2230,7 +2230,7 @@ def test_hotkey_registry():
 def test_hotkey_edit_capture():
     """La zone de capture lit les modificateurs sur la frappe : on tape
     la combinaison, elle s'affiche « Shift+q ». Plus de cases à cocher."""
-    from hotbox_designer.widgets import HotkeyEdit
+    from hotboxLibrary.widgets import HotkeyEdit
 
     edit = HotkeyEdit()
 
@@ -2266,7 +2266,7 @@ def test_hotkey_edit_capture():
 def test_hotkey_manager_dialog():
     """Le gestionnaire de raccourcis liste les hotboxes, affiche leur
     touche et branche les boutons Set/Clear."""
-    from hotbox_designer.dialog import HotkeyManagerDialog
+    from hotboxLibrary.dialog import HotkeyManagerDialog
 
     store = {'face': {'sequence': 'Ctrl+F', 'mode': 'switch on press'}}
     calls = {'assign': [], 'clear': []}
@@ -2319,8 +2319,8 @@ def test_button_sets():
     relative, se dépose d'un coup dans une hotbox, et survit aux
     opérations de rangement (catégorie, renommage, réécriture)."""
     import tempfile
-    from hotbox_designer import buttonlibrary as bl
-    from hotbox_designer.designer.editarea import shapes_from_drop
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.designer.editarea import shapes_from_drop
 
     def opts(left, top, label):
         options = dict(SQUARE_BUTTON)
@@ -2409,8 +2409,8 @@ def test_drag_performance():
     shapes déplacées sont re-synchronisées, panneau mis à jour au
     relâchement."""
     import tempfile
-    from hotbox_designer import images
-    from hotbox_designer.images import image_pixmap, clear_image_cache
+    from hotboxLibrary import images
+    from hotboxLibrary.images import image_pixmap, clear_image_cache
 
     tmp = tempfile.mkdtemp()
     icon = QtGui.QPixmap(8, 8)

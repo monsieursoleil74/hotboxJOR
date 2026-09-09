@@ -24,7 +24,7 @@ jobs:
 
       - name: Lint (pyflakes, vendor exclu)
         run: |
-          python -m pyflakes $(git ls-files 'hotbox_designer/**/*.py' 'hotbox_designer/*.py' 'tests/*.py' | grep -v '/vendor/')
+          python -m pyflakes $(git ls-files 'hotboxLibrary/**/*.py' 'hotboxLibrary/*.py' 'tests/*.py' | grep -v '/vendor/')
 
       - name: Suite de tests (headless)
         env:

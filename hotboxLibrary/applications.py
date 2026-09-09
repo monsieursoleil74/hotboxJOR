@@ -1,9 +1,9 @@
 import os
 import json
 import shutil
-from hotbox_designer.vendor.Qt import QtWidgets
-from hotbox_designer.dialog import warning
-from hotbox_designer.languages import (
+from hotboxLibrary.vendor.Qt import QtWidgets
+from hotboxLibrary.dialog import warning
+from hotboxLibrary.languages import (
     MEL, PYTHON, NUKE_TCL, NUKE_EXPRESSION, HSCRIPT, RUMBA_SCRIPT)
 
 
@@ -52,7 +52,7 @@ class AbstractApplication(object):
         folder = self.get_data_folder()
         # les images manquantes seront recherchées par nom de fichier
         # dans ce dossier (et son sous-dossier icons/)
-        from hotbox_designer.images import register_image_root
+        from hotboxLibrary.images import register_image_root
         register_image_root(folder)
         self.local_file = os.path.join(folder, HOTBOXES_FILENAME)
         self.shared_file = os.path.join(folder, SHARED_HOTBOXES_FILENAME)
@@ -128,7 +128,7 @@ class AbstractApplication(object):
 
     def record_hotkey(self, name, sequence, mode):
         """Note (ou met à jour) le raccourci d'une hotbox dans le registre."""
-        from hotbox_designer.data import atomic_write_json
+        from hotboxLibrary.data import atomic_write_json
         data = self.load_hotkeys()
         data[name] = {'sequence': sequence, 'mode': mode}
         atomic_write_json(self.get_hotkey_file(), data)
@@ -136,7 +136,7 @@ class AbstractApplication(object):
     def remove_hotkey(self, name):
         """Retire le raccourci du registre. Les backends qui posent un
         vrai raccourci DCC (Maya) surchargent pour le débrancher aussi."""
-        from hotbox_designer.data import atomic_write_json
+        from hotboxLibrary.data import atomic_write_json
         data = self.load_hotkeys()
         if name in data:
             del data[name]
@@ -409,7 +409,7 @@ class Houdini(AbstractApplication):
 
     def set_hotkey(
             self, name, mode, sequence, open_cmd, close_cmd, switch_cmd):
-        from hotbox_designer.qtutils import set_shortcut
+        from hotboxLibrary.qtutils import set_shortcut
         from functools import partial
         set_shortcut(sequence, self.main_window, partial(execute, switch_cmd))
 

@@ -1,5 +1,5 @@
 import os
-from hotbox_designer.vendor.Qt import QtGui, QtWidgets, QtCore
+from hotboxLibrary.vendor.Qt import QtGui, QtWidgets, QtCore
 
 
 VALIGNS = {

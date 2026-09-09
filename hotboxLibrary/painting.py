@@ -1,6 +1,6 @@
-from hotbox_designer.vendor.Qt import QtCore, QtGui
-from hotbox_designer.qtutils import VALIGNS, HALIGNS
-from hotbox_designer.geometry import grow_rect
+from hotboxLibrary.vendor.Qt import QtCore, QtGui
+from hotboxLibrary.qtutils import VALIGNS, HALIGNS
+from hotboxLibrary.geometry import grow_rect
 
 
 MANIPULATOR_BORDER = 5

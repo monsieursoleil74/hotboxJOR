@@ -1,5 +1,5 @@
 import math
-from hotbox_designer.vendor.Qt import QtCore, QtGui
+from hotboxLibrary.vendor.Qt import QtCore, QtGui
 
 POINT_RADIUS = 8
 POINT_OFFSET = 4

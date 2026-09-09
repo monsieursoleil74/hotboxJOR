@@ -1,11 +1,11 @@
 
-from hotbox_designer.vendor.Qt import QtCore, QtGui, QtWidgets
+from hotboxLibrary.vendor.Qt import QtCore, QtGui, QtWidgets
 
-from hotbox_designer.interactive import Manipulator, SelectionSquare
-from hotbox_designer.geometry import (
+from hotboxLibrary.interactive import Manipulator, SelectionSquare
+from hotboxLibrary.geometry import (
     Transform, ViewportMapper, snap, get_combined_rects)
-from hotbox_designer.painting import draw_editor, draw_editor_center
-from hotbox_designer.qtutils import get_cursor
+from hotboxLibrary.painting import draw_editor, draw_editor_center
+from hotboxLibrary.qtutils import get_cursor
 
 
 def shapes_from_drop(options_list, center):
@@ -15,7 +15,7 @@ def shapes_from_drop(options_list, center):
     cascade de 10px entre éléments), soit une LISTE d'options (un SET :
     la disposition relative des boutons est préservée, le groupe est
     centré au point de dépôt)."""
-    from hotbox_designer.interactive import Shape
+    from hotboxLibrary.interactive import Shape
     dropped = []
     for index, options in enumerate(options_list):
         offset = QtCore.QPointF(index * 10.0, index * 10.0)
@@ -400,19 +400,19 @@ class ShapeEditArea(QtWidgets.QWidget):
         self.contextMenuRequested.emit(event.globalPos())
 
     def dragEnterEvent(self, event):
-        from hotbox_designer.buttonlibrary import BUTTONS_MIME
+        from hotboxLibrary.buttonlibrary import BUTTONS_MIME
         if event.mimeData().hasFormat(BUTTONS_MIME):
             event.acceptProposedAction()
 
     def dragMoveEvent(self, event):
-        from hotbox_designer.buttonlibrary import BUTTONS_MIME
+        from hotboxLibrary.buttonlibrary import BUTTONS_MIME
         if event.mimeData().hasFormat(BUTTONS_MIME):
             event.acceptProposedAction()
 
     def dropEvent(self, event):
         """Dépose des boutons de la librairie à l'endroit du curseur."""
         import json
-        from hotbox_designer.buttonlibrary import BUTTONS_MIME
+        from hotboxLibrary.buttonlibrary import BUTTONS_MIME
         data = event.mimeData().data(BUTTONS_MIME)
         if not data:
             return
@@ -621,7 +621,7 @@ class ShapeEditArea(QtWidgets.QWidget):
 
     def duplicate_selection(self):
         from copy import deepcopy
-        from hotbox_designer.interactive import Shape
+        from hotboxLibrary.interactive import Shape
         duplicates = [Shape(deepcopy(s.options)) for s in self.selection]
         self.shapes.extend(duplicates)
         self.selection.replace(duplicates)

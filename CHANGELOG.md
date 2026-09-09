@@ -4,6 +4,30 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-09 — Renommage du paquet : `hotboxLibrary`
+
+- **Le paquet s'appelle désormais `hotboxLibrary`** (demande du pipe
+  studio) : il **cohabite sans conflit** avec le `hotbox_designer`
+  d'origine déjà déployé, au lieu de devoir le remplacer. Les deux
+  outils sont des modules distincts, installables côte à côte sur le
+  même `sys.path`.
+  - lancement : `import hotboxLibrary` /
+    `hotboxLibrary.launch_manager('maya')` (idem avec
+    `studio_admin=True`) ;
+  - les commandes générées (ouvrir / fermer / basculer une hotbox,
+    raccourcis Maya) portent le nouveau nom ;
+  - **rien ne change côté données** : mêmes `hotboxes.json` et
+    `shared_hotboxes.json` dans les préférences Maya, même format —
+    les deux outils voient les mêmes hotboxes ; les données propres au
+    fork restent dans `prefs/hotbox/` ;
+  - **les raccourcis Maya déjà posés** par l'ancien outil appellent
+    toujours `hotbox_designer.show('nom')` et continuent donc de passer
+    par lui : les réassigner une fois (⌨ → Set…) pour qu'ils utilisent
+    `hotboxLibrary` ;
+  - README : la section « Migration » (remplacement du dossier) devient
+    « Cohabitation », et l'essai avant déploiement ne demande plus de
+    purge de modules.
+
 ## 2026-08 — Registre de commandes : essayé puis retiré
 
 - **Manipulation des boutons nettement plus fluide** (lourdeur

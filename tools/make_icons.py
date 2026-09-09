@@ -5,11 +5,11 @@ import sys
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 sys.path.insert(0, '/workspace/hotboxjor')
-from hotbox_designer.vendor.Qt import QtWidgets, QtGui, QtCore, QtSvg
+from hotboxLibrary.vendor.Qt import QtWidgets, QtGui, QtCore, QtSvg
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
-OUT = '/workspace/hotboxjor/hotbox_designer/resources/icons'
+OUT = '/home/user/hotboxjor/hotboxLibrary/resources/icons'
 STROKE = '#d8d8d8'
 ACCENT = '#4d9bf5'
 SIZE = 32

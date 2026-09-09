@@ -1,4 +1,4 @@
-"""Lancement standalone : ``python -m hotbox_designer``.
+"""Lancement standalone : ``python -m hotboxLibrary``.
 
 Ouvre le gestionnaire de hotboxes hors de tout DCC (données dans
 ~/.hotbox). Pratique pour développer et éditer des hotboxes sans
@@ -6,8 +6,8 @@ Maya ; les hotkeys globaux restent réservés aux DCC.
 """
 import sys
 
-from hotbox_designer.vendor.Qt import QtWidgets
-from hotbox_designer.manager import launch_manager
+from hotboxLibrary.vendor.Qt import QtWidgets
+from hotboxLibrary.manager import launch_manager
 
 
 def main():

@@ -27,6 +27,11 @@ Les hotboxes vivent dans `hotboxes.json` dans les préférences Maya
 (`Documents\maya\<version>\prefs\`) — compatibles avec l'original
 hotbox_designer, jamais altérées par une simple ouverture.
 
+Le paquet Python s'appelle **`hotboxLibrary`** (et non
+`hotbox_designer`) : l'outil **cohabite sans conflit** avec un
+hotbox_designer déjà installé dans le pipeline — les deux peuvent vivre
+côte à côte et lisent les mêmes hotboxes.
+
 Le manager se lance en **deux modes** : animateur (par défaut — la
 librairie studio est une référence en lecture seule) ou **admin studio**
 (`launch_manager('maya', studio_admin=True)` — la librairie officielle
@@ -276,12 +281,12 @@ shelf :
 
 ```python
 # animateur : la librairie studio est une RÉFÉRENCE en lecture seule
-import hotbox_designer
-hotbox_designer.launch_manager('maya')
+import hotboxLibrary
+hotboxLibrary.launch_manager('maya')
 
 # lead : mode ADMIN — la librairie officielle est éditable
-import hotbox_designer
-hotbox_designer.launch_manager('maya', studio_admin=True)
+import hotboxLibrary
+hotboxLibrary.launch_manager('maya', studio_admin=True)
 ```
 
 - **Mode animateur** (par défaut) : il pioche les boutons officiels par

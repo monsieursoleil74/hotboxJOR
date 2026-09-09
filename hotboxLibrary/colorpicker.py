@@ -7,7 +7,7 @@ QColorDialog natif, jugé vieillot.
 Usage :
     color = ColorPickerDialog.get_color('#3388ff', parent)  # -> '#rrggbb' ou None
 """
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui
+from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui
 
 
 PRESETS = [
@@ -307,7 +307,7 @@ class ColorPickerDialog(QtWidgets.QDialog):
     @staticmethod
     def get_color(initial='#888888', parent=None):
         dialog = ColorPickerDialog(initial, parent)
-        from hotbox_designer.theme import apply_dark_theme
+        from hotboxLibrary.theme import apply_dark_theme
         apply_dark_theme(dialog)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             return dialog.color_name()

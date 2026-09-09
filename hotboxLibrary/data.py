@@ -1,7 +1,7 @@
 
 import os
 import json
-from hotbox_designer.templates import HOTBOX
+from hotboxLibrary.templates import HOTBOX
 
 
 DEFAULT_NAME = 'MyHotbox_{}'

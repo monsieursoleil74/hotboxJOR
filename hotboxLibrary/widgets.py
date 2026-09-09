@@ -1,4 +1,4 @@
-from hotbox_designer.vendor.Qt import QtGui, QtCore, QtWidgets
+from hotboxLibrary.vendor.Qt import QtGui, QtCore, QtWidgets
 
 
 # en-tête de section repliable : capitales espacées + tiret d'accent à
@@ -250,7 +250,7 @@ class ColorButton(QtWidgets.QPushButton):
             % self._color)
 
     def pick_color(self):
-        from hotbox_designer.colorpicker import ColorPickerDialog
+        from hotboxLibrary.colorpicker import ColorPickerDialog
         name = ColorPickerDialog.get_color(self._color or '#888888', self)
         if name is None:
             return

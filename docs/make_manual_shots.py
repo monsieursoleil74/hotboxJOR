@@ -25,16 +25,16 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
-from hotbox_designer.vendor.Qt import QtWidgets, QtCore, QtGui  # noqa: E402
+from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui  # noqa: E402
 
 APP = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
-from hotbox_designer import buttonlibrary as bl              # noqa: E402
-from hotbox_designer.applications import Standalone          # noqa: E402
-from hotbox_designer.designer.application import HotboxEditor  # noqa: E402
-from hotbox_designer.templates import (                      # noqa: E402
+from hotboxLibrary import buttonlibrary as bl              # noqa: E402
+from hotboxLibrary.applications import Standalone          # noqa: E402
+from hotboxLibrary.designer.application import HotboxEditor  # noqa: E402
+from hotboxLibrary.templates import (                      # noqa: E402
     SQUARE_BUTTON, TEXT, HOTBOX)
-from hotbox_designer.theme import ACCENT                     # noqa: E402
+from hotboxLibrary.theme import ACCENT                     # noqa: E402
 
 MANUAL = os.path.join(ROOT, 'MANUEL.html')
 BEGIN = '/* == CAPTURES : bloc généré par docs/make_manual_shots.py == */'
@@ -205,7 +205,7 @@ bl.save_library(studio_path, [
     entry('body ctrls', 'SELECTION', button(0, 0, 70, 30, 'body', BROWN)),
 ])
 logo_source = os.path.join(
-    ROOT, 'hotbox_designer', 'resources', 'icons', 'studio_logo.png')
+    ROOT, 'hotboxLibrary', 'resources', 'icons', 'studio_logo.png')
 if os.path.exists(logo_source):
     shutil.copy(logo_source, os.path.join(studio_folder, 'studio_logo.png'))
 bl.set_studio_location(studio_path)
@@ -226,7 +226,7 @@ application.record_hotkey('TAT_face', 'Alt+F', 'open on press & close on release
 print('captures :')
 
 # 1. le manager (mode animateur) ------------------------------------
-from hotbox_designer.manager import HotboxManager               # noqa: E402
+from hotboxLibrary.manager import HotboxManager               # noqa: E402
 
 bl.set_studio_admin(False)
 manager = HotboxManager(application)
@@ -327,7 +327,7 @@ grab(dialog, 'dialogue-librairie')
 dialog.close()
 
 # 12. le dialogue de création (grille de templates) --------------------
-from hotbox_designer.dialog import (                             # noqa: E402
+from hotboxLibrary.dialog import (                             # noqa: E402
     CreateHotboxDialog, HotkeyManagerDialog)
 
 create = CreateHotboxDialog([demo] + others)
@@ -350,7 +350,7 @@ grab(hotkeys, 'raccourcis')
 hotkeys.close()
 
 # 14. le sélecteur de couleurs ------------------------------------------
-from hotbox_designer.colorpicker import ColorPickerDialog        # noqa: E402
+from hotboxLibrary.colorpicker import ColorPickerDialog        # noqa: E402
 
 picker = ColorPickerDialog('#6d8c5e')
 picker.show()
@@ -358,7 +358,7 @@ grab(picker, 'colorpicker')
 picker.close()
 
 # 15. la hotbox en production (reader) ----------------------------------
-from hotbox_designer.reader import HotboxReader                  # noqa: E402
+from hotboxLibrary.reader import HotboxReader                  # noqa: E402
 
 reader = HotboxReader(json.loads(json.dumps(demo)), parent=None)
 reader.show()
