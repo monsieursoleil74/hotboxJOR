@@ -4,13 +4,12 @@ import os
 import sys
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.dirname(ROOT))
+sys.path.insert(0, '/workspace/hotboxjor')
 from hotboxLibrary.vendor.Qt import QtWidgets, QtGui, QtCore, QtSvg
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
-OUT = os.path.join(ROOT, 'resources', 'icons')
+OUT = '/home/user/hotboxjor/hotboxLibrary/resources/icons'
 STROKE = '#d8d8d8'
 ACCENT = '#4d9bf5'
 SIZE = 32

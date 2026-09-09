@@ -105,22 +105,18 @@ utilisateur + 7 templates maison, mode « placer l'image » complet
 Le premier commit de ce dépôt est une copie verbatim du dépôt amont
 (`hotbox_designer/` + `LICENSE` + `README.upstream.md` +
 `documentation/`). Tout ce qui suit dans l'historique git est propre à
-ce fork. Depuis septembre 2026 le paquet vit **à la racine** du dépôt
-(le dépôt se pose tel quel sous le nom `hotboxLibrary`).
+ce fork.
 
 ## Installation dans Maya
 
 1. Récupérer le code : bouton « Code → Download ZIP » sur GitHub, ou
    `git clone https://github.com/monsieursoleil74/hotboxJOR.git`
    (un `git pull` suffira ensuite pour les mises à jour).
-2. Poser le dépôt **tel quel**, sous le nom **`hotboxLibrary`**, dans le
-   dossier de scripts Maya : `C:\Users\<toi>\Documents\maya\scripts\hotboxLibrary`
-   (le zip GitHub se dézippe en `hotboxJOR-main` : renommer ce dossier
-   en `hotboxLibrary`). **Le dépôt EST le paquet Python** — `__init__.py`,
-   `manager.py`… sont à sa racine, la doc et les tests à côté ne
-   gênent pas. Le paquet portant un nom distinct, il **cohabite sans
-   conflit** avec un `hotbox_designer` déjà installé (voir
-   « Cohabitation » plus bas).
+2. Copier le dossier **`hotboxLibrary`** (le dossier intérieur, celui
+   qui contient `manager.py`) dans le dossier de scripts Maya :
+   `C:\Users\<toi>\Documents\maya\scripts\hotboxLibrary`.
+   Le paquet portant un nom distinct, il **cohabite sans conflit** avec
+   un `hotbox_designer` déjà installé (voir « Cohabitation » plus bas).
 3. Lancer, dans le Script Editor (onglet Python) :
 
    ```python
@@ -149,8 +145,8 @@ configuration retenue pour le déploiement studio (demande du pipe :
 aucun risque pour l'outil déjà en place).
 
 - **Rien à retirer** : le `hotbox_designer` du pipeline reste où il est
-  et continue de fonctionner. On ajoute simplement le dépôt, nommé
-  `hotboxLibrary`, à côté (ex. `R:\XX_TOOL\AdditionalScript_Maya\hotboxLibrary`).
+  et continue de fonctionner. On ajoute simplement le dossier
+  `hotboxLibrary` à côté.
 - **Les hotboxes sont les mêmes des deux côtés** : les deux outils
   lisent le même `hotboxes.json` des préférences Maya (et le même
   `shared_hotboxes.json`), au même format, jamais réécrit à
@@ -194,13 +190,13 @@ Depuis que le paquet s'appelle `hotboxLibrary`, l'essai ne demande plus
 aucune précaution : les deux outils sont des modules DIFFÉRENTS, ils ne
 peuvent pas se remplacer l'un l'autre.
 
-1. Déposer le dépôt, nommé `hotboxLibrary`, où l'on veut (par exemple
-   `D:\test\hotboxLibrary`).
+1. Déposer le dossier `hotboxLibrary` où l'on veut (par exemple
+   `D:\test\hotboxJOR\hotboxLibrary`).
 2. Lancer, dans le Script Editor (onglet Python) :
 
    ```python
    import os, sys
-   sys.path.insert(0, r"D:\test")   # le PARENT du dossier hotboxLibrary
+   sys.path.insert(0, r"D:\test\hotboxJOR")
    # config studio locale pour l'essai (optionnel)
    os.environ['HOTBOX_STUDIO_LIBRARY'] = r"R:\...\TAT.json"
    import hotboxLibrary

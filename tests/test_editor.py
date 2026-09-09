@@ -14,8 +14,7 @@ import os
 import sys
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-# le dépôt EST le paquet hotboxLibrary : son PARENT va sur sys.path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui
 
@@ -30,7 +29,7 @@ import hotboxLibrary.designer.editarea as editarea_mod
 
 
 HUMAN = os.path.join(
-    os.path.dirname(__file__), '..', 'resources',
+    os.path.dirname(__file__), '..', 'hotboxLibrary', 'resources',
     'templates', 'human.json')
 
 

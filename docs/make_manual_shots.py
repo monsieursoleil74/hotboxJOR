@@ -22,9 +22,7 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# le dépôt EST le paquet (dossier nommé hotboxLibrary) : son parent
-# va sur sys.path pour que `import hotboxLibrary` le trouve
-sys.path.insert(0, os.path.dirname(ROOT))
+sys.path.insert(0, ROOT)
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 
 from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui  # noqa: E402
@@ -207,7 +205,7 @@ bl.save_library(studio_path, [
     entry('body ctrls', 'SELECTION', button(0, 0, 70, 30, 'body', BROWN)),
 ])
 logo_source = os.path.join(
-    ROOT, 'resources', 'icons', 'studio_logo.png')
+    ROOT, 'hotboxLibrary', 'resources', 'icons', 'studio_logo.png')
 if os.path.exists(logo_source):
     shutil.copy(logo_source, os.path.join(studio_folder, 'studio_logo.png'))
 bl.set_studio_location(studio_path)

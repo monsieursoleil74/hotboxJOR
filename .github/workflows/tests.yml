@@ -9,11 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      # le dépôt EST le paquet Python : on le clone dans un dossier
-      # nommé hotboxLibrary, comme au studio (posé tel quel sur R:\)
       - uses: actions/checkout@v4
-        with:
-          path: hotboxLibrary
 
       - uses: actions/setup-python@v5
         with:
@@ -28,10 +24,9 @@ jobs:
 
       - name: Lint (pyflakes, vendor exclu)
         run: |
-          cd hotboxLibrary
-          python -m pyflakes $(git ls-files '*.py' | grep -Ev '(^|/)vendor/')
+          python -m pyflakes $(git ls-files 'hotboxLibrary/**/*.py' 'hotboxLibrary/*.py' 'tests/*.py' | grep -v '/vendor/')
 
       - name: Suite de tests (headless)
         env:
           QT_QPA_PLATFORM: offscreen
-        run: python hotboxLibrary/tests/test_editor.py
+        run: python tests/test_editor.py
