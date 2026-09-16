@@ -195,7 +195,9 @@ affiché avec son vrai rendu en vignette.
 - **Renommer un bouton** : clic droit sur un bouton de la shelf →
   **Rename…** (perso toujours ; studio en mode admin). Le bouton garde
   son apparence et sa commande, seul son nom change.
-- **Supprimer** : clic droit sur un bouton de la shelf → Delete.
+- **Supprimer** : clic droit sur un bouton de la shelf → Delete (perso
+  toujours ; studio en **mode admin**, avec une confirmation — le
+  bouton disparaît pour tout le département).
 - **Ouvrir le dossier** (JSON brut) : clic droit sur la shelf ou un
   onglet → « Open library folder » — ouvre l'explorateur à
   l'emplacement du `.json` (perso ou studio selon l'onglet). Sur les

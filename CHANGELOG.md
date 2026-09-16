@@ -6,6 +6,13 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Supprimer un bouton de la librairie studio en mode admin** (bug
+  remonté : « Delete » n'existait que pour la librairie perso). Le
+  clic droit sur un bouton studio propose désormais « Delete … from
+  studio library » en mode admin, avec une confirmation (tout le
+  département le perd) ; l'animateur n'y a toujours pas droit. Test :
+  `test_admin_can_delete_studio_button`.
+
 - **Lock background, façon dwpicker** : nouvelle option `background`
   sur les shapes (case **Background** dans la section Shape du panneau
   d'attributs ; « Add background » la coche d'office) et **cadenas**

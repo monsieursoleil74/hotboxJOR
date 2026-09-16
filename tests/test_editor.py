@@ -2704,6 +2704,57 @@ def test_drop_replaces_button():
     editor.close()
     print('dépôt d un bouton SUR un bouton = remplacement OK')
 
+def test_admin_can_delete_studio_button():
+    """Bug remonté : en mode admin, aucun « Delete » sur les boutons de la
+    librairie studio. Désormais l'admin supprime (avec confirmation)
+    dans le json studio ; l'animateur, lui, ne peut toujours pas."""
+    import tempfile
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.buttonlibrary import LibraryShelf
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    studio = os.path.join(tmp, 'TAT.json')
+    entries = [
+        {'name': 'a', 'category': 'ANIM', 'options': dict(SQUARE_BUTTON)},
+        {'name': 'b', 'category': 'ANIM',
+         'options': dict(SQUARE_BUTTON, **{'text.content': 'b'})}]
+    bl.save_library(studio, list(entries))
+    saved_env = os.environ.pop(bl.STUDIO_ENV_VARIABLE, None)
+    bl.set_studio_location(studio)
+    asked = []
+    real_question = QtWidgets.QMessageBox.question
+    QtWidgets.QMessageBox.question = (
+        lambda *a, **k: (asked.append(1), QtWidgets.QMessageBox.Yes)[1])
+    try:
+        # animateur : la suppression studio est refusée, sans dialogue
+        bl.set_studio_admin(False)
+        shelf = LibraryShelf(application)
+        shelf._delete([entries[0]], readonly=True)
+        assert len(bl.load_library(studio)) == 2 and asked == []
+        shelf.close()
+
+        # admin : confirmation demandée, suppression écrite dans le json
+        # studio, shelf rafraîchie
+        bl.set_studio_admin(True)
+        shelf = LibraryShelf(application)
+        shelf._delete([entries[0]], readonly=True)
+        assert asked == [1]
+        assert [e['name'] for e in bl.load_library(studio)] == ['b']
+        tab = shelf.tabs.widget(0)
+        names = [tab.item(i).data(QtCore.Qt.UserRole)['name']
+                 for i in range(tab.count())]
+        assert names == ['b']
+        shelf.close()
+    finally:
+        QtWidgets.QMessageBox.question = real_question
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)
+        if saved_env is not None:
+            os.environ[bl.STUDIO_ENV_VARIABLE] = saved_env
+    print('suppression studio en mode admin (confirmée, refusée en anim) OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2758,4 +2809,5 @@ if __name__ == '__main__':
     test_admin_shelf_without_library()
     test_background_lock()
     test_drop_replaces_button()
+    test_admin_can_delete_studio_button()
     print('TOUT EST VERT')

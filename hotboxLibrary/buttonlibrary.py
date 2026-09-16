@@ -1674,22 +1674,30 @@ class LibraryShelf(QtWidgets.QWidget):
                 'Move to category…',
                 lambda: self._prompt_move(target, entries))
             move.setEnabled(target is not None)
-            menu.addSeparator()
-        # actions sur les boutons perso sélectionnés
-        if entries and not shelf_list.readonly:
+            # supprimer : perso toujours, studio en mode admin (avec
+            # confirmation — le bouton disparaît pour tout le monde)
             count = len(entries)
-            # publier vers la librairie officielle : admin seulement
-            if is_studio_admin() and studio_write_path() is not None:
-                send_label = (
-                    'Send "%s" to studio library' % entries[0]['name']
-                    if count == 1
-                    else 'Send %d buttons to studio library' % count)
-                menu.addAction(
-                    self.studio_icon, send_label,
-                    lambda: self._send_to_studio(entries))
             del_label = ('Delete "%s"' % entries[0]['name']
                          if count == 1 else 'Delete %d buttons' % count)
-            menu.addAction(del_label, lambda: self._delete(entries))
+            if shelf_list.readonly:
+                del_label += ' from studio library'
+            delete = menu.addAction(
+                del_label,
+                lambda: self._delete(entries, shelf_list.readonly))
+            delete.setEnabled(target is not None)
+            menu.addSeparator()
+        # publier vers la librairie officielle : depuis la perso, en
+        # mode admin seulement
+        if (entries and not shelf_list.readonly and is_studio_admin()
+                and studio_write_path() is not None):
+            count = len(entries)
+            send_label = (
+                'Send "%s" to studio library' % entries[0]['name']
+                if count == 1
+                else 'Send %d buttons to studio library' % count)
+            menu.addAction(
+                self.studio_icon, send_label,
+                lambda: self._send_to_studio(entries))
             menu.addSeparator()
         # ouvrir le dossier : perso toujours ; studio en mode admin
         # seulement
@@ -1714,10 +1722,28 @@ class LibraryShelf(QtWidgets.QWidget):
             '%d button(s) sent to the studio library.' % added
             if added else 'These buttons are already in the studio library.')
 
-    def _delete(self, entries):
+    def _delete(self, entries, readonly=False):
+        """Supprime des boutons (ou sets) de la librairie perso — ou,
+        en mode admin, de la librairie studio : là on confirme, parce
+        que tout le département les perd."""
+        if not self._can_edit(readonly):
+            return
+        target = self._category_target(readonly)
+        if target is None:
+            return self._warn_no_studio()
+        if readonly:
+            count = len(entries)
+            answer = QtWidgets.QMessageBox.question(
+                self, 'Studio library',
+                'Delete %d button(s) from the studio library « %s » ?\n'
+                'Everyone will lose them.' % (count, studio_library_label()),
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No)
+            if answer != QtWidgets.QMessageBox.Yes:
+                return
         remaining = [
-            e for e in load_library_raw(self.path) if e not in entries]
-        save_library(self.path, remaining)
+            e for e in load_library_raw(target) if e not in entries]
+        save_library(target, remaining)
         refresh_shelves()
 
     def add_entries(self, new_entries):
