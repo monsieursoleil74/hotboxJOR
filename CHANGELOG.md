@@ -6,6 +6,13 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Vignettes de la shelf fidèles** (retour utilisateur) : un bouton
+  illustré n'était représenté que par son image — on ne voyait plus
+  son fond, sa bordure ni sa forme. La vignette dessine désormais le
+  bouton tel qu'il apparaît dans la hotbox (forme, couleurs, bordure,
+  image, texte). Les données de la librairie n'ont jamais changé : le
+  style était bien stocké et restitué au dépôt.
+
 - **Supprimer un bouton de la librairie studio en mode admin** (bug
   remonté : « Delete » n'existait que pour la librairie perso). Le
   clic droit sur un bouton studio propose désormais « Delete … from

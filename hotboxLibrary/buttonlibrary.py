@@ -495,12 +495,11 @@ def _thumb_cache_key(options, size):
 
 
 def button_thumbnail(options, size=None):
-    """Icône du bouton pour la librairie (mise en cache).
-
-    - bouton AVEC image : on affiche l'image seule, ajustée, sur fond
-      transparent (icône propre, pas de rectangle sombre derrière) ;
-    - bouton SANS image : on dessine le bouton (forme + couleurs), fond
-      transparent."""
+    """Icône du bouton pour la librairie (mise en cache) : le bouton
+    dessiné TEL QU'IL APPARAÎT dans une hotbox — forme, couleurs,
+    bordure, image et texte — sur fond transparent. (Une première
+    version n'affichait que l'image des boutons illustrés : on ne
+    voyait plus à quoi ressemblait le bouton — retour utilisateur.)"""
     thumb_width, thumb_height = size or (THUMB_SIZE * 2, THUMB_SIZE)
     key = _thumb_cache_key(options, (thumb_width, thumb_height))
     cached = _THUMB_CACHE.get(key)
@@ -512,28 +511,16 @@ def button_thumbnail(options, size=None):
     painter.setRenderHint(QtGui.QPainter.Antialiasing)
     painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
 
-    from hotboxLibrary.images import resolve_image_path
-    image_path = resolve_image_path(options.get('image.path') or '')
-    image = QtGui.QPixmap(image_path) if image_path else QtGui.QPixmap()
-    if not image.isNull():
-        # image seule, centrée et ajustée en gardant les proportions
-        scaled = image.scaled(
-            thumb_width - 4, thumb_height - 4,
-            QtCore.Qt.KeepAspectRatio, QtCore.Qt.SmoothTransformation)
-        painter.drawPixmap(
-            (thumb_width - scaled.width()) // 2,
-            (thumb_height - scaled.height()) // 2, scaled)
-    else:
-        shape = Shape(dict(options))
-        rect = shape.rect
-        width = rect.width() or 1.0
-        height = rect.height() or 1.0
-        scale = min((thumb_width - 4) / width, (thumb_height - 4) / height)
-        painter.translate(
-            (thumb_width - width * scale) / 2 - rect.left() * scale,
-            (thumb_height - height * scale) / 2 - rect.top() * scale)
-        painter.scale(scale, scale)
-        draw_shape(painter, shape)
+    shape = Shape(dict(options))
+    rect = shape.rect
+    width = rect.width() or 1.0
+    height = rect.height() or 1.0
+    scale = min((thumb_width - 4) / width, (thumb_height - 4) / height)
+    painter.translate(
+        (thumb_width - width * scale) / 2 - rect.left() * scale,
+        (thumb_height - height * scale) / 2 - rect.top() * scale)
+    painter.scale(scale, scale)
+    draw_shape(painter, shape)   # fond, bordure, image, texte : le vrai look
     painter.end()
     icon = QtGui.QIcon(pixmap)
     # même pixmap à l'état sélectionné : sans ça Qt teinte l'icône en

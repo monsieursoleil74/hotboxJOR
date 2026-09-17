@@ -154,7 +154,8 @@ endroit relatif sous le curseur), la vue est recadrée. Annulable.
 L'idée : configurer un bouton une fois (commande, couleurs, texte…),
 le ranger, le réutiliser dans toutes ses hotboxes. La librairie est une
 **shelf en bas de l'éditeur** : un onglet par catégorie, chaque bouton
-affiché avec son vrai rendu en vignette.
+affiché avec son vrai rendu en vignette — forme, couleurs, bordure,
+image et texte, exactement comme il apparaîtra dans la hotbox.
 
 - **Sauvegarder** : sélectionne un ou plusieurs boutons → bouton 💾 de
   la barre d'outils (ou clic droit → « Save selection to library… ») →
