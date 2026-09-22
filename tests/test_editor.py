@@ -2755,6 +2755,58 @@ def test_admin_can_delete_studio_button():
             os.environ[bl.STUDIO_ENV_VARIABLE] = saved_env
     print('suppression studio en mode admin (confirmée, refusée en anim) OK')
 
+def test_hotbox_closes_before_command():
+    """Bug remonté : une commande qui ouvre un dialogue bloquant laissait
+    la hotbox affichée par-dessus, « close hotbox » coché ou pas —
+    l'original exécutait PUIS fermait. Désormais la hotbox est cachée
+    AVANT que la commande ne s'exécute."""
+    from hotboxLibrary import languages
+    from hotboxLibrary.templates import HOTBOX as HOTBOX_T
+
+    options = dict(SQUARE_BUTTON)
+    options.update({
+        'shape.left': 100.0, 'shape.top': 100.0,
+        'action.left': True, 'action.left.close': True,
+        'action.left.language': 'python', 'action.left.command': 'pass'})
+    data = {'general': dict(HOTBOX_T, name='t', width=600, height=400),
+            'shapes': [options]}
+    reader = HotboxReader(ensure_old_data_compatible(data), parent=None)
+    reader.show()
+    APP.processEvents()
+    assert reader.isVisible()
+
+    # la commande note si la hotbox est ENCORE visible quand elle tourne
+    seen = []
+    real = languages.EXECUTORS['python']
+    languages.EXECUTORS['python'] = lambda code: seen.append(
+        reader.isVisible())
+    try:
+        button = reader.shapes[0]
+        button.hovered = True
+        reader.left_clicked = True
+        reader.mouseReleaseEvent(FakeMouseEvent(QtCore.Qt.LeftButton))
+    finally:
+        languages.EXECUTORS['python'] = real
+    assert seen == [False], 'la commande doit tourner hotbox déjà cachée'
+    assert not reader.isVisible()
+
+    # sans « close hotbox » : la commande tourne, la hotbox reste
+    button.options['action.left.close'] = False
+    reader.show()
+    APP.processEvents()
+    seen = []
+    languages.EXECUTORS['python'] = lambda code: seen.append(
+        reader.isVisible())
+    try:
+        button.hovered = True
+        reader.left_clicked = True
+        reader.mouseReleaseEvent(FakeMouseEvent(QtCore.Qt.LeftButton))
+    finally:
+        languages.EXECUTORS['python'] = real
+    assert seen == [True] and reader.isVisible()
+    reader.close()
+    print('hotbox fermée AVANT la commande (close hotbox) OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2810,4 +2862,5 @@ if __name__ == '__main__':
     test_background_lock()
     test_drop_replaces_button()
     test_admin_can_delete_studio_button()
+    test_hotbox_closes_before_command()
     print('TOUT EST VERT')

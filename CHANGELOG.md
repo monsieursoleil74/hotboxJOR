@@ -6,6 +6,15 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **La hotbox se ferme AVANT d'exécuter la commande** (bug hérité de
+  l'original, remonté au studio) : au clic, l'original exécutait
+  d'abord puis fermait — une commande qui ouvre un dialogue bloquant
+  (Save Increment, confirmDialog…) ne rendait la main qu'au clic sur
+  OK, et la hotbox restait affichée par-dessus pendant tout ce temps,
+  « close hotbox » coché ou pas. L'ordre est inversé : fermeture (et
+  rafraîchissement de l'écran), puis exécution. Test :
+  `test_hotbox_closes_before_command`.
+
 - **Vignettes de la shelf fidèles** (retour utilisateur) : un bouton
   illustré n'était représenté que par son image — on ne voyait plus
   son fond, sa bordure ni sa forme. La vignette dessine désormais le

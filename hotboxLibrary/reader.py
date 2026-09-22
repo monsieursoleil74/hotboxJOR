@@ -139,9 +139,7 @@ class HotboxReader(QtWidgets.QWidget):
         self.repaint()
 
     def mouseReleaseEvent(self, event):
-        close = execute_hovered_shape(
-            self.shapes, self.left_clicked, self.right_clicked)
-
+        left, right = self.left_clicked, self.right_clicked
         if event.button() == QtCore.Qt.RightButton:
             self.right_clicked = False
         elif event.button() == QtCore.Qt.LeftButton:
@@ -151,8 +149,18 @@ class HotboxReader(QtWidgets.QWidget):
             if shape.is_interactive():
                 shape.clicked = bool(shape.hovered and self.clicked)
 
-        if close is True:
+        # on FERME AVANT d'exécuter (l'original exécutait puis fermait) :
+        # une commande qui ouvre un dialogue bloquant — Save Increment,
+        # confirmDialog… — ne rend la main qu'au clic sur OK, et la
+        # hotbox restait affichée par-dessus tout ce temps
+        shape = hovered_interactive_shape(self.shapes)
+        close = shape is not None and shape.autoclose(left=left, right=right)
+        if close:
             self.hide()
+            self.repaint()
+            QtWidgets.QApplication.processEvents()  # que ça disparaisse
+        if shape is not None:
+            shape.execute(left=left, right=right)
         self.repaint()
 
     def paintEvent(self, _):
@@ -254,9 +262,17 @@ def set_crossed_shapes_hovered(point1, point2, shapes, cursor):
     shapedistances[min(shapedistances.keys())].hovered = True
 
 
-def execute_hovered_shape(shapes, left=False, right=False):
+def hovered_interactive_shape(shapes):
+    """Le bouton survolé, s'il peut réagir."""
     for shape in shapes:
         if shape.is_interactive() and shape.hovered:
-            shape.execute(left=left, right=right)
-            return shape.autoclose(left=left, right=right)
-    return False
+            return shape
+    return None
+
+
+def execute_hovered_shape(shapes, left=False, right=False):
+    shape = hovered_interactive_shape(shapes)
+    if shape is None:
+        return False
+    shape.execute(left=left, right=right)
+    return shape.autoclose(left=left, right=right)
