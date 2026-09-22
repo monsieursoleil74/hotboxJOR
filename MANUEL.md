@@ -529,7 +529,8 @@ Shared) — plus besoin d'ouvrir le gestionnaire juste pour vérifier.
 
 Le bouton **touche** de la barre d'outils du manager (⌨) ouvre le
 **gestionnaire de raccourcis** : un tableau qui liste **toutes** les
-hotboxes avec la touche qui leur est assignée.
+hotboxes — perso **et partagées** (onglet Shared) — avec la touche qui
+leur est assignée.
 
 - **Voir** — chaque ligne montre la hotbox et sa touche (ou « — » si
   aucune). Avant, on pouvait assigner un raccourci mais jamais le revoir.

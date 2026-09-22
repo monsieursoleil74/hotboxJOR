@@ -6,6 +6,13 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Raccourci sur une hotbox partagée** (bug remonté) : le
+  gestionnaire ⌨ ne listait que les hotboxes perso — une hotbox de
+  l'onglet Shared n'y apparaissait pas, donc ni Set ni Clear pour
+  elle. Il liste désormais perso + partagées (dédoublonnées) ; la
+  colonne raccourci de l'onglet Shared, elle, marchait déjà. Test :
+  `test_hotkey_manager_lists_shared`.
+
 - **La hotbox se ferme AVANT d'exécuter la commande** (bug hérité de
   l'original, remonté au studio) : au clic, l'original exécutait
   d'abord puis fermait — une commande qui ouvre un dialogue bloquant

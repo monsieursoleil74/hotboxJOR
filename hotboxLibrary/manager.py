@@ -380,7 +380,17 @@ class HotboxManager(QtWidgets.QWidget):
         clear_loaded_hotboxes()
 
     def _hotbox_names(self):
-        return [h['general']['name'] for h in self.personnal_model.hotboxes]
+        """Toutes les hotboxes qu'un raccourci peut ouvrir : les perso
+        ET les partagées (onglet Shared) — le gestionnaire ne listait
+        que les perso, impossible de poser une touche sur une hotbox
+        partagée. Dédoublonné, ordre d'affichage conservé."""
+        names = []
+        for hotbox in (self.personnal_model.hotboxes
+                       + self.shared_model.hotboxes):
+            name = (hotbox or {}).get('general', {}).get('name')
+            if name and name not in names:
+                names.append(name)
+        return names
 
     def _call_manage_hotkeys(self):
         """Gestionnaire de raccourcis : liste toutes les hotboxes avec leur

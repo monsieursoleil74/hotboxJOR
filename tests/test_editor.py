@@ -2843,6 +2843,42 @@ def test_hotbox_closes_before_command():
     reader.close()
     print('hotbox fermée AVANT la commande (clic ET click or close, 1 fois) OK')
 
+def test_hotkey_manager_lists_shared():
+    """Bug remonté : impossible de changer le raccourci d'une hotbox
+    PARTAGÉE — le gestionnaire ⌨ ne listait que les perso. Il doit
+    lister perso + partagées, sans doublon, et le raccourci posé sur
+    une partagée s'afficher dans l'onglet Shared."""
+    import tempfile
+    from hotboxLibrary.manager import HotboxManager
+    from hotboxLibrary import buttonlibrary as bl
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    application.local_file = os.path.join(tmp, 'hotboxes.json')
+    application.shared_file = os.path.join(tmp, 'shared_hotboxes.json')
+    perso = {'general': dict(HOTBOX, name='perso_box'), 'shapes': []}
+    shared = {'general': dict(HOTBOX, name='shared_box'), 'shapes': []}
+    link = os.path.join(tmp, 'shared_box.json')
+    json.dump([perso], open(application.local_file, 'w'))
+    json.dump(shared, open(link, 'w'))
+    json.dump([link], open(application.shared_file, 'w'))
+    bl.set_studio_location(None)
+
+    manager = HotboxManager(application)
+    assert manager._hotbox_names() == ['perso_box', 'shared_box']
+
+    # une touche posée sur la partagée remonte dans l'onglet Shared
+    application.record_hotkey('shared_box', 'Alt+S', 'switch on press')
+    manager._refresh_hotkeys_display()
+    model = manager.shared_model
+    assert model.data(model.index(0, 1), QtCore.Qt.DisplayRole) == 'Alt+S'
+    # ... et Clear la retire
+    manager._clear_hotkey('shared_box')
+    assert model.data(model.index(0, 1), QtCore.Qt.DisplayRole) == ''
+    manager.close()
+    print('gestionnaire de raccourcis : hotboxes partagées listées OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2899,4 +2935,5 @@ if __name__ == '__main__':
     test_drop_replaces_button()
     test_admin_can_delete_studio_button()
     test_hotbox_closes_before_command()
+    test_hotkey_manager_lists_shared()
     print('TOUT EST VERT')
