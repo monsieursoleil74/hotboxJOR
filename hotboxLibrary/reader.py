@@ -157,6 +157,11 @@ class HotboxReader(QtWidgets.QWidget):
         close = shape is not None and shape.autoclose(left=left, right=right)
         if close:
             self.hide()
+            # en mode « click or close », hide() a DÉJÀ exécuté le bouton
+            # survolé (clic gauche) : ne pas le rejouer ici — c'est ce
+            # qui faisait apparaître un popup deux fois
+            if self.triggering == 'click or close' and left:
+                return self.repaint()
             self.repaint()
             QtWidgets.QApplication.processEvents()  # que ça disparaisse
         if shape is not None:

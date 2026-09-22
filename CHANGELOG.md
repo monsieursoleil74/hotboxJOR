@@ -14,8 +14,9 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   « close hotbox » coché ou pas. L'ordre est inversé : fermeture (et
   rafraîchissement de l'écran), puis exécution — sur les DEUX chemins :
   le clic (`mouseReleaseEvent`) et le relâchement de la touche en mode
-  « click or close » (`hide()`), qui avait le même défaut. Test :
-  `test_hotbox_closes_before_command`.
+  « click or close » (`hide()`), qui avait le même défaut — sans
+  exécuter deux fois quand on CLIQUE dans ce mode (le popup apparaissait
+  en double). Test : `test_hotbox_closes_before_command`.
 
 - **Vignettes de la shelf fidèles** (retour utilisateur) : un bouton
   illustré n'était représenté que par son image — on ne voyait plus

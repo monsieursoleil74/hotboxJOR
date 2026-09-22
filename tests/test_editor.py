@@ -2823,8 +2823,25 @@ def test_hotbox_closes_before_command():
         languages.EXECUTORS['python'] = real
     assert seen == [False], 'click or close : commande hotbox déjà cachée'
     assert not reader.isVisible()
+
+    # et un CLIC dans ce même mode n'exécute qu'UNE fois (régression :
+    # mouseRelease + hide() rejouaient tous deux le bouton -> popup
+    # en double)
+    reader.shapes[0].options['action.left.close'] = True
+    reader.show()
+    APP.processEvents()
+    seen = []
+    languages.EXECUTORS['python'] = lambda code: seen.append(
+        reader.isVisible())
+    try:
+        reader.shapes[0].hovered = True
+        reader.left_clicked = True
+        reader.mouseReleaseEvent(FakeMouseEvent(QtCore.Qt.LeftButton))
+    finally:
+        languages.EXECUTORS['python'] = real
+    assert seen == [False], seen   # une seule exécution, hotbox cachée
     reader.close()
-    print('hotbox fermée AVANT la commande (clic ET click or close) OK')
+    print('hotbox fermée AVANT la commande (clic ET click or close, 1 fois) OK')
 
 if __name__ == '__main__':
     test_reader_and_roundtrip()
