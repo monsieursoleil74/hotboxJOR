@@ -2805,7 +2805,26 @@ def test_hotbox_closes_before_command():
         languages.EXECUTORS['python'] = real
     assert seen == [True] and reader.isVisible()
     reader.close()
-    print('hotbox fermée AVANT la commande (close hotbox) OK')
+
+    # 2e chemin : mode « click or close » (touche maintenue) — relâcher
+    # la touche ferme la hotbox via hide(), qui exécute le bouton
+    # survolé. Là aussi, la commande doit tourner hotbox déjà cachée.
+    data['general']['triggering'] = 'click or close'
+    reader = HotboxReader(ensure_old_data_compatible(data), parent=None)
+    reader.show()
+    APP.processEvents()
+    seen = []
+    languages.EXECUTORS['python'] = lambda code: seen.append(
+        reader.isVisible())
+    try:
+        reader.shapes[0].hovered = True
+        reader.hide()
+    finally:
+        languages.EXECUTORS['python'] = real
+    assert seen == [False], 'click or close : commande hotbox déjà cachée'
+    assert not reader.isVisible()
+    reader.close()
+    print('hotbox fermée AVANT la commande (clic ET click or close) OK')
 
 if __name__ == '__main__':
     test_reader_and_roundtrip()

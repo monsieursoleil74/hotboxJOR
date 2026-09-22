@@ -189,8 +189,13 @@ class HotboxReader(QtWidgets.QWidget):
         if not self.isVisible():
             return
 
+        # « click or close » (touche relâchée sur un bouton) : là aussi
+        # l'original EXÉCUTAIT PUIS cachait — une commande qui ouvre un
+        # dialogue bloquant laissait la hotbox affichée par-dessus. On
+        # retient le bouton, on cache, on exécute ensuite.
+        pending = None
         if self.triggering == 'click or close':
-            execute_hovered_shape(self.shapes, left=True)
+            pending = hovered_interactive_shape(self.shapes)
         if self.is_submenu is False:
             self.hideSubmenusRequested.emit()
 
@@ -201,6 +206,9 @@ class HotboxReader(QtWidgets.QWidget):
         # clean the aiming shape before close
         self.clear_aiming()
         super(HotboxReader, self).hide()
+        if pending is not None:
+            QtWidgets.QApplication.processEvents()  # qu'elle disparaisse
+            pending.execute(left=True)
 
     def set_hovered_shapes(self):
         shapes = self.interactive_shapes

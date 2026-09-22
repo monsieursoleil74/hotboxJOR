@@ -12,7 +12,9 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   (Save Increment, confirmDialog…) ne rendait la main qu'au clic sur
   OK, et la hotbox restait affichée par-dessus pendant tout ce temps,
   « close hotbox » coché ou pas. L'ordre est inversé : fermeture (et
-  rafraîchissement de l'écran), puis exécution. Test :
+  rafraîchissement de l'écran), puis exécution — sur les DEUX chemins :
+  le clic (`mouseReleaseEvent`) et le relâchement de la touche en mode
+  « click or close » (`hide()`), qui avait le même défaut. Test :
   `test_hotbox_closes_before_command`.
 
 - **Vignettes de la shelf fidèles** (retour utilisateur) : un bouton
