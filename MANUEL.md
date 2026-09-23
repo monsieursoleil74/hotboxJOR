@@ -256,7 +256,10 @@ fichier temporaire puis remplace l'original d'un seul coup — un crash
 ou une coupure en pleine écriture ne peut pas corrompre le fichier.
 Aucun fichier annexe n'est créé : les sauvegardes historiques restent
 à la charge de l'utilisateur (copie manuelle) ou du studio (backups
-quotidiens des serveurs).
+quotidiens des serveurs). Sur le réseau, si le fichier est
+momentanément verrouillé (un collègue le relit, l'antivirus l'inspecte),
+l'écriture **réessaie d'elle-même** pendant ~2 s ; si ça échoue quand
+même, un message le dit clairement et rien n'est modifié.
 
 ### Où c'est stocké
 

@@ -48,17 +48,40 @@ def load_json(filename, default=None):
         return json.load(f)
 
 
+# sur un partage réseau Windows, os.replace échoue PAR INTERMITTENCE
+# (« accès refusé ») quand le fichier est ouvert ailleurs à cet instant :
+# la shelf d'un collègue qui le relit après une publication, l'antivirus
+# qui inspecte le .tmp… On réessaie un court moment avant d'abandonner
+# — au studio il fallait « sauver plusieurs fois ».
+REPLACE_ATTEMPTS = 12
+REPLACE_DELAY = 0.15   # secondes entre deux essais (~1,8 s au total)
+
+
 def atomic_write_json(path, payload):
     """Écriture SÛRE d'un json : le contenu part dans un fichier
     temporaire du même dossier, puis remplace l'original d'un coup
     (os.replace) — un crash ou une coupure réseau en pleine écriture ne
-    peut plus corrompre le fichier."""
+    peut plus corrompre le fichier. Le remplacement est réessayé
+    quelques instants si le fichier est momentanément verrouillé ;
+    au-delà, l'OSError remonte et le temporaire est nettoyé."""
+    import time
     temporary = path + '.tmp'
     with open(temporary, 'w') as f:
         json.dump(payload, f, indent=2)
         f.flush()
         os.fsync(f.fileno())
-    os.replace(temporary, path)
+    for attempt in range(REPLACE_ATTEMPTS):
+        try:
+            os.replace(temporary, path)
+            return
+        except OSError:
+            if attempt == REPLACE_ATTEMPTS - 1:
+                try:
+                    os.remove(temporary)
+                except OSError:
+                    pass
+                raise
+            time.sleep(REPLACE_DELAY)
 
 
 def save_datas(filename, hotboxes_data):

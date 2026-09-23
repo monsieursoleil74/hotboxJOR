@@ -1067,7 +1067,11 @@ hotboxLibrary.launch_manager('maya', studio_admin=True)</code></pre>
   le contenu part dans un fichier temporaire puis remplace l’original d’un seul
   coup — un crash en pleine écriture ne peut pas corrompre le fichier. Aucun
   fichier annexe n’est créé&nbsp;: les sauvegardes historiques restent à la
-  charge de l’utilisateur (copie manuelle) ou du studio (backups quotidiens).</p></div>
+  charge de l’utilisateur (copie manuelle) ou du studio (backups quotidiens).
+  Sur le réseau, si le fichier est momentanément verrouillé (un collègue le
+  relit, l’antivirus l’inspecte), l’écriture <strong>réessaie d’elle-même</strong>
+  pendant ~2&nbsp;s&nbsp;; si ça échoue quand même, un message le dit clairement
+  et rien n’est modifié.</p></div>
 </section>
 
 <!-- ================================================================ -->

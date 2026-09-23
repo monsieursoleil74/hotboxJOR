@@ -2928,6 +2928,74 @@ def test_import_follows_tab():
     manager.close()
     print('Import suit l onglet (Shared = lien, Personal = copie) OK')
 
+def test_atomic_write_retries():
+    """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
+    réseau, os.replace échoue par intermittence (fichier ouvert
+    ailleurs). L'écriture doit réessayer, puis réussir sans laisser de
+    .tmp ; un échec PERSISTANT remonte proprement, sans .tmp non plus,
+    et la shelf le dit comme un problème d'écriture — pas de config."""
+    import tempfile
+    from hotboxLibrary import data as data_mod
+    from hotboxLibrary import buttonlibrary as bl
+
+    tmp = tempfile.mkdtemp()
+    path = os.path.join(tmp, 'TAT.json')
+    data_mod.atomic_write_json(path, ['v1'])
+    real_replace = os.replace
+    real_delay = data_mod.REPLACE_DELAY
+    data_mod.REPLACE_DELAY = 0.0   # pas d'attente dans les tests
+
+    # 1) verrou passager : échoue 3 fois, puis passe
+    calls = []
+
+    def flaky(src, dst):
+        calls.append(1)
+        if len(calls) <= 3:
+            raise PermissionError('[WinError 5] Access is denied')
+        return real_replace(src, dst)
+    os.replace = flaky
+    try:
+        data_mod.atomic_write_json(path, ['v2'])
+    finally:
+        os.replace = real_replace
+    assert len(calls) == 4 and json.load(open(path)) == ['v2']
+    assert not os.path.exists(path + '.tmp')
+
+    # 2) verrou persistant : OSError, fichier intact, pas de .tmp
+    def locked(src, dst):
+        raise PermissionError('[WinError 5] Access is denied')
+    os.replace = locked
+    try:
+        try:
+            data_mod.atomic_write_json(path, ['v3'])
+            assert False, 'un échec persistant doit remonter'
+        except OSError:
+            pass
+        assert json.load(open(path)) == ['v2']
+        assert not os.path.exists(path + '.tmp')
+
+        # 3) export_to_studio distingue « pas de librairie » et
+        #    « impossible d'écrire »
+        saved_env = os.environ.pop(bl.STUDIO_ENV_VARIABLE, None)
+        bl.set_studio_location(None)
+        entry = {'name': 'x', 'category': 'A', 'options': dict(SQUARE_BUTTON)}
+        assert bl.export_to_studio([entry]) == bl.NO_STUDIO
+        bl.set_studio_location(path)
+        assert bl.export_to_studio([entry]) == bl.WRITE_FAILED
+    finally:
+        os.replace = real_replace
+        data_mod.REPLACE_DELAY = real_delay
+        bl.set_studio_location(None)
+        if saved_env is not None:
+            os.environ[bl.STUDIO_ENV_VARIABLE] = saved_env
+    # sans verrou, l'export passe
+    bl.set_studio_location(path)
+    try:
+        assert bl.export_to_studio([entry]) == 1
+    finally:
+        bl.set_studio_location(None)
+    print('écriture réseau : réessais, échec propre, messages distincts OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2986,4 +3054,5 @@ if __name__ == '__main__':
     test_hotbox_closes_before_command()
     test_hotkey_manager_lists_shared()
     test_import_follows_tab()
+    test_atomic_write_retries()
     print('TOUT EST VERT')

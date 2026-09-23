@@ -224,13 +224,20 @@ def studio_write_path():
     return path
 
 
+# codes d'échec d'export_to_studio — deux causes bien distinctes, qui
+# appellent deux messages différents
+NO_STUDIO = -1        # aucune librairie studio configurée
+WRITE_FAILED = -2     # librairie configurée mais impossible à écrire
+
+
 def export_to_studio(entries):
     """Ajoute des boutons à la librairie studio (dédupliqués). Retourne
-    le nombre réellement ajouté, ou -1 si le studio n'est pas
-    accessible en écriture."""
+    le nombre réellement ajouté, NO_STUDIO si aucune librairie n'est
+    configurée, WRITE_FAILED si le fichier n'a pas pu être écrit
+    (verrouillé, droits…)."""
     path = studio_write_path()
     if not path:
-        return -1
+        return NO_STUDIO
     existing = load_library_raw(path)
     already = [e for e in existing if is_button_entry(e)]
     added = 0
@@ -243,7 +250,7 @@ def export_to_studio(entries):
         try:
             save_library(path, existing)
         except OSError:
-            return -1
+            return WRITE_FAILED
     return added
 
 
@@ -1043,7 +1050,9 @@ class LibraryShelf(QtWidgets.QWidget):
         (ou -1 si le studio n'est pas accessible en écriture)."""
         if studio:
             added = export_to_studio(entries)
-            if added < 0:
+            if added == WRITE_FAILED:
+                self._warn_write_failed()
+            elif added < 0:
                 self._warn_no_studio()
             else:
                 refresh_shelves()
@@ -1338,8 +1347,20 @@ class LibraryShelf(QtWidgets.QWidget):
     def _warn_no_studio(self):
         QtWidgets.QMessageBox.warning(
             self, 'Studio library',
-            'Studio library is not configured or not writable.\n'
-            'Set the HOTBOX_STUDIO_LIBRARY location first.')
+            'No studio library is loaded.\n'
+            'Open or create one (buttons in the shelf corner), or set '
+            'HOTBOX_STUDIO_LIBRARY.')
+
+    def _warn_write_failed(self):
+        """La librairie existe mais n'a pas pu être écrite (fichier
+        verrouillé par un autre poste, droits réseau…) — dire lequel et
+        inviter à réessayer, sans parler de configuration."""
+        QtWidgets.QMessageBox.warning(
+            self, 'Studio library',
+            'Could not write the studio library:\n%s\n\n'
+            'The file may be locked by another workstation or read-only '
+            'on the network. Nothing was changed — try again in a moment.'
+            % (studio_write_path() or studio_location()))
 
     # --- choix de la librairie studio ---------------------------------
     def _studio_library_menu(self):
@@ -1697,12 +1718,10 @@ class LibraryShelf(QtWidgets.QWidget):
 
     def _send_to_studio(self, entries):
         added = export_to_studio(entries)
+        if added == WRITE_FAILED:
+            return self._warn_write_failed()
         if added < 0:
-            QtWidgets.QMessageBox.warning(
-                self, 'Studio library',
-                'Studio library is not configured or not writable.\n'
-                'Set the HOTBOX_STUDIO_LIBRARY location first.')
-            return
+            return self._warn_no_studio()
         refresh_shelves()
         QtWidgets.QMessageBox.information(
             self, 'Studio library',
@@ -1730,7 +1749,10 @@ class LibraryShelf(QtWidgets.QWidget):
                 return
         remaining = [
             e for e in load_library_raw(target) if e not in entries]
-        save_library(target, remaining)
+        try:
+            save_library(target, remaining)
+        except OSError:
+            return self._warn_write_failed()
         refresh_shelves()
 
     def add_entries(self, new_entries):

@@ -6,6 +6,17 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Sauvegarde vers la librairie studio fiabilisée** (bug remonté :
+  « je dois sauver plusieurs fois », et un message « not configured »
+  trompeur). Sur un partage réseau Windows, le remplacement atomique
+  du `.json` échoue par intermittence quand le fichier est ouvert
+  ailleurs à cet instant (shelf d'un collègue qui le relit après une
+  publication, antivirus…). L'écriture réessaie désormais pendant
+  ~2 s avant d'abandonner, et le message distingue enfin « aucune
+  librairie chargée » de « impossible d'écrire ce fichier (verrouillé /
+  droits) — rien n'a été modifié, réessayez ». Test :
+  `test_atomic_write_retries`.
+
 - **Import suit l'onglet du manager** (bug remonté) : depuis l'onglet
   Shared, Import copiait la hotbox dans la liste perso. Il lie
   désormais le fichier en place (comme le bouton chaîne) — le `.json`
