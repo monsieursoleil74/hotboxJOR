@@ -223,6 +223,10 @@ class HotboxManager(QtWidgets.QWidget):
         self.toolbar.delete.setEnabled(index == 0)
         self.toolbar.link.setEnabled(index == 1)
         self.toolbar.unlink.setEnabled(index == 1)
+        # l'infobulle d'Import dit ce qu'il va faire selon l'onglet
+        self.toolbar.import_.setToolTip(
+            'Import hotbox file as a shared link (the file stays in place)'
+            if index == 1 else 'Import hotbox (copy into my hotboxes)')
 
     def hotbox_data_modified(self, link, hotbox_data):
         # la hotbox est retrouvée par identité, pas par ligne
@@ -453,6 +457,13 @@ class HotboxManager(QtWidgets.QWidget):
             % hotbox['general']['name'])
 
     def _call_import(self):
+        """Import : dans l'onglet Personal, une COPIE entre dans ma liste ;
+        dans l'onglet Shared, le fichier est LIÉ en place (comme le bouton
+        chaîne) — le .json reste où il est, tout le monde suit ses mises
+        à jour. Avant, Import copiait toujours dans les perso, quel que
+        soit l'onglet (bug remonté au studio)."""
+        if self.tabwidget.currentIndex() == 1:
+            return self._call_add_link()
         hotbox = import_hotbox()
         if not hotbox:
             return warning('Hotbox designer', 'No hotbox selected')

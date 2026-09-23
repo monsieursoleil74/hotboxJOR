@@ -19,7 +19,7 @@ Trois fenêtres :
 
 | Fenêtre | Rôle |
 |---|---|
-| **Manager** | Liste des hotboxes : créer, éditer, supprimer, importer/exporter, **gérer les raccourcis** (voir/assigner/effacer). |
+| **Manager** | Liste des hotboxes : créer, éditer, supprimer, importer/exporter, **gérer les raccourcis** (voir/assigner/effacer). **Import suit l'onglet** : dans Personal il copie la hotbox dans ma liste ; dans Shared il lie le fichier en place (le `.json` reste sur le réseau, tout le monde suit ses mises à jour). |
 | **Éditeur** | Là où on construit une hotbox. Plusieurs éditeurs peuvent être ouverts en même temps (un par hotbox). |
 | **Reader** | La hotbox en production : ce qui s'affiche sous le curseur dans Maya. Non themé — son apparence, c'est ta hotbox. |
 

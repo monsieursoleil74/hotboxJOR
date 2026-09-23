@@ -2879,6 +2879,55 @@ def test_hotkey_manager_lists_shared():
     manager.close()
     print('gestionnaire de raccourcis : hotboxes partagées listées OK')
 
+def test_import_follows_tab():
+    """Bug remonté : depuis l'onglet Shared, Import copiait la hotbox
+    dans la liste perso. Il doit lier le fichier en place (comme le
+    bouton chaîne) ; depuis Personal, copier comme avant."""
+    import tempfile
+    from hotboxLibrary import manager as manager_mod
+    from hotboxLibrary.manager import HotboxManager
+    from hotboxLibrary import buttonlibrary as bl
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    application.local_file = os.path.join(tmp, 'hotboxes.json')
+    application.shared_file = os.path.join(tmp, 'shared_hotboxes.json')
+    json.dump([], open(application.local_file, 'w'))
+    json.dump([], open(application.shared_file, 'w'))
+    incoming = os.path.join(tmp, 'studio_box.json')
+    json.dump({'general': dict(HOTBOX, name='studio_box'), 'shapes': []},
+              open(incoming, 'w'))
+    bl.set_studio_location(None)
+    manager = HotboxManager(application)
+
+    # les dialogues de fichier renvoient notre fichier
+    real_import = manager_mod.import_hotbox
+    real_link = manager_mod.import_hotbox_link
+    manager_mod.import_hotbox = lambda: json.load(open(incoming))
+    manager_mod.import_hotbox_link = lambda: incoming
+    try:
+        # onglet Shared : Import LIE, rien n'entre dans les perso
+        manager.tabwidget.setCurrentIndex(1)
+        manager._call_import()
+        assert manager.shared_model.hotboxes_links == [incoming]
+        assert manager.personnal_model.hotboxes == []
+        assert json.load(open(application.shared_file)) == [incoming]
+        assert 'shared link' in manager.toolbar.import_.toolTip()
+
+        # onglet Personal : Import COPIE, les liens ne bougent pas
+        manager.tabwidget.setCurrentIndex(0)
+        manager._call_import()
+        names = [h['general']['name'] for h in manager.personnal_model.hotboxes]
+        assert names == ['studio_box']
+        assert manager.shared_model.hotboxes_links == [incoming]
+        assert 'copy' in manager.toolbar.import_.toolTip()
+    finally:
+        manager_mod.import_hotbox = real_import
+        manager_mod.import_hotbox_link = real_link
+    manager.close()
+    print('Import suit l onglet (Shared = lien, Personal = copie) OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -2936,4 +2985,5 @@ if __name__ == '__main__':
     test_admin_can_delete_studio_button()
     test_hotbox_closes_before_command()
     test_hotkey_manager_lists_shared()
+    test_import_follows_tab()
     print('TOUT EST VERT')

@@ -6,6 +6,13 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Import suit l'onglet du manager** (bug remonté) : depuis l'onglet
+  Shared, Import copiait la hotbox dans la liste perso. Il lie
+  désormais le fichier en place (comme le bouton chaîne) — le `.json`
+  reste sur le réseau et tout le monde suit ses mises à jour ; depuis
+  Personal, il copie comme avant. L'infobulle du bouton annonce ce
+  qu'il va faire. Test : `test_import_follows_tab`.
+
 - **Raccourci sur une hotbox partagée** (bug remonté) : le
   gestionnaire ⌨ ne listait que les hotboxes perso — une hotbox de
   l'onglet Shared n'y apparaissait pas, donc ni Set ni Clear pour
