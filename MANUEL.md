@@ -193,15 +193,18 @@ image et texte, exactement comme il apparaîtra dans la hotbox.
   exception : « Replace with library button » demande un bouton
   simple, pas un set. Case décochée (défaut) : comportement
   historique, N boutons indépendants « nom, nom 2, nom 3… ».
-- **Ré-éditer un bouton de la librairie** : dépose-le dans la hotbox
-  (ou prends celui qui y est déjà), modifie-le dans l'éditeur, puis
-  clic droit sur le canvas → **« Update “nom” in library with this
-  button »** — l'entrée de la shelf est réécrite en place (même nom,
-  même catégorie, même position dans l'onglet). Seuls le look et les
+- **Ré-éditer un bouton de la librairie** : modifie le bouton dans sa
+  hotbox (celle où tu l'avais créé, par exemple), sélectionne-le, puis
+  **clic droit sur l'entrée de la shelf → « Update “nom” with the
+  hotbox button »** — l'entrée est réécrite en place (même nom, même
+  catégorie, même position dans l'onglet). Seuls le look et les
   commandes partent ; la position et la taille du bouton dans la
   hotbox ne sont pas envoyées. Il faut UN bouton sélectionné dans la
-  hotbox et UN dans la shelf (pas un set). Perso toujours ; studio en
-  mode admin. Plus besoin de supprimer puis re-sauver.
+  hotbox (sinon l'action est grisée) et l'entrée doit être un bouton
+  simple (pas un set). Perso toujours ; studio en mode admin. Le
+  chemin inverse existe aussi : clic droit sur le canvas → « Update
+  “nom” in library with this button » (entrée sélectionnée dans la
+  shelf). Plus besoin de supprimer puis re-sauver.
 - **Renommer un bouton** : clic droit sur un bouton de la shelf →
   **Rename…** (perso toujours ; studio en mode admin). Le bouton garde
   son apparence et sa commande, seul son nom change.

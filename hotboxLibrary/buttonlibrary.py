@@ -987,6 +987,10 @@ class LibraryShelf(QtWidgets.QWidget):
         super(LibraryShelf, self).__init__(parent)
         self.application = application
         self.path = library_path(application)
+        # options des boutons sélectionnés dans la hotbox — branché par
+        # l'éditeur (pour « Update … with the hotbox button ») ; seule
+        # la shelf sait sinon rien de la hotbox au-dessus
+        self.hotbox_selection = lambda: []
         # librairie studio mémorisée (choisie via le bouton TAT) :
         # appliquée avant le premier refresh
         restore_studio_location(application)
@@ -1686,6 +1690,23 @@ class LibraryShelf(QtWidgets.QWidget):
                 'Select exactly one button (not a set) in the shelf below.')
             return False
         readonly = getattr(widget, 'readonly', False)
+        return self._update_entry(readonly, entries[0], options)
+
+    def update_from_hotbox(self, entry, readonly=False):
+        """Clic droit SUR l'entrée de la shelf : « Update with the hotbox
+        button ». Le bouton source est celui sélectionné dans la hotbox
+        (fourni par l'éditeur via `hotbox_selection`) — c'est le
+        workflow naturel : on retouche le bouton dans sa hotbox, puis
+        on pousse le résultat sur son entrée de librairie."""
+        shapes = list(self.hotbox_selection())
+        if len(shapes) != 1:
+            QtWidgets.QMessageBox.warning(
+                self, 'Update in library',
+                'Select exactly one button in the hotbox first.')
+            return False
+        return self._update_entry(readonly, entry, shapes[0])
+
+    def _update_entry(self, readonly, entry, options):
         if not self._can_edit(readonly):
             QtWidgets.QMessageBox.warning(
                 self, 'Update in library',
@@ -1697,7 +1718,7 @@ class LibraryShelf(QtWidgets.QWidget):
             self._warn_no_studio()
             return False
         try:
-            done = update_entry_in(target, entries[0], options)
+            done = update_entry_in(target, entry, options)
         except OSError:
             self._warn_write_failed()
             return False
@@ -1738,6 +1759,19 @@ class LibraryShelf(QtWidgets.QWidget):
                     'Rename…',
                     lambda: self._prompt_rename_entry(target, entries[0]))
                 rename.setEnabled(target is not None)
+            # ré-éditer : le bouton sélectionné DANS LA HOTBOX remplace
+            # cette entrée (même nom, même catégorie, même place)
+            if len(entries) == 1 and 'options' in entries[0]:
+                selected = list(self.hotbox_selection())
+                update = menu.addAction(
+                    icon('save.png'),
+                    'Update "%s" with the hotbox button' % entries[0]['name'],
+                    lambda: self.update_from_hotbox(
+                        entries[0], shelf_list.readonly))
+                update.setEnabled(target is not None and len(selected) == 1)
+                if len(selected) != 1:
+                    update.setToolTip(
+                        'Select exactly one button in the hotbox first')
             move = menu.addAction(
                 'Move to category…',
                 lambda: self._prompt_move(target, entries))

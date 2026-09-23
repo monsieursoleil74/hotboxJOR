@@ -97,7 +97,7 @@ class Driver:
         self.release(button)
 
 
-def make_editor(shapes_specs, name='test'):
+def make_editor(shapes_specs, name='test', application=None):
     shapes = []
     for left, top, label in shapes_specs:
         options = dict(SQUARE_BUTTON)
@@ -106,7 +106,7 @@ def make_editor(shapes_specs, name='test'):
         shapes.append(options)
     data = {'general': dict(HOTBOX, name=name, width=600, height=400),
             'shapes': shapes}
-    editor = HotboxEditor(data, Standalone(), parent=None)
+    editor = HotboxEditor(data, application or Standalone(), parent=None)
     editor.resize(1000, 650)
     editor.show()
     APP.processEvents()
@@ -3012,7 +3012,7 @@ def test_update_library_entry():
     bl.set_studio_location(None)
     bl.set_studio_admin(False)
     try:
-        editor = make_editor([(100, 100, 'work')])
+        editor = make_editor([(100, 100, 'work')], application=application)
         area = editor.shape_editor
         shelf = editor.library_shelf
         old = dict(SQUARE_BUTTON, **{
@@ -3049,6 +3049,53 @@ def test_update_library_entry():
         # la vignette de la shelf a suivi
         item = shelf.tabs.currentWidget().item(0)
         assert item.data(QtCore.Qt.UserRole)['options']['text.content'] == 'NEW'
+
+        # le workflow préféré : clic droit SUR l'entrée de la shelf →
+        # « Update "Snap" with the hotbox button »
+        shelf_list = shelf.tabs.currentWidget()
+        shelf_list.item(0).setSelected(True)
+        shape.options.update({'text.content': 'V3'})
+        real_exec = QtWidgets.QMenu.exec_
+        menus = []
+        QtWidgets.QMenu.exec_ = lambda menu, *a, **k: menus.append(menu)
+        try:
+            shelf._menu(shelf_list, QtCore.QPoint(2, 2))
+            actions = {a.text(): a for a in menus[-1].actions()}
+            update = actions['Update "Snap" with the hotbox button']
+            assert update.isEnabled()    # un bouton sélectionné dans la hotbox
+            update.trigger()
+            entries = bl.load_library(shelf.path)
+            assert [e['name'] for e in entries] == ['Snap', 'Other']
+            assert entries[0]['options']['text.content'] == 'V3'
+            assert entries[0]['options']['shape.left'] == 5.0   # géométrie gardée
+            # rien de sélectionné dans la hotbox : action grisée et refus
+            area.selection.clear()
+            area.update_selection()
+            shelf_list = shelf.tabs.currentWidget()
+            shelf_list.item(0).setSelected(True)
+            shelf._menu(shelf_list, QtCore.QPoint(2, 2))
+            actions = {a.text(): a for a in menus[-1].actions()}
+            assert not actions['Update "Snap" with the hotbox button'].isEnabled()
+            real_warning = QtWidgets.QMessageBox.warning
+            warned = []
+            QtWidgets.QMessageBox.warning = lambda *a, **k: warned.append(a[2])
+            try:
+                assert not shelf.update_from_hotbox(entries[0])
+            finally:
+                QtWidgets.QMessageBox.warning = real_warning
+            assert warned and 'hotbox' in warned[0]
+            assert bl.load_library(shelf.path)[0]['options']['text.content'] == 'V3'
+            # un set n'est pas ré-éditable : pas d'action proposée
+            shelf.add_entries([{'name': 'Duo', 'category': 'General',
+                                'set': [dict(old), dict(other)]}])
+            shelf_list = shelf.tabs.currentWidget()
+            shelf_list.clearSelection()
+            shelf_list.item(2).setSelected(True)
+            shelf._menu(shelf_list, QtCore.QPoint(2, 2))
+            labels = [a.text() for a in menus[-1].actions()]
+            assert not any(l.startswith('Update "Duo"') for l in labels)
+        finally:
+            QtWidgets.QMenu.exec_ = real_exec
         editor.close()
 
         # onglet studio, mode animateur : refusé, rien n'est écrit
@@ -3056,7 +3103,7 @@ def test_update_library_entry():
         bl.save_library(studio, [
             {'name': 'S', 'category': 'ANIM', 'options': dict(old)}])
         bl.set_studio_location(studio)
-        editor = make_editor([(100, 100, 'work')])
+        editor = make_editor([(100, 100, 'work')], application=application)
         shelf = editor.library_shelf
         shelf.tabs.setCurrentIndex(0)   # l'onglet studio vient en premier
         assert shelf.tabs.currentWidget().readonly

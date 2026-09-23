@@ -6,6 +6,18 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Ré-éditer un bouton depuis la shelf** (retour utilisateur : le
+  point d'entrée naturel, c'est l'entrée de librairie elle-même).
+  Clic droit sur un bouton de la shelf → « Update “nom” with the
+  hotbox button » : l'entrée est réécrite avec le bouton sélectionné
+  dans la hotbox (grisé tant qu'il n'y a pas exactement un bouton
+  sélectionné ; pas proposé sur un set). Même garde-fous que le
+  chemin depuis l'éditeur, qui reste disponible. La shelf lit la
+  sélection de la hotbox via `hotbox_selection`, branché par
+  l'éditeur. Test étendu : `test_update_library_entry` (menu,
+  écriture, refus sans sélection, set exclu) ; les tests de librairie
+  n'écrivent plus dans le `~/.hotbox` de la machine.
+
 - **Ré-éditer un bouton de la librairie** (demande utilisateur : il
   fallait supprimer puis re-sauver). Nouveau clic droit dans
   l'éditeur : « Update “nom” in library with this button » réécrit

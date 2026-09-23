@@ -134,6 +134,10 @@ class HotboxEditor(QtWidgets.QWidget):
         # librairie intégrée en bas, façon shelf Maya
         from hotboxLibrary.buttonlibrary import LibraryShelf
         self.library_shelf = LibraryShelf(self.application)
+        # la shelf peut lire la sélection de la hotbox (clic droit sur
+        # une entrée → « Update … with the hotbox button »)
+        self.library_shelf.hotbox_selection = lambda: [
+            dict(s.options) for s in self.shape_editor.selection]
 
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.setContentsMargins(0, 0, 0, 0)
