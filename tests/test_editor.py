@@ -2996,6 +2996,91 @@ def test_atomic_write_retries():
         bl.set_studio_location(None)
     print('écriture réseau : réessais, échec propre, messages distincts OK')
 
+def test_update_library_entry():
+    """Demande utilisateur : ré-éditer un bouton déjà dans la librairie
+    sans supprimer/re-sauver. « Update in library » réécrit l'entrée
+    sélectionnée dans la shelf avec le bouton sélectionné dans la
+    hotbox — nom, catégorie et place conservés, géométrie non envoyée ;
+    refusé sur un onglet studio hors admin."""
+    import tempfile
+    from hotboxLibrary import buttonlibrary as bl
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    saved_env = os.environ.pop(bl.STUDIO_ENV_VARIABLE, None)
+    bl.set_studio_location(None)
+    bl.set_studio_admin(False)
+    try:
+        editor = make_editor([(100, 100, 'work')])
+        area = editor.shape_editor
+        shelf = editor.library_shelf
+        old = dict(SQUARE_BUTTON, **{
+            'text.content': 'OLD', 'bgcolor.normal': '#111111',
+            'shape.left': 5.0, 'shape.top': 5.0,
+            'shape.width': 40.0, 'shape.height': 20.0})
+        other = dict(SQUARE_BUTTON, **{'text.content': 'other'})
+        shelf.add_entries([
+            {'name': 'Snap', 'category': 'General', 'options': old},
+            {'name': 'Other', 'category': 'General', 'options': other}])
+        shelf_list = shelf.tabs.currentWidget()
+        shelf_list.item(0).setSelected(True)
+
+        # le bouton de la hotbox est édité : look + commande
+        shape = area.shapes[0]
+        shape.options.update({
+            'text.content': 'NEW', 'bgcolor.normal': '#ff0000',
+            'action.left': True, 'action.left.command': 'print("v2")'})
+        area.selection.set([shape])
+        area.update_selection()
+        editor.update_library_entry()
+
+        entries = bl.load_library(shelf.path)
+        assert [e['name'] for e in entries] == ['Snap', 'Other']   # place gardée
+        snap = entries[0]
+        assert snap['category'] == 'General'
+        assert snap['options']['text.content'] == 'NEW'
+        assert snap['options']['bgcolor.normal'] == '#ff0000'
+        assert snap['options']['action.left.command'] == 'print("v2")'
+        # la géométrie de l'entrée n'a PAS pris celle de la hotbox
+        assert snap['options']['shape.left'] == 5.0
+        assert snap['options']['shape.width'] == 40.0
+        assert entries[1]['options']['text.content'] == 'other'  # intact
+        # la vignette de la shelf a suivi
+        item = shelf.tabs.currentWidget().item(0)
+        assert item.data(QtCore.Qt.UserRole)['options']['text.content'] == 'NEW'
+        editor.close()
+
+        # onglet studio, mode animateur : refusé, rien n'est écrit
+        studio = os.path.join(tmp, 'TAT.json')
+        bl.save_library(studio, [
+            {'name': 'S', 'category': 'ANIM', 'options': dict(old)}])
+        bl.set_studio_location(studio)
+        editor = make_editor([(100, 100, 'work')])
+        shelf = editor.library_shelf
+        shelf.tabs.setCurrentIndex(0)   # l'onglet studio vient en premier
+        assert shelf.tabs.currentWidget().readonly
+        shelf.tabs.currentWidget().item(0).setSelected(True)
+        area = editor.shape_editor
+        area.selection.set([area.shapes[0]])
+        area.update_selection()
+        real_warning = QtWidgets.QMessageBox.warning
+        warned = []
+        QtWidgets.QMessageBox.warning = lambda *a, **k: warned.append(a[2])
+        try:
+            editor.update_library_entry()
+        finally:
+            QtWidgets.QMessageBox.warning = real_warning
+        assert warned and 'read-only' in warned[0]
+        assert bl.load_library(studio)[0]['options']['text.content'] == 'OLD'
+        editor.close()
+    finally:
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)
+        if saved_env is not None:
+            os.environ[bl.STUDIO_ENV_VARIABLE] = saved_env
+    print('ré-édition d un bouton de la librairie (Update in library) OK')
+
 if __name__ == '__main__':
     test_reader_and_roundtrip()
     test_interactions()
@@ -3055,4 +3140,5 @@ if __name__ == '__main__':
     test_hotkey_manager_lists_shared()
     test_import_follows_tab()
     test_atomic_write_retries()
+    test_update_library_entry()
     print('TOUT EST VERT')

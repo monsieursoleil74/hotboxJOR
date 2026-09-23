@@ -189,7 +189,35 @@ class HotboxEditor(QtWidgets.QWidget):
         replace.setEnabled(has_selection and single)
         if not entries:
             replace.setToolTip('Select a button in the shelf below first')
+
+        # le chemin inverse : renvoyer le bouton édité SUR son entrée de
+        # librairie (même nom, même catégorie) — avant il fallait
+        # supprimer puis re-sauver
+        if single:
+            update_label = 'Update "%s" in library with this button' % (
+                entries[0].get('name') or 'button')
+        else:
+            update_label = 'Update library button with this button'
+        update = menu.addAction(
+            icon('save.png'), update_label, self.update_library_entry)
+        one_shape = len(self.shape_editor.selection.shapes) == 1
+        update.setEnabled(one_shape and single)
+        if not one_shape:
+            update.setToolTip('Select exactly one button in the hotbox')
+        elif not single:
+            update.setToolTip('Select the library button to update below')
         menu.exec_(global_pos)
+
+    def update_library_entry(self):
+        """Ré-enregistre le bouton de la shelf sélectionné avec le look
+        et les commandes du bouton sélectionné dans la hotbox. Sa
+        position/taille dans la hotbox ne sont pas envoyées."""
+        from hotboxLibrary.dialog import warning
+        shapes = list(self.shape_editor.selection)
+        if len(shapes) != 1:
+            return warning(
+                'Update in library', 'Select exactly one button in the hotbox')
+        self.library_shelf.update_selected_entry(shapes[0].options)
 
     def open_button_library(self):
         """Bouton librairie de la barre d'outils : affiche/masque la

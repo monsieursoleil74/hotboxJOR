@@ -6,6 +6,16 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Ré-éditer un bouton de la librairie** (demande utilisateur : il
+  fallait supprimer puis re-sauver). Nouveau clic droit dans
+  l'éditeur : « Update “nom” in library with this button » réécrit
+  l'entrée sélectionnée dans la shelf avec le look et les commandes du
+  bouton sélectionné dans la hotbox — même nom, même catégorie, même
+  place dans l'onglet ; position/taille ne sont pas envoyées. Un
+  bouton simple des deux côtés (pas de set) ; perso toujours, studio
+  en mode admin ; messages clairs sinon. Test :
+  `test_update_library_entry`.
+
 - **Sauvegarde vers la librairie studio fiabilisée** (bug remonté :
   « je dois sauver plusieurs fois », et un message « not configured »
   trompeur). Sur un partage réseau Windows, le remplacement atomique

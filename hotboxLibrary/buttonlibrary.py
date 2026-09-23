@@ -448,6 +448,34 @@ def set_entries_category_in(path, entries, category):
     return changed
 
 
+# ce qui est mis à jour quand on ré-enregistre un bouton de la
+# librairie depuis l'éditeur : son LOOK et ses commandes — pas sa
+# géométrie (position/taille dans la hotbox de travail n'ont rien à
+# faire dans la librairie), ni son nom ni sa catégorie
+UPDATE_SKIP_KEYS = (
+    'shape.left', 'shape.top', 'shape.width', 'shape.height')
+
+
+def update_entry_in(path, entry, options):
+    """Ré-enregistre un bouton EXISTANT de la librairie avec de
+    nouvelles options (édité dans l'éditeur puis renvoyé) : même nom,
+    même catégorie, même place dans l'onglet — seul le contenu change.
+    Retourne True si une entrée a été mise à jour."""
+    raw = load_library_raw(path)
+    updated = False
+    fresh = {k: v for k, v in dict(options).items()
+             if k not in UPDATE_SKIP_KEYS}
+    for candidate in raw:
+        if 'options' in candidate and candidate == entry:
+            kept = {k: candidate['options'][k]
+                    for k in UPDATE_SKIP_KEYS if k in candidate['options']}
+            candidate['options'] = dict(fresh, **kept)
+            updated = True
+    if updated:
+        save_library(path, raw)
+    return updated
+
+
 def rename_entry_in(path, entry, new_name):
     """Renomme un bouton EXISTANT de la librairie. Retourne True si un
     bouton a été renommé."""
@@ -1644,6 +1672,38 @@ class LibraryShelf(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(
                 self, 'Library folder',
                 'Could not open the folder (not found or not configured).')
+
+    def update_selected_entry(self, options):
+        """« Update in library » de l'éditeur : réécrit le bouton
+        sélectionné dans la shelf avec ces options. Retourne True si
+        c'est fait ; prévient sinon (rien de sélectionné, set, onglet
+        studio hors admin, écriture impossible)."""
+        widget = self.tabs.currentWidget()
+        entries = self.current_selected_entries()
+        if widget is None or len(entries) != 1 or 'options' not in entries[0]:
+            QtWidgets.QMessageBox.warning(
+                self, 'Update in library',
+                'Select exactly one button (not a set) in the shelf below.')
+            return False
+        readonly = getattr(widget, 'readonly', False)
+        if not self._can_edit(readonly):
+            QtWidgets.QMessageBox.warning(
+                self, 'Update in library',
+                'The studio library is read-only for animators — save '
+                'the button to your personal library instead.')
+            return False
+        target = self._category_target(readonly)
+        if target is None:
+            self._warn_no_studio()
+            return False
+        try:
+            done = update_entry_in(target, entries[0], options)
+        except OSError:
+            self._warn_write_failed()
+            return False
+        if done:
+            refresh_shelves()
+        return done
 
     def current_selected_entries(self):
         """Boutons sélectionnés dans l'onglet courant de la shelf (pour
