@@ -576,7 +576,10 @@ class HotboxEditor(QtWidgets.QWidget):
         être ouvertes comme sous-menu depuis un bouton)."""
         current = self.options.get('name')
         names = []
-        for hotbox in self.all_hotboxes:
+        hotboxes = self.all_hotboxes
+        if callable(hotboxes):   # liste VIVANTE fournie par le manager
+            hotboxes = hotboxes()
+        for hotbox in hotboxes:
             # un lien partagé cassé vaut None dans le modèle
             general = (hotbox or {}).get('general', {})
             name = general.get('name')
@@ -584,6 +587,19 @@ class HotboxEditor(QtWidgets.QWidget):
                 if name not in names:
                     names.append(name)
         return sorted(names)
+
+    def refresh_submenus(self):
+        """Relit les hotboxes marquées « is submenu » — on peut en
+        marquer une dans le manager PENDANT que l'éditeur est ouvert."""
+        self.attribute_editor.set_submenus(self.submenu_names())
+
+    def changeEvent(self, event):
+        # retour sur la fenêtre de l'éditeur (après un passage par le
+        # manager, par exemple) : la liste des sous-menus se met à jour
+        if (event.type() == QtCore.QEvent.ActivationChange
+                and self.isActiveWindow()):
+            self.refresh_submenus()
+        return super(HotboxEditor, self).changeEvent(event)
 
     def set_submenu_opener(self, name):
         """Transforme le(s) bouton(s) sélectionné(s) en ouvreur du

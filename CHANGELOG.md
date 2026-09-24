@@ -6,6 +6,15 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Liste « Open sub-hotbox » toujours visible** (« j'ai rien ici,
+  c'est normal ? »). Sans hotbox marquée « is submenu », la liste
+  était cachée et il ne restait que le titre au-dessus de rien. Elle
+  affiche maintenant « no hotbox marked “is submenu” », grisée, avec
+  le mode d'emploi au survol. Et elle se rafraîchit quand l'éditeur
+  redevient actif : on peut marquer une hotbox sous-menu dans le
+  manager pendant que l'éditeur est ouvert (liste vivante perso +
+  partagées, `refresh_submenus`). Test : `test_submenu_opener` étendu.
+
 - **Sous-menus réparés** (bug remonté : « le submenu ne fonctionne
   pas »). Quatre corrections : les boutons hérités de l'ancien outil
   appellent `hotbox_designer.show(...)` — depuis le renommage c'est

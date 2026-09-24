@@ -488,8 +488,13 @@ Refondu façon Photoshop :
   « is submenu » (dans le manager). En choisir une **génère toute seule**
   la commande d'ouverture (`show('nom')`) sur le clic gauche du/des
   bouton(s) sélectionné(s) : plus besoin d'écrire une ligne de Python à
-  la main pour enchaîner deux hotboxes. La liste reste cachée tant
-  qu'aucune hotbox n'est marquée sous-menu — perso **ou partagée**
+  la main pour enchaîner deux hotboxes. **Marche à suivre** : dans le
+  manager, sélectionne la hotbox à ouvrir → panneau General → **is
+  submenu = True** ; puis dans l'éditeur, sélectionne le bouton et
+  choisis-la dans « Open sub-hotbox ». Tant qu'aucune hotbox n'est
+  marquée, la liste affiche « no hotbox marked “is submenu” » (grisée,
+  avec l'explication au survol) ; elle se met à jour toute seule quand
+  tu reviens sur l'éditeur. Les hotboxes partagées comptent aussi
   (onglet Shared : le fichier `.json` lié doit avoir `"submenu": true`).
   Les boutons créés avec l'ancien outil (`hotbox_designer.show(...)`)
   sont **rebranchés automatiquement** sur hotboxLibrary au chargement :

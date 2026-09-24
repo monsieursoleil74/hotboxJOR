@@ -315,8 +315,8 @@ class HotboxManager(QtWidgets.QWidget):
             parent=self.application.main_window,
             # perso ET partagées : un sous-menu peut être une hotbox
             # partagée (au studio, elles le sont presque toutes)
-            all_hotboxes=(self.personnal_model.hotboxes
-                          + self.shared_model.hotboxes))
+            all_hotboxes=lambda: (self.personnal_model.hotboxes
+                                  + self.shared_model.hotboxes))
         link = _EditorLink(editor, hotbox_data)
         editor.hotboxDataModified.connect(
             partial(self.hotbox_data_modified, link))

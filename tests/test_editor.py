@@ -1101,7 +1101,25 @@ def test_submenu_opener():
     APP.processEvents()
     assert shape.options['action.left'] is True
     assert combo.currentIndex() == 0
+    editor.close()
 
+    # aucune hotbox marquée « is submenu » : la liste reste VISIBLE,
+    # désactivée, et dit quoi faire (« j'ai rien ici, c'est normal ? »)
+    live = [main]
+    editor = HotboxEditor(
+        data, Standalone(), parent=None, all_hotboxes=lambda: live)
+    editor.show()
+    APP.processEvents()
+    combo = editor.attribute_editor.action._submenu
+    assert combo.isVisible() and not combo.isEnabled()
+    assert 'is submenu' in combo.currentText()
+    assert 'manager' in combo.toolTip()
+    # on marque une hotbox sous-menu dans le manager PENDANT que
+    # l'éditeur est ouvert : la liste vivante se rafraîchit au retour
+    live.append(sub)
+    editor.refresh_submenus()
+    assert combo.isEnabled()
+    assert [combo.itemData(i) for i in range(combo.count())] == ['', 'outils']
     editor.close()
     print('sous-menu fluide (ouvreur de hotbox généré) OK')
 

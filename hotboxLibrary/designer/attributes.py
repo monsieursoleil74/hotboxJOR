@@ -516,20 +516,30 @@ class ActionSettings(QtWidgets.QWidget):
         self._rlanguage.addItems(languages)
         self.blockSignals(False)
 
+    NO_SUBMENU = '— no hotbox marked « is submenu » —'
+    NO_SUBMENU_TIP = (
+        'To open another hotbox from a button, mark that hotbox\n'
+        '« is submenu » in the manager (General settings), then\n'
+        'come back here: it will be listed.')
+
     def set_submenus(self, names):
-        """Peuple la liste des sous-menus disponibles. Cachée s'il n'y a
-        aucune hotbox marquée « is submenu »."""
+        """Peuple la liste des sous-menus disponibles. S'il n'y a aucune
+        hotbox marquée « is submenu », la liste reste VISIBLE mais
+        désactivée, avec le mode d'emploi — cachée, il ne restait que
+        le titre « Open sub-hotbox » au-dessus de rien (« j'ai rien
+        ici, c'est normal ? »)."""
         self._submenu.blockSignals(True)
         self._submenu.clear()
-        self._submenu.addItem('— none —', '')
-        for name in names:
-            self._submenu.addItem(name, name)
+        if names:
+            self._submenu.addItem('— none —', '')
+            for name in names:
+                self._submenu.addItem(name, name)
+        else:
+            self._submenu.addItem(self.NO_SUBMENU, '')
         self._submenu.blockSignals(False)
         has_submenus = bool(names)
-        self._submenu.setVisible(has_submenus)
-        label = self.layout.labelForField(self._submenu)
-        if label is not None:
-            label.setVisible(has_submenus)
+        self._submenu.setEnabled(has_submenus)
+        self._submenu.setToolTip('' if has_submenus else self.NO_SUBMENU_TIP)
 
     def _submenu_chosen(self, index):
         name = self._submenu.itemData(index)
