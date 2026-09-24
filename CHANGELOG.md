@@ -6,6 +6,15 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Panneau d'attributs coupé à droite** (régression du commit
+  précédent, remontée aussitôt : colonne Click et bouton « Center »
+  hors écran). Le libellé long de la liste « Open sub-hotbox » entrait
+  dans la largeur MINIMALE du panneau (largeur fixe, sans barre
+  horizontale). La liste ne dicte plus sa largeur (politique
+  `Ignored` + `minimumContentsLength`), le texte est coupé « … » au
+  besoin. Test : largeur mini du contenu ≤ panneau, et largeur mini de
+  la liste indépendante de son texte.
+
 - **Liste « Open sub-hotbox » toujours visible** (« j'ai rien ici,
   c'est normal ? »). Sans hotbox marquée « is submenu », la liste
   était cachée et il ne restait que le titre au-dessus de rien. Elle

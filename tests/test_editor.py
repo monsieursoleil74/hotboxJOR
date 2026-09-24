@@ -1114,12 +1114,25 @@ def test_submenu_opener():
     assert combo.isVisible() and not combo.isEnabled()
     assert 'is submenu' in combo.currentText()
     assert 'manager' in combo.toolTip()
+    # régression : le libellé long élargissait TOUT le panneau (largeur
+    # fixe, pas de barre horizontale) -> colonne Click et bouton
+    # « Center » coupés à droite. Le contenu doit tenir dans le panneau.
+    panel = editor.attribute_editor
+    inner = panel.scroll_area.widget()
+    assert inner.minimumSizeHint().width() <= panel.width(), (
+        inner.minimumSizeHint().width(), panel.width())
+    assert inner.width() <= panel.width()
+    # indépendant de la police (Maya = plus grosse) : la largeur MINI
+    # de la liste ne doit pas dépendre de son texte
+    assert combo.minimumSizeHint().width() < 150, combo.minimumSizeHint()
     # on marque une hotbox sous-menu dans le manager PENDANT que
     # l'éditeur est ouvert : la liste vivante se rafraîchit au retour
     live.append(sub)
     editor.refresh_submenus()
     assert combo.isEnabled()
     assert [combo.itemData(i) for i in range(combo.count())] == ['', 'outils']
+    APP.processEvents()
+    assert inner.minimumSizeHint().width() <= panel.width()
     editor.close()
     print('sous-menu fluide (ouvreur de hotbox généré) OK')
 

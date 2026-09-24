@@ -455,6 +455,14 @@ class ActionSettings(QtWidgets.QWidget):
         # « is submenu » génère automatiquement la commande d'ouverture
         # sur le clic gauche (plus besoin d'écrire show('...') à la main)
         self._submenu = QtWidgets.QComboBox()
+        # un libellé long ne doit JAMAIS élargir le panneau (largeur
+        # fixe, sans barre horizontale) : le texte est coupé « … »
+        # plutôt que de repousser la colonne Click hors de l'écran
+        self._submenu.setSizeAdjustPolicy(
+            QtWidgets.QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self._submenu.setMinimumContentsLength(8)
+        self._submenu.setSizePolicy(
+            QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Fixed)
         self._submenu.currentIndexChanged.connect(self._submenu_chosen)
 
         self._lactive = BoolCombo(False)
@@ -516,7 +524,7 @@ class ActionSettings(QtWidgets.QWidget):
         self._rlanguage.addItems(languages)
         self.blockSignals(False)
 
-    NO_SUBMENU = '— no hotbox marked « is submenu » —'
+    NO_SUBMENU = 'no hotbox marked "is submenu"'
     NO_SUBMENU_TIP = (
         'To open another hotbox from a button, mark that hotbox\n'
         '« is submenu » in the manager (General settings), then\n'
