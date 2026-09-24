@@ -859,7 +859,13 @@ hotboxLibrary.launch_manager('maya', studio_admin=True)</code></pre>
       seule</strong> la commande d’ouverture (<code>show('nom')</code>) sur le clic
       gauche&nbsp;: plus besoin d’écrire une ligne de Python à la main pour
       enchaîner deux hotboxes. La liste reste cachée tant qu’aucune hotbox
-      n’est marquée sous-menu.</li>
+      n’est marquée sous-menu — perso <strong>ou partagée</strong> (onglet
+      Shared&nbsp;: le fichier <code>.json</code> lié doit avoir
+      <code>"submenu": true</code>). Les boutons créés avec l’ancien outil
+      (<code>hotbox_designer.show(...)</code>) sont <strong>rebranchés
+      automatiquement</strong> sur hotboxLibrary au chargement&nbsp;: pas besoin
+      de les réécrire. En mode «&nbsp;click or close&nbsp;», relâcher la touche
+      referme la hotbox ET ses sous-menus, comme avant.</li>
   </ul>
 
   <figure class="shot">

@@ -214,6 +214,12 @@ class HotboxReader(QtWidgets.QWidget):
         if pending is not None:
             QtWidgets.QApplication.processEvents()  # qu'elle disparaisse
             pending.execute(left=True)
+            # si le bouton relâché est un OUVREUR de sous-menu, il vient
+            # de le (r)ouvrir — l'original exécutait AVANT de fermer les
+            # sous-menus, donc la touche relâchée fermait tout. On garde
+            # ce comportement : rien ne reste ouvert sans touche
+            if self.is_submenu is False:
+                self.hideSubmenusRequested.emit()
 
     def set_hovered_shapes(self):
         shapes = self.interactive_shapes

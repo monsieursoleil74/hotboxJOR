@@ -6,6 +6,22 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Sous-menus réparés** (bug remonté : « le submenu ne fonctionne
+  pas »). Quatre corrections : les boutons hérités de l'ancien outil
+  appellent `hotbox_designer.show(...)` — depuis le renommage c'est
+  l'outil du pipe (ou rien) qui répondait ; ils sont rebranchés sur
+  hotboxLibrary au chargement (`migrate_legacy_command`, mot entier
+  seulement). En « click or close », relâcher la touche sur l'ouvreur
+  ROUVRAIT le sous-menu après la fermeture (effet de bord de « fermer
+  avant d'exécuter ») : les sous-menus sont refermés après la commande
+  du bouton relâché, comme dans l'original. La liste « Open sub-hotbox »
+  de l'éditeur voit maintenant les hotboxes PARTAGÉES marquées submenu
+  (elle ne listait que les perso). `show()`/`switch()` d'une hotbox
+  absente rechargent les fichiers puis préviennent, au lieu d'un
+  KeyError dans le script editor. Au passage : un lien partagé mort
+  (lecteur absent, fichier déplacé) empêchait TOUTES les hotboxes de
+  s'ouvrir — il est ignoré. Test : `test_submenu_fixes`.
+
 - **Ré-éditer un bouton depuis la shelf** (retour utilisateur : le
   point d'entrée naturel, c'est l'entrée de librairie elle-même).
   Clic droit sur un bouton de la shelf → « Update “nom” with the

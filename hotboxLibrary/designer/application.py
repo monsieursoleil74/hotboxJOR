@@ -577,9 +577,12 @@ class HotboxEditor(QtWidgets.QWidget):
         current = self.options.get('name')
         names = []
         for hotbox in self.all_hotboxes:
-            general = hotbox.get('general', {})
-            if general.get('submenu') and general.get('name') != current:
-                names.append(general['name'])
+            # un lien partagé cassé vaut None dans le modèle
+            general = (hotbox or {}).get('general', {})
+            name = general.get('name')
+            if general.get('submenu') and name != current:
+                if name not in names:
+                    names.append(name)
         return sorted(names)
 
     def set_submenu_opener(self, name):

@@ -1,5 +1,6 @@
 
 import os
+import re
 import json
 from hotboxLibrary.templates import HOTBOX
 
@@ -122,8 +123,28 @@ def ensure_old_data_compatible(data):
         shape.setdefault('image.offsety', 0)
         # fond verrouillable (« lock background », façon dwpicker)
         shape.setdefault('background', False)
+        # boutons de sous-menu écrits par l'ancien outil : ils
+        # appellent `hotbox_designer.show(...)` — depuis le renommage,
+        # ce module est l'outil du pipe (ou n'existe plus). On les
+        # rebranche sur ce package, sinon « le sous-menu ne s'ouvre pas »
+        for side in ('left', 'right'):
+            key = 'action.%s.command' % side
+            if key in shape:
+                shape[key] = migrate_legacy_command(shape[key])
 
     return data
+
+
+LEGACY_MODULE = re.compile(r'\bhotbox_designer\b')
+
+
+def migrate_legacy_command(command):
+    """`import hotbox_designer … hotbox_designer.show('x')` →
+    `hotboxLibrary`. Ne touche qu'au nom du module (mot entier) ; une
+    commande qui ne le cite pas revient telle quelle."""
+    if not command or 'hotbox_designer' not in command:
+        return command
+    return LEGACY_MODULE.sub('hotboxLibrary', command)
 
 
 def load_templates(user_folder=None):

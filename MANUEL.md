@@ -489,7 +489,12 @@ Refondu façon Photoshop :
   la commande d'ouverture (`show('nom')`) sur le clic gauche du/des
   bouton(s) sélectionné(s) : plus besoin d'écrire une ligne de Python à
   la main pour enchaîner deux hotboxes. La liste reste cachée tant
-  qu'aucune hotbox n'est marquée sous-menu.
+  qu'aucune hotbox n'est marquée sous-menu — perso **ou partagée**
+  (onglet Shared : le fichier `.json` lié doit avoir `"submenu": true`).
+  Les boutons créés avec l'ancien outil (`hotbox_designer.show(...)`)
+  sont **rebranchés automatiquement** sur hotboxLibrary au chargement :
+  pas besoin de les réécrire. En mode « click or close », relâcher la
+  touche referme la hotbox ET ses sous-menus, comme avant.
 
 ## Menu clic droit (récapitulatif)
 

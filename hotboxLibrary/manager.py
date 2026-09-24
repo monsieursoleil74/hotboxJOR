@@ -20,6 +20,7 @@ from hotboxLibrary.data import (
 
 
 hotboxes = {}
+_application = None   # celle du dernier chargement (pour recharger)
 hotbox_manager = None
 APPLICATIONS = {
     'maya': Maya,
@@ -57,15 +58,22 @@ def initialize(application):
 
 
 def load_hotboxes(application):
+    global _application
     from hotboxLibrary.images import register_image_root
+    _application = application
     hotboxes_datas = load_hotboxes_datas(application.local_file)
     file_ = application.shared_file
-    links = load_json(file_)
+    links = load_json(file_, default=[])
     for link in links:
         # une hotbox partagée transporte souvent ses icônes à côté
         register_image_root(os.path.dirname(link))
-    hotboxes_datas += [
-        ensure_old_data_compatible(load_json(f)) for f in links]
+        # lien mort (lecteur réseau absent, fichier déplacé) : on
+        # l'ignore — avant, UN lien cassé empêchait TOUTES les hotboxes
+        # de s'ouvrir (traceback sur le raccourci)
+        shared = load_json(link)
+        if shared is None:
+            continue
+        hotboxes_datas.append(ensure_old_data_compatible(shared))
 
     for hotboxes_data in hotboxes_datas:
         name = hotboxes_data['general']['name']
@@ -79,16 +87,41 @@ def clear_loaded_hotboxes():
     hotboxes = {}
 
 
+def _reader(name):
+    """La hotbox `name` chargée. Si elle manque (sous-menu créé ou lié
+    APRÈS le chargement, par exemple), on recharge une fois depuis les
+    fichiers ; si elle manque toujours, un message clair plutôt qu'un
+    KeyError dans le script editor."""
+    reader = hotboxes.get(name)
+    if reader is None and _application is not None:
+        clear_loaded_hotboxes()
+        load_hotboxes(_application)
+        reader = hotboxes.get(name)
+    if reader is None:
+        warning(
+            'Hotbox designer',
+            'Hotbox "%s" not found.\nCheck its name in the manager '
+            '(personal or shared tab).' % name)
+    return reader
+
+
 def show(name):
-    hotboxes[name].show()
+    reader = _reader(name)
+    if reader is not None:
+        reader.show()
 
 
 def hide(name):
-    hotboxes[name].hide()
+    reader = hotboxes.get(name)   # pas chargée = déjà « cachée »
+    if reader is not None:
+        reader.hide()
 
 
 def switch(name):
-    if hotboxes[name].isVisible():
+    reader = _reader(name)
+    if reader is None:
+        return
+    if reader.isVisible():
         return hide(name)
     return show(name)
 
@@ -280,7 +313,10 @@ class HotboxManager(QtWidgets.QWidget):
             hotbox_data,
             self.application,
             parent=self.application.main_window,
-            all_hotboxes=self.personnal_model.hotboxes)
+            # perso ET partagées : un sous-menu peut être une hotbox
+            # partagée (au studio, elles le sont presque toutes)
+            all_hotboxes=(self.personnal_model.hotboxes
+                          + self.shared_model.hotboxes))
         link = _EditorLink(editor, hotbox_data)
         editor.hotboxDataModified.connect(
             partial(self.hotbox_data_modified, link))

@@ -2843,6 +2843,137 @@ def test_hotbox_closes_before_command():
     reader.close()
     print('hotbox fermée AVANT la commande (clic ET click or close, 1 fois) OK')
 
+def test_submenu_fixes():
+    """Bug remonté : « le submenu ne fonctionne pas ». Trois causes
+    corrigées : (1) les boutons hérités de l'ancien outil appellent
+    `hotbox_designer.show(...)` — rebranchés sur hotboxLibrary au
+    chargement ; (2) en « click or close », relâcher la touche sur
+    l'ouvreur ROUVRAIT le sous-menu après la fermeture (ordre inversé
+    par « fermer avant d'exécuter ») ; (3) la liste Sub-menu de
+    l'éditeur ignorait les hotboxes partagées. Et show() d'une hotbox
+    inconnue recharge puis prévient, au lieu d'un KeyError."""
+    import tempfile
+    from hotboxLibrary import manager as mgr
+    from hotboxLibrary.data import migrate_legacy_command
+    from hotboxLibrary.templates import HOTBOX as HOTBOX_T
+
+    # (1) migration des commandes de l'ancien outil
+    legacy = ("import hotbox_designer\nfrom hotbox_designer import "
+              "applications\nhotbox_designer.initialize(applications.Maya())"
+              "\nhotbox_designer.show('outils')\n")
+    migrated = migrate_legacy_command(legacy)
+    assert 'hotbox_designer' not in migrated
+    assert "hotboxLibrary.show('outils')" in migrated
+    assert 'from hotboxLibrary import applications' in migrated
+    mel = 'python("import hotbox_designer;hotbox_designer.switch(\'x\')")'
+    assert migrate_legacy_command(mel) == (
+        'python("import hotboxLibrary;hotboxLibrary.switch(\'x\')")')
+    assert migrate_legacy_command('cmds.ls()') == 'cmds.ls()'
+    assert migrate_legacy_command('') == ''
+    assert migrate_legacy_command('hotbox_designer_v2.go()') == (
+        'hotbox_designer_v2.go()')   # mot entier seulement
+    opener = dict(SQUARE_BUTTON, **{
+        'shape.left': 100.0, 'shape.top': 100.0,
+        'action.left': True, 'action.left.command': legacy,
+        'action.right': True, 'action.right.language': 'mel',
+        'action.right.command': mel})
+    data = ensure_old_data_compatible({
+        'general': dict(HOTBOX_T, name='main', triggering='click or close'),
+        'shapes': [opener]})
+    assert 'hotbox_designer' not in data['shapes'][0]['action.left.command']
+    assert 'hotbox_designer' not in data['shapes'][0]['action.right.command']
+
+    # (2) sous-menu : ouvert au clic, FERMÉ quand la touche est relâchée
+    saved = dict(mgr.hotboxes)
+    try:
+        mgr.hotboxes.clear()
+        sub_data = ensure_old_data_compatible({
+            'general': dict(HOTBOX_T, name='sub', submenu=True),
+            'shapes': []})
+        data['shapes'][0]['action.left.command'] = (
+            "import hotboxLibrary\nhotboxLibrary.show('sub')\n")
+        main = HotboxReader(data, parent=None)
+        sub = HotboxReader(sub_data, parent=None)
+        for reader in (main, sub):
+            reader.hideSubmenusRequested.connect(mgr.hide_submenus)
+        mgr.hotboxes.update({'main': main, 'sub': sub})
+        main.show()
+        APP.processEvents()
+        button = main.shapes[0]
+        button.hovered = True
+        main.left_clicked = True
+        main.mouseReleaseEvent(FakeMouseEvent(QtCore.Qt.LeftButton))
+        APP.processEvents()
+        assert main.isVisible() and sub.isVisible()   # close=False : les deux
+        # touche relâchée : le curseur est toujours sur l'ouvreur
+        button.hovered = True
+        main.hide()
+        APP.processEvents()
+        assert not main.isVisible()
+        assert not sub.isVisible(), 'le sous-menu ne doit pas survivre'
+        main.close()
+        sub.close()
+    finally:
+        mgr.hotboxes.clear()
+        mgr.hotboxes.update(saved)
+
+    # (3) le combo Sub-menu de l'éditeur voit les partagées ;
+    # (4) show() d'une hotbox créée après le chargement recharge
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    application.local_file = os.path.join(tmp, 'hotboxes.json')
+    application.shared_file = os.path.join(tmp, 'shared_hotboxes.json')
+    perso = {'general': dict(HOTBOX_T, name='perso_box'), 'shapes': []}
+    shared = {'general': dict(HOTBOX_T, name='shared_sub', submenu=True),
+              'shapes': []}
+    link = os.path.join(tmp, 'shared_sub.json')
+    json.dump([perso], open(application.local_file, 'w'))
+    json.dump(shared, open(link, 'w'))
+    json.dump([link, os.path.join(tmp, 'missing.json')],
+              open(application.shared_file, 'w'))
+    from hotboxLibrary import buttonlibrary as bl
+    bl.set_studio_location(None)
+    manager = mgr.HotboxManager(application)
+    manager.personnal_view.selectRow(0)
+    manager._call_edit()
+    editor = manager.editors[-1].editor
+    assert editor.submenu_names() == ['shared_sub']
+    editor.close()
+    manager.close()
+
+    saved = dict(mgr.hotboxes)
+    saved_app = mgr._application
+    real_warning = mgr.warning
+    warned = []
+    mgr.warning = lambda *a: warned.append(a[1])
+    try:
+        mgr.clear_loaded_hotboxes()
+        mgr.initialize(application)
+        assert sorted(mgr.hotboxes) == ['perso_box', 'shared_sub']
+        # une hotbox ajoutée au fichier APRÈS le chargement
+        late = {'general': dict(HOTBOX_T, name='late_sub', submenu=True),
+                'shapes': []}
+        json.dump([perso, late], open(application.local_file, 'w'))
+        mgr.show('late_sub')
+        assert mgr.hotboxes['late_sub'].isVisible()
+        mgr.hide('late_sub')
+        assert not warned
+        # vraiment inconnue : message, pas de KeyError
+        mgr.show('nope')
+        mgr.switch('nope')
+        assert len(warned) == 2 and 'nope' in warned[0]
+        mgr.hide('nope')   # silencieux
+        for reader in mgr.hotboxes.values():
+            reader.close()
+    finally:
+        mgr.warning = real_warning
+        mgr.clear_loaded_hotboxes()
+        mgr.hotboxes.update(saved)
+        mgr._application = saved_app
+    print('sous-menus : commandes héritées, fermeture, partagées, show() OK')
+
+
 def test_hotkey_manager_lists_shared():
     """Bug remonté : impossible de changer le raccourci d'une hotbox
     PARTAGÉE — le gestionnaire ⌨ ne listait que les perso. Il doit
@@ -3184,6 +3315,7 @@ if __name__ == '__main__':
     test_drop_replaces_button()
     test_admin_can_delete_studio_button()
     test_hotbox_closes_before_command()
+    test_submenu_fixes()
     test_hotkey_manager_lists_shared()
     test_import_follows_tab()
     test_atomic_write_retries()
