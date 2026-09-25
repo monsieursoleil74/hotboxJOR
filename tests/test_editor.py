@@ -2571,6 +2571,60 @@ def test_admin_shelf_without_library():
             os.environ[bl.STUDIO_ENV_VARIABLE] = saved_env
     print('shelf admin sans librairie (onglet d attente, + guidé) OK')
 
+def test_background_panel_disables_states():
+    """Retour utilisateur : une shape Background gardait hover/click
+    dans le panneau. Un fond n'a ni survol, ni clic, ni commande : seuls
+    couleur et opacité de l'état normal restent réglables — aperçu sur
+    un seul état, pastilles Hover/Click et section Action désactivées.
+    Décocher Background rend tout."""
+    from hotboxLibrary.templates import BACKGROUND
+
+    editor = make_editor([(200, 150, 'btn')])
+    area = editor.shape_editor
+    editor.create_shape(BACKGROUND, before=True)
+    background, button = area.shapes
+    panel = editor.attribute_editor
+    appearance = panel.appearence
+
+    def state():
+        normal = appearance.color_buttons['bgcolor.normal'].isEnabled()
+        hover = appearance.color_buttons['bgcolor.hovered'].isEnabled()
+        click = appearance.color_buttons['bordercolor.clicked'].isEnabled()
+        return (normal, hover, click, panel.action.isEnabled(),
+                len(panel.preview.states()))
+
+    # un bouton normal : tout est actif, 3 états dans l'aperçu
+    area.selection.set([button])
+    area.update_selection()
+    assert state() == (True, True, True, True, 3)
+
+    # le fond (sélectionnable cadenas ouvert) : normal seulement
+    editor.menu.lockbg.setChecked(False)
+    area.selection.set([background])
+    area.update_selection()
+    assert state() == (True, False, False, False, 1)
+    assert panel.preview._shapes and len(panel.preview._shapes) == 1
+    assert not panel.action_toggler.isEnabled()
+
+    # la case Background bascule le panneau sans re-sélectionner
+    panel.shape.background.setCurrentText('False')
+    panel.shape.background.valueSet.emit(False)
+    APP.processEvents()
+    assert background.options['background'] is False
+    assert state() == (True, True, True, True, 3)
+    panel.shape.background.valueSet.emit(True)
+    APP.processEvents()
+    assert background.options['background'] is True
+    assert state() == (True, False, False, False, 1)
+
+    # sélection mixte (fond + bouton) : le bouton garde ses états
+    area.selection.set([background, button])
+    area.update_selection()
+    assert state() == (True, True, True, True, 3)
+    editor.close()
+    print('panneau Background : hover/click/action désactivés OK')
+
+
 def test_background_lock():
     """« Lock background » façon dwpicker : une shape marquée Background
     est transparente à la sélection (clic, rectangle, Ctrl+A) tant que
@@ -3342,6 +3396,7 @@ if __name__ == '__main__':
     test_button_sets()
     test_drag_performance()
     test_admin_shelf_without_library()
+    test_background_panel_disables_states()
     test_background_lock()
     test_drop_replaces_button()
     test_admin_can_delete_studio_button()

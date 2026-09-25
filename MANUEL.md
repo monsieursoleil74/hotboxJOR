@@ -482,7 +482,10 @@ Refondu façon Photoshop :
 - **Background** (section Shape) : une case à cocher marque la shape
   comme fond — ignorée en production, et transparente à la sélection
   tant que le cadenas « lock background » de la barre d'outils est
-  coché.
+  coché. Le panneau suit : un fond n'a ni survol, ni clic, ni commande,
+  donc l'aperçu ne montre que l'état Normal, les pastilles Hover / Click
+  et la section Action sont grisées. Il reste la forme, l'image, la
+  couleur et l'opacité. Décoche la case et tout revient.
 - **Sous-menu fluide** — en haut de la section **Action**, un menu
   déroulant « Open sub-hotbox » liste les autres hotboxes marquées
   « is submenu » (dans le manager). En choisir une **génère toute seule**

@@ -29,6 +29,15 @@ class StatePreview(QtWidgets.QWidget):
         self.setFixedHeight(86)
         self._options = None
         self._shapes = None
+        # un background n'a ni survol ni clic : un seul état affiché
+        self._background = False
+
+    def states(self):
+        return self.STATES[:1] if self._background else self.STATES
+
+    def set_background(self, background):
+        self._background = bool(background)
+        self._rebuild()
 
     def set_options(self, options):
         """`options` = les boutons sélectionnés ; on montre le premier."""
@@ -51,7 +60,7 @@ class StatePreview(QtWidgets.QWidget):
         options['shape.left'] = 0.0
         options['shape.top'] = 0.0
         self._shapes = []
-        for _, hovered, clicked in self.STATES:
+        for _, hovered, clicked in self.states():
             shape = Shape(dict(options))
             shape.hovered = hovered
             shape.clicked = clicked
@@ -62,10 +71,10 @@ class StatePreview(QtWidgets.QWidget):
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.Antialiasing)
         painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
-        cell = self.width() / 3.0
+        cell = self.width() / float(len(self.states()))
         font = QtGui.QFont()
         font.setPixelSize(9)
-        for index, (label, _, _) in enumerate(self.STATES):
+        for index, (label, _, _) in enumerate(self.states()):
             painter.setPen(QtGui.QColor('#8c8c8c'))
             painter.setFont(font)
             painter.drawText(
@@ -112,6 +121,7 @@ class AttributeEditor(QtWidgets.QWidget):
 
         self.shape = ShapeSettings()
         self.shape.optionSet.connect(self.optionSet.emit)
+        self.shape.optionSet.connect(self._option_emitted)
         self.shape.rectModified.connect(self.rectModified.emit)
         self.shape_toggler = WidgetToggler('Shape', self.shape)
 
@@ -176,6 +186,26 @@ class AttributeEditor(QtWidgets.QWidget):
         self.text.set_options(options)
         self.action.set_options(options)
         self.blockSignals(False)
+        self.set_background_mode(
+            bool(options) and all(o.get('background') for o in options))
+
+    def set_background_mode(self, background):
+        """Une shape Background n'a ni survol, ni clic, ni commande :
+        seuls la couleur et l'opacité de l'état normal restent
+        réglables. L'aperçu ne montre que cet état, les pastilles Hover
+        / Click et la section Action sont désactivées."""
+        self.preview.set_background(background)
+        self.appearence.set_background(background)
+        self.action.setEnabled(not background)
+        self.action_toggler.setEnabled(not background)
+        self.action_toggler.setToolTip(
+            'A background shape never runs a command' if background else '')
+
+    def _option_emitted(self, name, value):
+        # cocher/décocher Background bascule le panneau sans attendre
+        # une nouvelle sélection
+        if name == 'background':
+            self.set_background_mode(bool(value))
 
     def set_submenus(self, names):
         self.action.set_submenus(names)
@@ -421,6 +451,13 @@ class AppearenceSettings(QtWidgets.QWidget):
     def _width_changed(self, value):
         for key, ratio in self.WIDTH_RATIOS.items():
             self.optionSet.emit(key, round(value * ratio, 3))
+
+    def set_background(self, background):
+        """Background : seules les pastilles « Normal » restent
+        actives (un fond n'est jamais survolé ni cliqué)."""
+        for key, button in self.color_buttons.items():
+            if not key.endswith('.normal'):
+                button.setEnabled(not background)
 
     def set_options(self, options):
         for key, button in self.color_buttons.items():

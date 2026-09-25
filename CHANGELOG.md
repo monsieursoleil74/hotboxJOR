@@ -6,6 +6,15 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
+- **Shape Background : hover, click et action désactivés** (retour
+  utilisateur : « c'est juste un background, je change la couleur et
+  l'opacité, pas de hover »). Quand la case Background est cochée,
+  l'aperçu ne montre que l'état Normal, les pastilles Hover / Click
+  (fond et bordure) et la section Action sont grisées ; la bascule
+  suit la case sans re-sélectionner, et une sélection mixte fond +
+  bouton garde tout actif. Test :
+  `test_background_panel_disables_states`.
+
 - **Panneau d'attributs coupé à droite** (régression du commit
   précédent, remontée aussitôt : colonne Click et bouton « Center »
   hors écran). Le libellé long de la liste « Open sub-hotbox » entrait
