@@ -459,7 +459,13 @@ footer {
       importer/exporter, gérer les raccourcis. <strong>Import suit
       l’onglet</strong>&nbsp;: dans Personal il copie la hotbox dans ma liste,
       dans Shared il lie le fichier en place (le <code>.json</code> reste sur
-      le réseau, tout le monde suit ses mises à jour). La hotbox sélectionnée
+      le réseau, tout le monde suit ses mises à jour). Un fichier qui
+      contient <strong>plusieurs hotboxes</strong> (ton <code>hotboxes.json</code>
+      des prefs, par exemple) les importe <strong>toutes</strong> dans Personal&nbsp;;
+      un nom déjà pris est suffixé (<code>_00</code>). Un fichier qui n’est pas
+      une hotbox (librairie de boutons, picker…) donne un message clair. Dans
+      Shared, un lien doit pointer vers <strong>une seule</strong> hotbox&nbsp;: le
+      fichier est vérifié avant d’être lié. La hotbox sélectionnée
       s’affiche en vignette (mini-rendu de tous ses boutons) pour la
       reconnaître d’un coup d’œil.</p></div>
     <div class="card"><h4>Éditeur</h4>

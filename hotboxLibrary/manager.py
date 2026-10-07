@@ -15,8 +15,8 @@ from hotboxLibrary.dialog import (
     CommandDisplayDialog, HotkeySetter, HotkeyManagerDialog, warning)
 from hotboxLibrary.data import (
     get_valid_name, TRIGGERING_TYPES, save_datas, load_hotboxes_datas,
-    hotbox_data_to_html, load_json, ensure_old_data_compatible,
-    save_hotbox_as_template)
+    hotbox_data_to_html, load_json, save_hotbox_as_template,
+    read_hotbox_file, load_shared_hotbox, HotboxFileError)
 
 
 hotboxes = {}
@@ -70,10 +70,10 @@ def load_hotboxes(application):
         # lien mort (lecteur réseau absent, fichier déplacé) : on
         # l'ignore — avant, UN lien cassé empêchait TOUTES les hotboxes
         # de s'ouvrir (traceback sur le raccourci)
-        shared = load_json(link)
+        shared = load_shared_hotbox(link)
         if shared is None:
             continue
-        hotboxes_datas.append(ensure_old_data_compatible(shared))
+        hotboxes_datas.append(shared)
 
     for hotboxes_data in hotboxes_datas:
         name = hotboxes_data['general']['name']
@@ -366,9 +366,38 @@ class HotboxManager(QtWidgets.QWidget):
         clear_loaded_hotboxes()
 
     def _call_add_link(self):
-        filename = import_hotbox_link()
+        filename = import_hotbox_link(self)
         if not filename:
-            return
+            return  # annulé
+        # on VÉRIFIE avant de lier : un lien vers un fichier invalide
+        # (ou une liste de hotboxes) cassait l'affichage du manager et
+        # le chargement de toutes les hotboxes au raccourci
+        try:
+            hotboxes = read_hotbox_file(filename)
+        except HotboxFileError as error:
+            return warning('Import hotbox', str(error), self)
+        if len(hotboxes) != 1:
+            return warning(
+                'Import hotbox',
+                '"%s" contains %d hotboxes.\n\nA shared link points to '
+                'ONE hotbox. Import this file in the Personal tab, or '
+                'export a single hotbox from the manager and link that '
+                'file.' % (os.path.basename(filename), len(hotboxes)),
+                self)
+        links = [os.path.normcase(os.path.abspath(link))
+                 for link in self.shared_model.hotboxes_links]
+        target = os.path.normcase(os.path.abspath(filename))
+        if target in links:
+            self.shared_view.selectRow(links.index(target))
+            return warning(
+                'Import hotbox', 'This file is already linked.', self)
+        name = hotboxes[0]['general']['name']
+        if name in self._hotbox_names():
+            return warning(
+                'Import hotbox',
+                'A hotbox named "%s" already exists.\n\nRename one of '
+                'them first: two hotboxes cannot share a name.' % name,
+                self)
         self.shared_model.add_link(filename)
         # retrieve and selected last hotbox in the list (who's the new one)
         hotbox_count = len(self.shared_model.hotboxes) - 1
@@ -500,18 +529,34 @@ class HotboxManager(QtWidgets.QWidget):
         soit l'onglet (bug remonté au studio)."""
         if self.tabwidget.currentIndex() == 1:
             return self._call_add_link()
-        hotbox = import_hotbox()
-        if not hotbox:
-            return warning('Hotbox designer', 'No hotbox selected')
-        hotboxes = self.personnal_model.hotboxes
-        name = get_valid_name(hotboxes, hotbox['general']['name'])
-        hotbox['general']['name'] = name
-
+        filename = import_hotbox(self)
+        if not filename:
+            return  # annulé : pas de message
+        try:
+            incoming = read_hotbox_file(filename)
+        except HotboxFileError as error:
+            return warning('Import hotbox', str(error), self)
+        # noms uniques parmi les perso ET les partagées (deux hotboxes
+        # de même nom se marchaient dessus au chargement)
+        taken = [{'general': {'name': n}} for n in self._hotbox_names()]
         self.personnal_model.layoutAboutToBeChanged.emit()
-        self.personnal_model.hotboxes.append(hotbox)
+        names = []
+        for hotbox in incoming:
+            name = get_valid_name(taken, hotbox['general']['name'])
+            hotbox['general']['name'] = name
+            taken.append({'general': {'name': name}})
+            self.personnal_model.hotboxes.append(hotbox)
+            names.append(name)
         self.personnal_model.layoutChanged.emit()
+        self.personnal_view.selectRow(
+            len(self.personnal_model.hotboxes) - 1)
         self.save_hotboxes()
         clear_loaded_hotboxes()
+        if len(names) > 1:
+            QtWidgets.QMessageBox.information(
+                self, 'Import hotbox',
+                '%d hotboxes imported:\n%s' % (
+                    len(names), '\n'.join(names)))
 
 
 class _EditorLink():
@@ -706,7 +751,9 @@ class HotboxSharedTableModel(QtCore.QAbstractTableModel):
     def __init__(self, hotboxes_links, parent=None):
         super(HotboxSharedTableModel, self).__init__(parent=parent)
         self.hotboxes_links = hotboxes_links
-        self.hotboxes = [load_json(l) for l in hotboxes_links]
+        # un lien manquant / illisible vaut None (affiché vide) au lieu
+        # de faire planter l'ouverture du manager
+        self.hotboxes = [load_shared_hotbox(l) for l in hotboxes_links]
         self.hotkeys = {}
 
     def set_hotkeys(self, hotkeys):
@@ -723,7 +770,7 @@ class HotboxSharedTableModel(QtCore.QAbstractTableModel):
     def add_link(self, hotbox_link):
         self.layoutAboutToBeChanged.emit()
         self.hotboxes_links.append(hotbox_link)
-        self.hotboxes.append(load_json(hotbox_link))
+        self.hotboxes.append(load_shared_hotbox(hotbox_link))
         self.layoutChanged.emit()
 
     def remove_link(self, index):

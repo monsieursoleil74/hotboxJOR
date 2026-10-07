@@ -1,4 +1,5 @@
 
+import io
 import os
 import re
 import json
@@ -25,7 +26,8 @@ def get_new_hotbox(hotboxes):
 
 
 def get_valid_name(hotboxes, proposal=None):
-    names = [hotbox['general']['name'] for hotbox in hotboxes]
+    # un lien partagé cassé vaut None dans les modèles du manager
+    names = [hotbox['general']['name'] for hotbox in hotboxes if hotbox]
     index = 0
     name = proposal or DEFAULT_NAME.format(str(index).zfill(2))
     while name in names:
@@ -47,6 +49,70 @@ def load_json(filename, default=None):
         return default
     with open(filename, 'r') as f:
         return json.load(f)
+
+
+class HotboxFileError(ValueError):
+    """Fichier choisi à l'import qui n'est pas (ou pas lisible comme)
+    une hotbox. Le message est destiné à l'utilisateur."""
+
+
+def read_json_text(path):
+    """json lu en UTF-8 (avec ou sans BOM), sinon en latin-1 : un
+    fichier retouché à la main sous Windows (accents) ne bloque plus
+    l'import."""
+    try:
+        with io.open(path, 'r', encoding='utf-8-sig') as f:
+            return json.load(f)
+    except UnicodeDecodeError:
+        with io.open(path, 'r', encoding='latin-1') as f:
+            return json.load(f)
+
+
+def is_hotbox_data(data):
+    """Une hotbox = un dict avec `general` (qui porte un nom) et une
+    liste `shapes`. Écarte une librairie de boutons, un picker, etc."""
+    if not isinstance(data, dict):
+        return False
+    general = data.get('general')
+    return (isinstance(general, dict) and bool(general.get('name'))
+            and isinstance(data.get('shapes'), list))
+
+
+def read_hotbox_file(path):
+    """Toutes les hotboxes d'un fichier, prêtes à l'emploi. Accepte une
+    hotbox seule (fichier exporté) OU une liste de hotboxes (le
+    `hotboxes.json` des prefs, qu'on se passe souvent tel quel) — avant,
+    une liste faisait planter l'import sans un mot. Lève
+    HotboxFileError avec un message lisible si rien n'est importable."""
+    name = os.path.basename(path)
+    try:
+        data = read_json_text(path)
+    except (OSError, IOError) as error:
+        raise HotboxFileError(
+            'Could not open "%s":\n%s' % (name, error))
+    except ValueError as error:
+        raise HotboxFileError(
+            '"%s" is not a valid json file:\n%s' % (name, error))
+    items = data if isinstance(data, list) else [data]
+    hotboxes = [ensure_old_data_compatible(item)
+                for item in items if is_hotbox_data(item)]
+    if not hotboxes:
+        raise HotboxFileError(
+            '"%s" is not a hotbox file.\n\nPick a file exported from '
+            'the hotbox manager (or your hotboxes.json). A button '
+            'library or a picker file cannot be imported here.' % name)
+    return hotboxes
+
+
+def load_shared_hotbox(path):
+    """La hotbox d'un lien partagé, ou None si le fichier manque, est
+    illisible ou n'est pas UNE hotbox — un lien cassé ne doit jamais
+    empêcher les autres hotboxes de se charger."""
+    try:
+        hotboxes = read_hotbox_file(path)
+    except HotboxFileError:
+        return None
+    return hotboxes[0] if len(hotboxes) == 1 else None
 
 
 # sur un partage réseau Windows, os.replace échoue PAR INTERMITTENCE

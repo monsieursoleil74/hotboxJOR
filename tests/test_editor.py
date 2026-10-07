@@ -3120,8 +3120,8 @@ def test_import_follows_tab():
     # les dialogues de fichier renvoient notre fichier
     real_import = manager_mod.import_hotbox
     real_link = manager_mod.import_hotbox_link
-    manager_mod.import_hotbox = lambda: json.load(open(incoming))
-    manager_mod.import_hotbox_link = lambda: incoming
+    manager_mod.import_hotbox = lambda *a: incoming
+    manager_mod.import_hotbox_link = lambda *a: incoming
     try:
         # onglet Shared : Import LIE, rien n'entre dans les perso
         manager.tabwidget.setCurrentIndex(1)
@@ -3135,7 +3135,9 @@ def test_import_follows_tab():
         manager.tabwidget.setCurrentIndex(0)
         manager._call_import()
         names = [h['general']['name'] for h in manager.personnal_model.hotboxes]
-        assert names == ['studio_box']
+        # déjà présente côté Shared sous ce nom : la copie est renommée
+        # (deux hotboxes de même nom se marchaient dessus au chargement)
+        assert names == ['studio_box_00']
         assert manager.shared_model.hotboxes_links == [incoming]
         assert 'copy' in manager.toolbar.import_.toolTip()
     finally:
@@ -3143,6 +3145,158 @@ def test_import_follows_tab():
         manager_mod.import_hotbox_link = real_link
     manager.close()
     print('Import suit l onglet (Shared = lien, Personal = copie) OK')
+
+def test_import_robust():
+    """Bug remonté : « Import hotbox ne fonctionne pas ». Un fichier avec
+    PLUSIEURS hotboxes (le hotboxes.json des prefs, qu'on se passe tel
+    quel) faisait planter l'import sans un mot. Désormais : toutes sont
+    importées (noms uniques, perso + partagées) ; un fichier qui n'est
+    pas une hotbox donne un message clair ; accents/BOM tolérés ;
+    annuler ne dit rien ; côté Shared, un lien est VÉRIFIÉ (une seule
+    hotbox, pas de doublon) et un lien cassé ne bloque plus rien."""
+    import io
+    import tempfile
+    from hotboxLibrary import manager as manager_mod
+    from hotboxLibrary.manager import HotboxManager
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.data import read_hotbox_file, HotboxFileError
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    application.local_file = os.path.join(tmp, 'hotboxes.json')
+    application.shared_file = os.path.join(tmp, 'shared_hotboxes.json')
+
+    def box(name):
+        return {'general': dict(HOTBOX, name=name), 'shapes': [
+            dict(SQUARE_BUTTON, **{'text.content': 'é ' + name})]}
+
+    def write(name, payload, encoding='utf-8'):
+        path = os.path.join(tmp, name)
+        with io.open(path, 'w', encoding=encoding) as f:
+            f.write(json.dumps(payload, ensure_ascii=False))
+        return path
+
+    shared_one = write('shared_one.json', box('shared_one'))
+    dead_link = os.path.join(tmp, 'gone.json')     # lien mort
+    json.dump([box('mine')], open(application.local_file, 'w'))
+    json.dump([shared_one, dead_link], open(application.shared_file, 'w'))
+    many = write('hotboxes_from_a_friend.json',
+                 [box('anim'), box('mine'), box('shared_one'),
+                  {'not': 'a hotbox'}])
+    bom = write('bom.json', box('bom_box'), encoding='utf-8-sig')
+    latin = write('latin.json', box('latin_box'), encoding='latin-1')
+    library = write('RINGO.json', [
+        {'name': 'Key', 'category': 'ANIM', 'options': {}}])
+    broken = os.path.join(tmp, 'broken.json')
+    open(broken, 'w').write('{"general": ')
+
+    # lecture : formats acceptés / refusés
+    assert len(read_hotbox_file(many)) == 3
+    assert read_hotbox_file(bom)[0]['general']['name'] == 'bom_box'
+    assert read_hotbox_file(latin)[0]['shapes'][0]['text.content'] == (
+        'é latin_box')
+    for bad, word in ((library, 'not a hotbox'), (broken, 'valid json'),
+                      (dead_link, 'open')):
+        try:
+            read_hotbox_file(bad)
+        except HotboxFileError as error:
+            assert word in str(error), (word, str(error))
+        else:
+            raise AssertionError('should refuse %s' % bad)
+
+    bl.set_studio_location(None)
+    # le lien mort ne bloque PAS l'ouverture du manager
+    manager = HotboxManager(application)
+    assert manager.shared_model.hotboxes[1] is None
+    assert manager._hotbox_names() == ['mine', 'shared_one']
+
+    picked = []
+    warned = []
+    infos = []
+    real = (manager_mod.import_hotbox, manager_mod.import_hotbox_link,
+            manager_mod.warning, QtWidgets.QMessageBox.information)
+    manager_mod.import_hotbox = lambda *a: picked[-1]
+    manager_mod.import_hotbox_link = lambda *a: picked[-1]
+    manager_mod.warning = lambda title, message, *a: warned.append(message)
+    QtWidgets.QMessageBox.information = (
+        lambda *a, **k: infos.append(a[2]))
+    try:
+        # Personal : fichier à plusieurs hotboxes → toutes importées,
+        # noms dédoublonnés contre perso ET partagées
+        manager.tabwidget.setCurrentIndex(0)
+        picked.append(many)
+        manager._call_import()
+        names = [h['general']['name']
+                 for h in manager.personnal_model.hotboxes]
+        assert names == ['mine', 'anim', 'mine_00', 'shared_one_00'], names
+        assert infos and '3 hotboxes imported' in infos[0]
+        assert manager.personnal_view.get_selected_row() == 3
+        saved = json.load(open(application.local_file))
+        assert [h['general']['name'] for h in saved] == names
+        assert not warned
+
+        # Personal : pas une hotbox → message, rien n'entre
+        picked.append(library)
+        manager._call_import()
+        assert warned and 'not a hotbox' in warned[-1]
+        assert len(manager.personnal_model.hotboxes) == 4
+
+        # annuler : silencieux
+        picked.append(None)
+        count = len(warned)
+        manager._call_import()
+        assert len(warned) == count
+
+        # Shared : une liste de hotboxes est refusée (lien = UNE hotbox)
+        manager.tabwidget.setCurrentIndex(1)
+        picked.append(many)
+        manager._call_import()
+        assert 'contains 3 hotboxes' in warned[-1]
+        # fichier invalide refusé, sans toucher aux liens
+        picked.append(broken)
+        manager._call_import()
+        assert 'valid json' in warned[-1]
+        # déjà lié
+        picked.append(shared_one)
+        manager._call_import()
+        assert 'already linked' in warned[-1]
+        # nom déjà pris (une perso s'appelle anim)
+        clash = write('clash.json', box('anim'))
+        picked.append(clash)
+        manager._call_import()
+        assert 'already exists' in warned[-1]
+        assert manager.shared_model.hotboxes_links == [shared_one, dead_link]
+        # cas normal : lié
+        picked.append(bom)
+        manager._call_import()
+        assert manager.shared_model.hotboxes_links[-1] == bom
+        assert json.load(open(application.shared_file))[-1] == bom
+
+        # Create ne plante plus à cause du lien mort
+        from hotboxLibrary.data import get_valid_name
+        assert get_valid_name(manager.shared_model.hotboxes, 'x') == 'x'
+    finally:
+        (manager_mod.import_hotbox, manager_mod.import_hotbox_link,
+         manager_mod.warning, QtWidgets.QMessageBox.information) = real
+    manager.close()
+
+    # le chargement des hotboxes (raccourci) ignore le lien mort
+    saved_boxes = dict(manager_mod.hotboxes)
+    saved_app = manager_mod._application
+    try:
+        manager_mod.clear_loaded_hotboxes()
+        manager_mod.load_hotboxes(application)
+        assert 'shared_one' in manager_mod.hotboxes
+        assert 'bom_box' in manager_mod.hotboxes
+        for reader in manager_mod.hotboxes.values():
+            reader.close()
+    finally:
+        manager_mod.clear_loaded_hotboxes()
+        manager_mod.hotboxes.update(saved_boxes)
+        manager_mod._application = saved_app
+    print('Import robuste (multi, invalide, accents, liens vérifiés) OK')
+
 
 def test_atomic_write_retries():
     """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
@@ -3404,6 +3558,7 @@ if __name__ == '__main__':
     test_submenu_fixes()
     test_hotkey_manager_lists_shared()
     test_import_follows_tab()
+    test_import_robust()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

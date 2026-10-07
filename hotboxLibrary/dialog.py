@@ -3,8 +3,7 @@ import json
 from functools import partial
 from hotboxLibrary.vendor.Qt import QtWidgets, QtCore, QtGui
 from hotboxLibrary.data import (
-    get_new_hotbox, get_valid_name, copy_hotbox_data, load_templates,
-    ensure_old_data_compatible)
+    get_new_hotbox, get_valid_name, copy_hotbox_data, load_templates)
 from hotboxLibrary.widgets import HotkeyEdit
 
 
@@ -17,24 +16,22 @@ def warning(title, message, parent=None):
         QtWidgets.QMessageBox.Ok)
 
 
-def import_hotbox():
-    filenames = QtWidgets.QFileDialog.getOpenFileName(
-        None, 'Import hotbox', os.path.expanduser("~"),
-        filter='*.json')
-    if not filenames[0]:
-        return
-    with open(filenames[0], 'r') as f:
-        data = json.load(f)
-    return ensure_old_data_compatible(data)
+def import_hotbox(parent=None):
+    """Chemin du .json à importer, ou None si annulé. La LECTURE se fait
+    dans data.read_hotbox_file (messages clairs). Le dialogue est
+    parenté au manager : sans parent, sous Maya, il pouvait s'ouvrir
+    DERRIÈRE la fenêtre outil — « Import ne fait rien »."""
+    filename = QtWidgets.QFileDialog.getOpenFileName(
+        parent, 'Import hotbox', os.path.expanduser("~"),
+        filter='Hotbox (*.json)')[0]
+    return filename or None
 
 
-def import_hotbox_link():
-    filenames = QtWidgets.QFileDialog.getOpenFileName(
-        None, 'Import hotbox', os.path.expanduser("~"),
-        filter='*.json')
-    if filenames:
-        return filenames[0]
-    return None
+def import_hotbox_link(parent=None):
+    """Même choix de fichier, pour un lien partagé. (L'original testait
+    le tuple renvoyé par Qt, toujours « vrai » : annuler ajoutait un
+    lien vide.)"""
+    return import_hotbox(parent)
 
 
 def export_hotbox(hotbox):

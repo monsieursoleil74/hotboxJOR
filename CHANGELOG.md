@@ -4,6 +4,32 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-10 — Import fiabilisé
+
+- **Import hotbox réparé** (bug remonté au studio : « l'import ne
+  fonctionne pas »). Plusieurs causes, toutes muettes avant :
+  - un fichier contenant PLUSIEURS hotboxes (le `hotboxes.json` des
+    prefs, qu'on se passe tel quel) faisait planter l'import — elles
+    sont maintenant toutes importées, avec un récapitulatif ;
+  - un fichier qui n'est pas une hotbox (librairie de boutons, picker,
+    json cassé) donne un message clair au lieu d'une erreur dans le
+    script editor ;
+  - les fichiers retouchés à la main (UTF-8 avec BOM, accents latin-1)
+    se lisent ;
+  - le sélecteur de fichier est parenté au manager (sous Maya il
+    pouvait s'ouvrir DERRIÈRE la fenêtre outil) ; annuler ne dit plus
+    « No hotbox selected » ;
+  - les noms importés sont rendus uniques parmi les perso ET les
+    partagées (deux hotboxes de même nom se marchaient dessus) ; la
+    nouvelle hotbox est sélectionnée ;
+  - côté Shared, le fichier est vérifié AVANT d'être lié (une seule
+    hotbox, pas déjà liée, nom libre) : un lien invalide cassait
+    l'affichage du manager et le chargement de toutes les hotboxes.
+    Un lien mort existant est désormais ignoré partout (manager,
+    raccourci, Create).
+  Lecture centralisée dans `data.read_hotbox_file`. Test :
+  `test_import_robust`.
+
 ## 2026-09 — Renommage du paquet : `hotboxLibrary`
 
 - **Shape Background : hover, click et action désactivés** (retour
