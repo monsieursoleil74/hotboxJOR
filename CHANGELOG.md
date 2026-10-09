@@ -4,7 +4,22 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
-## 2026-10 — Import fiabilisé
+## 2026-10 — Import fiabilisé, 1er appel sans freeze
+
+- **Plus de freeze au premier appel de la session** (bug remonté :
+  « un freeze quand j'appelle la hotbox la première fois après
+  l'ouverture de Maya »). Le 1er appel construisait TOUTES les
+  hotboxes, avec TOUTES leurs icônes, souvent sur le réseau. Désormais
+  le chargement ne fait que lire les fichiers ; seule la hotbox appelée
+  est construite. Les icônes des autres sont chargées en tâche de fond
+  après le premier affichage, une par passage de la boucle Qt
+  (~5 ms chacune), et leur premier appel devient instantané. Un
+  rechargement (édition dans le manager) annule le préchauffage en
+  cours. Mesure (10 hotboxes × 30 icônes, accès disque à 3,5 ms) :
+  1er appel 277 → 151 ms, autre hotbox ensuite 6 ms, plus long blocage
+  du préchauffage 5 ms. API : `loaded_names()`, `warm_up_now()`.
+  Test : `test_lazy_hotbox_loading`.
+
 
 - **Import hotbox réparé** (bug remonté au studio : « l'import ne
   fonctionne pas »). Plusieurs causes, toutes muettes avant :

@@ -3035,7 +3035,7 @@ def test_submenu_fixes():
     try:
         mgr.clear_loaded_hotboxes()
         mgr.initialize(application)
-        assert sorted(mgr.hotboxes) == ['perso_box', 'shared_sub']
+        assert mgr.loaded_names() == ['perso_box', 'shared_sub']
         # une hotbox ajoutée au fichier APRÈS le chargement
         late = {'general': dict(HOTBOX_T, name='late_sub', submenu=True),
                 'shapes': []}
@@ -3287,8 +3287,8 @@ def test_import_robust():
     try:
         manager_mod.clear_loaded_hotboxes()
         manager_mod.load_hotboxes(application)
-        assert 'shared_one' in manager_mod.hotboxes
-        assert 'bom_box' in manager_mod.hotboxes
+        assert 'shared_one' in manager_mod.loaded_names()
+        assert 'bom_box' in manager_mod.loaded_names()
         for reader in manager_mod.hotboxes.values():
             reader.close()
     finally:
@@ -3296,6 +3296,113 @@ def test_import_robust():
         manager_mod.hotboxes.update(saved_boxes)
         manager_mod._application = saved_app
     print('Import robuste (multi, invalide, accents, liens vérifiés) OK')
+
+
+def test_lazy_hotbox_loading():
+    """Bug remonté : « freeze au 1er appel de la hotbox à l'ouverture de
+    Maya ». Le 1er appel construisait TOUTES les hotboxes avec TOUTES
+    leurs icônes (souvent sur le réseau). Désormais seule la hotbox
+    appelée est construite ; les icônes des autres se chargent ensuite
+    en tâche de fond, une par passage de la boucle Qt ; un rechargement
+    (édition dans le manager) annule le préchauffage en cours."""
+    import tempfile
+    import time
+    from hotboxLibrary import manager as mgr
+    from hotboxLibrary import images
+
+    tmp = tempfile.mkdtemp()
+    icon_paths = []
+    for i in range(6):
+        path = os.path.join(tmp, 'icon%d.png' % i)
+        image = QtGui.QImage(8, 8, QtGui.QImage.Format_ARGB32)
+        image.fill(QtGui.QColor('#6D8C5E'))
+        image.save(path)
+        icon_paths.append(path)
+
+    def box(name, icons):
+        return {'general': dict(HOTBOX, name=name), 'shapes': [
+            dict(SQUARE_BUTTON, **{'image.path': p,
+                                   'action.left.command': 'pass'})
+            for p in icons]}
+
+    application = Standalone()
+    application.local_file = os.path.join(tmp, 'hotboxes.json')
+    application.shared_file = os.path.join(tmp, 'shared.json')
+    json.dump([box('a', icon_paths[:2]), box('b', icon_paths[2:4]),
+               box('c', icon_paths[4:])], open(application.local_file, 'w'))
+    json.dump([], open(application.shared_file, 'w'))
+
+    loads = []
+    real_pixmap = QtGui.QPixmap
+
+    saved = dict(mgr.hotboxes)
+    saved_app = mgr._application
+    delays = mgr.WARM_UP_DELAY_MS, mgr.WARM_UP_STEP_MS
+    mgr.WARM_UP_DELAY_MS, mgr.WARM_UP_STEP_MS = 10, 1
+
+    class CountingPixmap(real_pixmap):
+        def __init__(self, *args):
+            if args and isinstance(args[0], str):
+                loads.append(os.path.basename(args[0]))
+            super(CountingPixmap, self).__init__(*args)
+
+    QtGui.QPixmap = CountingPixmap
+    try:
+        mgr.clear_loaded_hotboxes()
+        images.clear_image_cache()
+        mgr.initialize(application)
+        # rien n'est construit, aucune icône lue : la lecture est légère
+        assert mgr.hotboxes == {} and loads == []
+        assert mgr.loaded_names() == ['a', 'b', 'c']
+        # 1er appel : SEULE la hotbox appelée et SES icônes
+        mgr.show('b')
+        assert list(mgr.hotboxes) == ['b']
+        assert sorted(loads) == ['icon2.png', 'icon3.png']
+        assert mgr.hotboxes['b'].isVisible()
+        # la boucle Qt tourne : les icônes des autres arrivent en cache
+        end = time.time() + 2.0
+        while time.time() < end and len(set(loads)) < 6:
+            APP.processEvents()
+            time.sleep(0.005)
+        assert sorted(set(loads)) == sorted(
+            os.path.basename(p) for p in icon_paths), loads
+        assert list(mgr.hotboxes) == ['b']   # icônes seulement
+        # appel suivant : construit sans relire une seule icône
+        count = len(loads)
+        mgr.show('a')
+        assert len(loads) == count
+        assert set(mgr.hotboxes) == {'a', 'b'}
+        mgr.hide('a')
+        mgr.hide('b')
+
+        # un rechargement annule le préchauffage en cours
+        images.clear_image_cache()
+        mgr.clear_loaded_hotboxes()
+        mgr.initialize(application)
+        mgr.show('a')
+        mgr.hide('a')
+        count = len(loads)
+        mgr.clear_loaded_hotboxes()
+        end = time.time() + 0.3
+        while time.time() < end:
+            APP.processEvents()
+            time.sleep(0.005)
+        assert len(loads) == count, 'préchauffage annulé'
+
+        # warm_up_now construit tout d'un coup (diagnostic)
+        mgr.initialize(application)
+        mgr.warm_up_now()
+        assert set(mgr.hotboxes) == {'a', 'b', 'c'} and not mgr._pending
+        for reader in mgr.hotboxes.values():
+            reader.close()
+    finally:
+        QtGui.QPixmap = real_pixmap
+        mgr.WARM_UP_DELAY_MS, mgr.WARM_UP_STEP_MS = delays
+        mgr.clear_loaded_hotboxes()
+        mgr.hotboxes.update(saved)
+        mgr._application = saved_app
+        images.clear_image_cache()
+    print('hotboxes construites à la demande + préchauffage des icônes OK')
 
 
 def test_atomic_write_retries():
@@ -3559,6 +3666,7 @@ if __name__ == '__main__':
     test_hotkey_manager_lists_shared()
     test_import_follows_tab()
     test_import_robust()
+    test_lazy_hotbox_loading()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

@@ -19,8 +19,21 @@ from hotboxLibrary.data import (
     read_hotbox_file, load_shared_hotbox, HotboxFileError)
 
 
-hotboxes = {}
+hotboxes = {}          # hotboxes CONSTRUITES (fenêtres prêtes)
+# hotboxes LUES mais pas encore construites : on ne construit une hotbox
+# (et ne charge ses icônes, souvent sur le réseau) qu'au moment où on
+# l'appelle. Avant, le tout premier appel de la session construisait
+# TOUTES les hotboxes avec TOUTES leurs icônes : le freeze du 1er appel.
+_pending = {}
 _application = None   # celle du dernier chargement (pour recharger)
+# préchauffage : après le 1er affichage, les ICÔNES des autres hotboxes
+# sont chargées en tâche de fond, UNE par passage de la boucle Qt (une
+# icône réseau = quelques ms, imperceptible) ; construire la fenêtre au
+# moment de l'appel ne coûte alors presque rien
+WARM_UP_DELAY_MS = 400
+WARM_UP_STEP_MS = 15
+_load_generation = [0]
+_warm_up_scheduled = [False]
 hotbox_manager = None
 APPLICATIONS = {
     'maya': Maya,
@@ -52,9 +65,14 @@ def launch_manager(application, studio_admin=False):
 
 
 def initialize(application):
-    if hotboxes:
+    if hotboxes or _pending:
         return
     load_hotboxes(application)
+
+
+def loaded_names():
+    """Noms des hotboxes chargées, construites ou en attente."""
+    return sorted(set(hotboxes) | set(_pending))
 
 
 def load_hotboxes(application):
@@ -77,26 +95,83 @@ def load_hotboxes(application):
 
     for hotboxes_data in hotboxes_datas:
         name = hotboxes_data['general']['name']
-        reader = HotboxReader(hotboxes_data, parent=None)
-        reader.hideSubmenusRequested.connect(hide_submenus)
-        hotboxes[name] = reader
+        _pending[name] = hotboxes_data
+
+
+def _build(name):
+    """Construit la hotbox `name` (fenêtre + icônes) si elle attend."""
+    data = _pending.pop(name, None)
+    if data is None:
+        return hotboxes.get(name)
+    reader = HotboxReader(data, parent=None)
+    reader.hideSubmenusRequested.connect(hide_submenus)
+    hotboxes[name] = reader
+    return reader
+
+
+def _pending_image_paths():
+    """Icônes des hotboxes en attente, sans doublon, dans l'ordre."""
+    paths = []
+    for data in _pending.values():
+        for shape in data.get('shapes', []):
+            path = shape.get('image.path')
+            if path and path not in paths:
+                paths.append(path)
+    return paths
+
+
+def _schedule_warm_up():
+    if _warm_up_scheduled[0] or not _pending:
+        return
+    _warm_up_scheduled[0] = True
+    generation = _load_generation[0]
+    queue = _pending_image_paths()
+    QtCore.QTimer.singleShot(
+        WARM_UP_DELAY_MS, lambda: _warm_up_step(generation, queue))
+
+
+def _warm_up_step(generation, queue):
+    """Charge UNE icône en cache puis rend la main à Maya ; se relance
+    tant qu'il en reste. Abandonné si les hotboxes ont été rechargées
+    entre-temps (édition dans le manager)."""
+    from hotboxLibrary.images import image_pixmap
+    if generation != _load_generation[0] or not queue:
+        return
+    try:
+        image_pixmap(queue.pop(0))
+    except Exception:
+        # une icône abîmée ne doit pas casser le préchauffage
+        pass
+    if queue:
+        QtCore.QTimer.singleShot(
+            WARM_UP_STEP_MS, lambda: _warm_up_step(generation, queue))
+
+
+def warm_up_now():
+    """Construit tout de suite les hotboxes en attente (diagnostic, ou
+    pour préchauffer volontairement depuis un script de démarrage)."""
+    for name in list(_pending):
+        _build(name)
 
 
 def clear_loaded_hotboxes():
     global hotboxes
     hotboxes = {}
+    _pending.clear()
+    _load_generation[0] += 1
+    _warm_up_scheduled[0] = False
 
 
 def _reader(name):
-    """La hotbox `name` chargée. Si elle manque (sous-menu créé ou lié
-    APRÈS le chargement, par exemple), on recharge une fois depuis les
-    fichiers ; si elle manque toujours, un message clair plutôt qu'un
-    KeyError dans le script editor."""
-    reader = hotboxes.get(name)
+    """La hotbox `name`, construite à la demande. Si elle manque
+    (sous-menu créé ou lié APRÈS le chargement, par exemple), on
+    recharge une fois depuis les fichiers ; si elle manque toujours, un
+    message clair plutôt qu'un KeyError dans le script editor."""
+    reader = hotboxes.get(name) or _build(name)
     if reader is None and _application is not None:
         clear_loaded_hotboxes()
         load_hotboxes(_application)
-        reader = hotboxes.get(name)
+        reader = _build(name)
     if reader is None:
         warning(
             'Hotbox designer',
@@ -109,6 +184,7 @@ def show(name):
     reader = _reader(name)
     if reader is not None:
         reader.show()
+        _schedule_warm_up()
 
 
 def hide(name):
