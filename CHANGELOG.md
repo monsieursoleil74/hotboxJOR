@@ -20,6 +20,11 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
   du préchauffage 5 ms. API : `loaded_names()`, `warm_up_now()`.
   Test : `test_lazy_hotbox_loading`.
 
+- **CI : PySide6 figé sous 6.12.** La 6.12.0, sortie entre deux runs,
+  plante dans `QPainter.setRenderHint` (« Fatal Python error:
+  none_dealloc », reproduit avec 4 lignes hors de ce projet). Aucun
+  Maya n'embarque cette version ; on la réautorisera une fois corrigée.
+
 
 - **Import hotbox réparé** (bug remonté au studio : « l'import ne
   fonctionne pas »). Plusieurs causes, toutes muettes avant :
