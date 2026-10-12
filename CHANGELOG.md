@@ -4,6 +4,25 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-10 — Version de Qt alignée sur Maya
+
+- **« applications.py line 226: You need a shiboken-based type »**
+  (bug remonté sur UN poste animateur). Qt.py 2.x essaie PySide6 avant
+  PySide2 : dans Maya 2024 (Qt 5), un PySide6 installé ailleurs sur le
+  poste était choisi, et l'outil tournait sur une autre version de Qt
+  que Maya — la ligne 226 (rattachement à la fenêtre Maya, shiboken2 +
+  type PySide6) était le premier endroit à casser.
+  - `vendor/__init__.py` demande à Maya sa version de Qt
+    (`cmds.about(qtVersion=True)`) et place la liaison correspondante en
+    tête pour NOTRE Qt.py seulement (`QT_PREFERRED_BINDING_JSON`, clé =
+    notre module, variable rétablie juste après : les autres outils du
+    studio ne sont pas touchés). Hors Maya : la liaison déjà chargée.
+  - `get_main_window` passe par `QtCompat.wrapInstance` (toujours le
+    shiboken de la liaison choisie) ; si le rattachement échoue malgré
+    tout, les fenêtres s'ouvrent sans parent au lieu de planter.
+  Test : `test_qt_binding_follows_maya` (processus neuf, faux module
+  maya en Qt 5 et Qt 6).
+
 ## 2026-10 — Boutons liés à la librairie
 
 - **Reconnaissance des anciens boutons : la même image, et rien

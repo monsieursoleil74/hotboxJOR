@@ -1356,6 +1356,13 @@ hotboxLibrary.launch_manager('maya', studio_admin=True)</code></pre>
   <h2>Sous le capot</h2>
   <p>Pour s’y retrouver dans le code&nbsp;:</p>
   <ul>
+    <li><strong>Version de Qt</strong>&nbsp;: l’outil prend toujours la même
+      version de Qt que Maya (Qt 5 → PySide2, Qt 6 → PySide6). Un PySide6
+      installé ailleurs sur un poste Maya 2024 ne le perturbe plus — c’était
+      l’erreur «&nbsp;applications.py line 226: You need a shiboken-based
+      type&nbsp;». Le choix ne concerne que la copie de Qt.py embarquée
+      (<code>vendor/__init__.py</code>)&nbsp;: les autres outils du studio ne
+      sont pas touchés.</li>
     <li><strong>Coordonnées</strong>&nbsp;: les shapes vivent dans l’espace de la
       hotbox («&nbsp;unités&nbsp;») — le JSON est identique à l’original. Le
       viewport applique zoom + translation au rendu (<code>ViewportMapper</code>

@@ -608,6 +608,13 @@ s'ouvre pour le changer.
 
 ## Logique interne (pour s'y retrouver dans le code)
 
+- **Version de Qt** : l'outil prend toujours la même version de Qt que
+  Maya (Qt 5 → PySide2, Qt 6 → PySide6). Un PySide6 installé ailleurs
+  sur un poste Maya 2024 ne le perturbe plus — c'était l'erreur
+  « applications.py line 226: You need a shiboken-based type ». Le
+  choix ne concerne que la copie de Qt.py embarquée
+  (`vendor/__init__.py`) : les autres outils du studio ne sont pas
+  touchés.
 - **Coordonnées** : les shapes vivent dans l'espace de la hotbox
   (« unités ») — le JSON est donc identique à l'original. Le viewport
   applique zoom + translation au rendu (`ViewportMapper` dans

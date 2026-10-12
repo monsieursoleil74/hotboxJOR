@@ -3726,6 +3726,55 @@ def test_library_link_matching():
     print('reconnaissance : même image seulement (casse, barres), historique OK')
 
 
+def test_qt_binding_follows_maya():
+    """Bug studio, un seul poste : « applications.py line 226: You need
+    a shiboken-based type ». Qt.py 2.x essaie PySide6 avant PySide2 :
+    dans Maya 2024 (Qt 5), un PySide6 installé ailleurs sur le poste
+    était choisi. Notre Qt.py doit suivre la version de Qt de Maya,
+    sans toucher aux préférences des autres outils. Vérifié dans un
+    processus neuf, avec un faux module maya."""
+    import subprocess
+    import tempfile
+    from hotboxLibrary.vendor import preferred_bindings_json, QT_MODULE
+
+    # préférences des autres modules conservées, la nôtre en tête
+    merged = json.loads(preferred_bindings_json(
+        'PySide2', '{"other.Qt": ["PyQt5"]}'))
+    assert merged == {'other.Qt': ['PyQt5'],
+                      QT_MODULE: ['PySide2', 'PySide6']}
+    assert json.loads(preferred_bindings_json('PySide6', 'not json')) == {
+        QT_MODULE: ['PySide6', 'PySide2']}
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    fake = tempfile.mkdtemp()
+    os.makedirs(os.path.join(fake, 'maya'))
+    open(os.path.join(fake, 'maya', '__init__.py'), 'w').close()
+    script = (
+        'import os\n'
+        'os.environ["QT_PREFERRED_BINDING_JSON"] = \'{"other.Qt": ["PyQt5"]}\'\n'
+        'from hotboxLibrary.vendor import Qt, host_binding\n'
+        'print("HOST", host_binding())\n'
+        'print("ENV", os.environ["QT_PREFERRED_BINDING_JSON"])\n')
+    for qt_version, expected in (('5.15.2', "'PySide2', 'PySide6'"),
+                                 ('6.5.3', "'PySide6', 'PySide2'")):
+        with open(os.path.join(fake, 'maya', 'cmds.py'), 'w') as f:
+            f.write('def about(**kwargs):\n    return %r\n' % qt_version)
+        env = dict(os.environ, QT_VERBOSE='1', QT_QPA_PLATFORM='offscreen',
+                   PYTHONPATH=os.pathsep.join([fake, root]))
+        env.pop('QT_PREFERRED_BINDING_JSON', None)
+        result = subprocess.run(
+            [sys.executable, '-c', script], env=env, cwd=fake,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            universal_newlines=True, timeout=120)
+        out = result.stdout
+        assert result.returncode == 0, out
+        assert "Order: %s" % expected in out, out
+        assert 'HOST %s' % expected.split("'")[1] in out, out
+        # la variable d'environnement des autres outils est intacte
+        assert 'ENV {"other.Qt": ["PyQt5"]}' in out, out
+    print('Qt.py suit la version de Qt de Maya (PySide2 / PySide6) OK')
+
+
 def test_atomic_write_retries():
     """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
     réseau, os.replace échoue par intermittence (fichier ouvert
@@ -3990,6 +4039,7 @@ if __name__ == '__main__':
     test_lazy_hotbox_loading()
     test_library_link_sync()
     test_library_link_matching()
+    test_qt_binding_follows_maya()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

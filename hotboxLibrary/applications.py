@@ -209,21 +209,29 @@ class Maya(AbstractApplication):
 
     @staticmethod
     def get_main_window():
-        """Get the main window for maya.
+        """La fenêtre principale de Maya (parent des fenêtres de l'outil),
+        ou None.
 
-        Returns:
-            shiboken2.wrapInstance: The pointer to the maya main window.
+        Le rattachement passe par QtCompat.wrapInstance de Qt.py, qui
+        utilise TOUJOURS le shiboken de la liaison choisie. Avant, on
+        importait shiboken2 « au cas où » : sur un poste où la liaison
+        était PySide6 (voir vendor/__init__.py), shiboken2 recevait un
+        type PySide6 → « You need a shiboken-based type ». Si le
+        rattachement échoue malgré tout, les fenêtres s'ouvrent sans
+        parent plutôt que de ne pas s'ouvrir du tout.
         """
         import maya.OpenMayaUI as omui
-        try:
-            import shiboken2 as shiboken
-        except ImportError:
-            import shiboken6 as shiboken
+        from hotboxLibrary.vendor.Qt import QtCompat
         if os.name == 'posix':
             return None
         ptr = omui.MQtUtil.mainWindow()
-        if ptr is not None:
-            return shiboken.wrapInstance(int(ptr), QtWidgets.QWidget)
+        if ptr is None:
+            return None
+        try:
+            return QtCompat.wrapInstance(int(ptr), QtWidgets.QWidget)
+        except Exception as error:
+            print('hotboxLibrary: Maya main window not wrapped (%s)' % error)
+            return None
 
     @staticmethod
     def get_reader_parent():
