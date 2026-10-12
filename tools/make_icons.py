@@ -4,12 +4,15 @@ import os
 import sys
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-sys.path.insert(0, '/workspace/hotboxjor')
-from hotboxLibrary.vendor.Qt import QtWidgets, QtGui, QtCore, QtSvg
+# chemins relatifs au dépôt (les anciens chemins codés en dur ne
+# marchaient que sur une machine)
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, ROOT)
+from hotboxLibrary.vendor.Qt import QtWidgets, QtGui, QtCore, QtSvg  # noqa
 
 app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
 
-OUT = '/home/user/hotboxjor/hotboxLibrary/resources/icons'
+OUT = os.path.join(ROOT, 'hotboxLibrary', 'resources', 'icons')
 STROKE = '#d8d8d8'
 ACCENT = '#4d9bf5'
 SIZE = 32
@@ -51,6 +54,13 @@ ICONS = {
     'lock_bg': '<rect x="4" y="4" width="16" height="16" rx="2" %s/>'
                '<rect x="8" y="11" width="8" height="6" rx="1" %s/>'
                '<path d="M9.5 11 V9 a2.5 2.5 0 0 1 5 0 v2" %s/>' % (S, FA, SA),
+    # mettre à jour depuis la librairie : deux flèches en cercle autour
+    # d'un petit bouton (accent)
+    'sync_library': '<path d="M19 9 A8 8 0 0 0 5.5 7.5" %s/>'
+                    '<path d="M5 15 A8 8 0 0 0 18.5 16.5" %s/>'
+                    '<path d="M19 4 v5 h-5 M5 20 v-5 h5" %s/>'
+                    '<rect x="9" y="10" width="6" height="4" rx="1" %s/>'
+                    % (S, S, S, FA),
     'picker': '<rect x="4" y="4" width="7" height="7" rx="1" %s/>'
               '<rect x="13" y="4" width="7" height="7" rx="1" %s/>'
               '<rect x="4" y="13" width="7" height="7" rx="1" %s/>'
@@ -117,6 +127,10 @@ def render(name, body):
     pixmap.save(os.path.join(OUT, name + '.png'))
 
 
-for name, body in ICONS.items():
-    render(name, body)
-print('généré', len(ICONS), 'icônes')
+# `python tools/make_icons.py nom1 nom2` : seulement ces icônes (évite
+# de réécrire tout le jeu, dont le rendu varie d'une version de Qt à
+# l'autre) ; sans argument : toutes
+wanted = sys.argv[1:] or list(ICONS)
+for name in wanted:
+    render(name, ICONS[name])
+print('généré', len(wanted), 'icône(s)')

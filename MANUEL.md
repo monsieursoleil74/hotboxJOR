@@ -216,12 +216,15 @@ image et texte, exactement comme il apparaîtra dans la hotbox.
   qui a **modifié la commande** de son bouton garde la sienne. Si
   l'entrée est renommée ou supprimée, le bouton garde sa dernière
   commande.
-- **Rattacher les anciens boutons** : les boutons posés avant cette
-  version n'ont pas ce lien. Clic droit dans l'éditeur → **« Link
-  buttons to library… »** (sélection, sinon toute la hotbox) : chaque
-  bouton qui a le même texte et la même image qu'**une seule** entrée
-  est rattaché. Ceux dont la commande changerait sont listés et
-  confirmés avant. Ensuite ils suivent la librairie comme les autres.
+- **Bouton « Update from library »** (barre d'outils de l'éditeur, à
+  côté des boutons de librairie) : **un clic** met à jour toute la
+  hotbox. Les boutons déjà liés prennent tout de suite les commandes
+  actuelles de la librairie ; les boutons posés avant cette version,
+  qui n'ont pas encore de lien, sont reconnus quand ils ont le même
+  texte et la même image qu'**une seule** entrée. Ceux dont la commande
+  changerait sont listés et confirmés avant. Ensuite ils suivent la
+  librairie tout seuls. Le même geste existe au clic droit (« Link
+  buttons to library… »), limité à la sélection s'il y en a une.
 - **Renommer un bouton** : clic droit sur un bouton de la shelf →
   **Rename…** (perso toujours ; studio en mode admin). Le bouton garde
   son apparence et sa commande, seul son nom change.
@@ -562,7 +565,7 @@ hotbox d'origine ne le change pas.
 Supprimer • copier • coller • copier style • coller style — undo /
 redo — grille (aimant rouge) + pas x/y — champs **size** + **fit
 zone** — édition du **centre** + coordonnées — ajout : bouton / texte /
-background — **cadenas** lock background — **librairie** / **enregistrer dans la librairie** — ordre :
+background — **cadenas** lock background — **librairie** / **enregistrer dans la librairie** / **Update from library** — ordre :
 tout au fond / tout devant — alignements (6) — distributions
 (2).
 

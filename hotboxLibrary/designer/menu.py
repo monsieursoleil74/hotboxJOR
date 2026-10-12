@@ -12,6 +12,7 @@ class MenuWidget(QtWidgets.QWidget):
     pasteStyleRequested = QtCore.Signal()
     libraryRequested = QtCore.Signal()
     saveToLibraryRequested = QtCore.Signal()
+    updateFromLibraryRequested = QtCore.Signal()
     undoRequested = QtCore.Signal()
     redoRequested = QtCore.Signal()
     sizeChanged = QtCore.Signal()
@@ -112,6 +113,20 @@ class MenuWidget(QtWidgets.QWidget):
         self.savetolibrary = QtWidgets.QAction(icon('save.png'), '', self)
         self.savetolibrary.setToolTip('Save selected buttons to library')
         self.savetolibrary.triggered.connect(self.saveToLibraryRequested.emit)
+        # bouton À TEXTE (pas une icône seule) : c'est LE geste demandé
+        # aux animateurs quand la librairie a changé — il doit se voir
+        self.updatefromlibrary = QtWidgets.QAction(
+            icon('sync_library.png'), 'Update from library', self)
+        self.updatefromlibrary.setToolTip(
+            'Update this hotbox\'s buttons with the current commands of '
+            'the library\n(look, position and size are kept)')
+        self.updatefromlibrary.triggered.connect(
+            self.updateFromLibraryRequested.emit)
+        self.updatefromlibrary_button = QtWidgets.QToolButton()
+        self.updatefromlibrary_button.setDefaultAction(
+            self.updatefromlibrary)
+        self.updatefromlibrary_button.setToolButtonStyle(
+            QtCore.Qt.ToolButtonTextBesideIcon)
 
         icon_ = icon('addbutton.png')
         self.addbutton = QtWidgets.QAction(icon_, '', self)
@@ -199,6 +214,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.library)
         self.toolbar.addAction(self.savetolibrary)
+        self.toolbar.addWidget(self.updatefromlibrary_button)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.onbottom)
         self.toolbar.addAction(self.ontop)

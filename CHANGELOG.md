@@ -6,6 +6,18 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-10 — Boutons liés à la librairie
 
+- **Bouton « Update from library » dans la barre d'outils de
+  l'éditeur** (retour studio : le rattachement des anciens boutons, au
+  clic droit, était trop caché pour les animateurs). Bouton à texte,
+  un clic, toute la hotbox même avec une sélection : met tout de suite
+  à jour les boutons liés dont la librairie a changé, rattache les
+  anciens reconnus (texte + image, une seule entrée) après confirmation
+  de ceux dont la commande change, et dit « Everything is up to date »
+  sinon. Icône `sync_library`. `tools/make_icons.py` : chemins relatifs
+  au dépôt (ils étaient codés en dur) et génération d'icônes à la
+  demande (`python tools/make_icons.py sync_library`). Test :
+  `test_library_link_sync` étendu.
+
 - **Les boutons d'une hotbox suivent la librairie** (retour studio :
   quand la commande d'un bouton de la librairie changeait, chaque
   animateur devait supprimer son bouton et le re-glisser). Un bouton

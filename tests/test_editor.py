@@ -3570,7 +3570,26 @@ def test_library_link_sync():
         # relancé : plus rien à faire
         asked[:] = []
         editor.link_buttons_to_library()
-        assert not asked and 'No button to link' in infos[-1]
+        assert not asked and 'up to date' in infos[-1]
+
+        # --- bouton « Update from library » de la barre d'outils :
+        # visible avec son TEXTE, toute la hotbox même avec une
+        # sélection ; met à jour les boutons liés si la librairie change
+        # pendant que l'éditeur est ouvert ---
+        button = editor.menu.updatefromlibrary_button
+        assert button.text() == 'Update from library'
+        assert (button.toolButtonStyle()
+                == QtCore.Qt.ToolButtonTextBesideIcon)
+        raw = bl.load_library_raw(studio)
+        raw[0]['options']['action.left.command'] = 'print("key v3")'
+        bl.save_library(studio, raw)
+        area.selection.set([area.shapes[5]])       # sélection ignorée
+        area.update_selection()
+        editor.menu.updatefromlibrary.trigger()
+        commands = [s.options['action.left.command'] for s in area.shapes]
+        assert commands[:4] == ['print("key v3")'] * 4, commands
+        assert '4 button(s) updated from the library' in infos[-1], infos
+        assert not asked
 
         # --- ce qui repart vers la librairie n'emporte pas l'étiquette
         bl.set_studio_admin(True)

@@ -79,6 +79,8 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.copyStyleRequested.connect(self.copy_style)
         self.menu.pasteStyleRequested.connect(self.paste_style)
         self.menu.libraryRequested.connect(self.open_button_library)
+        self.menu.updateFromLibraryRequested.connect(
+            lambda: self.link_buttons_to_library(whole_hotbox=True))
         self.menu.saveToLibraryRequested.connect(
             self.save_selection_to_library)
         self.menu.deleteRequested.connect(self.delete_selection)
@@ -225,13 +227,15 @@ class HotboxEditor(QtWidgets.QWidget):
             self.link_buttons_to_library)
         menu.exec_(global_pos)
 
-    def link_buttons_to_library(self):
+    def link_buttons_to_library(self, whole_hotbox=False):
         """Rattache à la librairie les boutons qui en viennent mais ne le
         savent pas (posés avant le lien automatique), et ceux dont la
         commande a été retouchée : ils reprennent les commandes de leur
         entrée et suivront ses mises à jour. Les boutons reconnus dont
         les commandes CHANGERAIENT sont listés et confirmés d'abord.
-        Porte sur la sélection, sinon sur toute la hotbox."""
+        Porte sur la sélection, sinon sur toute la hotbox ; le bouton
+        « Update from library » de la barre d'outils porte TOUJOURS sur
+        toute la hotbox (un clic, sans rien sélectionner)."""
         import json
         from hotboxLibrary.librarylink import (
             load_library_index, find_link_candidates, apply_link,
@@ -241,10 +245,20 @@ class HotboxEditor(QtWidgets.QWidget):
         if not index:
             return QtWidgets.QMessageBox.information(
                 self, title, 'No library button found.')
-        shapes = (list(self.shape_editor.selection)
-                  or list(self.shape_editor.shapes))
+        if whole_hotbox:
+            shapes = list(self.shape_editor.shapes)
+        else:
+            shapes = (list(self.shape_editor.selection)
+                      or list(self.shape_editor.shapes))
+        # les boutons DÉJÀ liés dont la librairie a changé : mis à jour
+        # tout de suite (comme au chargement) — c'est le cas courant
+        # pour un animateur qui clique après une mise à jour du lead
+        from hotboxLibrary.librarylink import sync_options
+        synced = 0
         before = json.dumps([s.options for s in shapes], sort_keys=True,
                             default=str)
+        for shape in shapes:
+            synced += sync_options(shape.options, index)
         candidates = find_link_candidates(
             [shape.options for shape in shapes], index)
         same = [c for c in candidates
@@ -276,16 +290,20 @@ class HotboxEditor(QtWidgets.QWidget):
             self.selection_changed()
             self.shape_editor.repaint()
             self.set_data_modified()
+        lines = []
+        if synced:
+            lines.append('%d button(s) updated from the library.' % synced)
         if same or updated:
-            message = '%d button(s) linked to the library' % (
+            text = '%d button(s) linked to the library' % (
                 len(same) + updated)
             if updated:
-                message += ', %d updated with its current commands' % updated
-            message += '.\nFrom now on they follow its updates.'
+                text += ', %d of them with new commands' % updated
+            lines.append(text + '. From now on they follow its updates.')
+        if lines:
+            message = '\n'.join(lines)
         elif not changes:
-            message = ('No button to link: none matches a library button '
-                       '(same text and same image), or they are already '
-                       'linked.')
+            message = ('Everything is up to date: no button needs an '
+                       'update from the library.')
         else:
             message = 'Nothing changed.'
         QtWidgets.QMessageBox.information(self, title, message)
