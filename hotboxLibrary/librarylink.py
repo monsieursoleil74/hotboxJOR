@@ -29,6 +29,18 @@ les rattache, après confirmation.
 from copy import deepcopy
 
 LINK_KEY = 'library.link'
+# gardés DANS les entrées de librairie par les gestes d'admin :
+# anciennes commandes (Update) et anciens (catégorie, nom) (Rename,
+# Move) — pour reconnaître les boutons pas encore rattachés
+HISTORY_KEY = 'history'
+ALIASES_KEY = 'aliases'
+HISTORY_LIMIT = 20
+COMMAND_KEYS = ('action.left.command', 'action.right.command')
+# ressemblance minimale d'un script pour le proposer, et avance exigée
+# sur le 2e meilleur (sinon : ambigu, on ne propose rien)
+SIMILARITY_MIN = 0.75
+SIMILARITY_MARGIN = 0.1
+SIMILARITY_MIN_LENGTH = 12
 ACTION_KEYS = (
     'action.left', 'action.left.close', 'action.left.language',
     'action.left.command',
@@ -81,11 +93,19 @@ class LibraryIndex(object):
     def __init__(self, libraries):
         self._entries = {}
         self.entries = []
+        aliases = []
         for entries in libraries:
             for entry in entries:
                 key = (entry.get('category'), entry.get('name'))
                 self._entries.setdefault(key, entry)
                 self.entries.append(entry)
+                for alias in entry.get(ALIASES_KEY) or []:
+                    if isinstance(alias, (list, tuple)) and len(alias) == 2:
+                        aliases.append((tuple(alias), entry))
+        # un bouton renommé ou changé de catégorie reste trouvable sous
+        # ses anciens noms — un nom ACTUEL prime toujours sur un alias
+        for key, entry in aliases:
+            self._entries.setdefault(key, entry)
 
     def __bool__(self):
         return bool(self._entries)
@@ -165,26 +185,112 @@ def sync_hotbox(data, index):
     return changed
 
 
-def _look(options):
-    return (options.get('text.content') or '', options.get('image.path') or '')
+def _members(entry):
+    """(place dans le set ou None, options) de chaque bouton d'une
+    entrée."""
+    if 'options' in entry:
+        return [(None, entry['options'])]
+    return list(enumerate(entry.get('set') or []))
+
+
+def _commands(options):
+    """Scripts non vides d'un bouton (clic gauche, clic droit)."""
+    commands = []
+    for key in COMMAND_KEYS:
+        command = (options.get(key) or '').strip()
+        if command:
+            commands.append(command)
+    return commands
+
+
+def _clean(value):
+    return (value or '').strip()
+
+
+def _match_entry(options, members):
+    """L'entrée d'un bouton NON rattaché, ou None. Indices, chacun
+    devant désigner UNE SEULE entrée : même image, même texte, même
+    script (actuel ou ANCIEN, gardé dans l'historique). S'ils désignent
+    des entrées différentes : ambigu, rien. Aucun indice sûr : le script
+    le plus RESSEMBLANT, s'il se détache nettement. Retourne
+    (entry, place, source, raison)."""
+    text = _clean(options.get('text.content'))
+    image = _clean(options.get('image.path'))
+    commands = _commands(options)
+    clues = []
+    if image:
+        clues.append(('same image', [
+            m for m in members if _clean(m[2].get('image.path')) == image]))
+    if text:
+        clues.append(('same text', [
+            m for m in members if _clean(m[2].get('text.content')) == text]))
+    if text and image:
+        clues.append(('same text and image', [
+            m for m in members
+            if _clean(m[2].get('image.path')) == image
+            and _clean(m[2].get('text.content')) == text]))
+    if commands:
+        clues.append(('same script', [
+            m for m in members
+            if set(commands) & set(_commands(m[2]))]))
+        clues.append(('old script of this button', [
+            m for m in members
+            if m[1] is None and set(commands) & set(m[3])]))
+    found = {}
+    for reason, matches in clues:
+        # identifié par MEMBRE (un set a plusieurs boutons)
+        keyed = {(id(m[0]), m[1]): m for m in matches}
+        if len(keyed) == 1:
+            key, member = list(keyed.items())[0]
+            found.setdefault(key, (member, []))[1].append(reason)
+    if len(found) == 1:
+        (entry, position, source, _), reasons = list(found.values())[0]
+        return entry, position, source, ', '.join(reasons)
+    if found:
+        return None  # indices contradictoires : on ne devine pas
+    # dernier recours : script ressemblant (un chemin, un argument qui a
+    # changé…) — proposé seulement s'il se détache nettement
+    from difflib import SequenceMatcher
+    if not commands or len(commands[0]) < SIMILARITY_MIN_LENGTH:
+        return None
+    scored = []
+    for member in members:
+        candidates = _commands(member[2]) + list(member[3])
+        best = 0.0
+        for command in candidates:
+            for mine in commands:
+                best = max(best, SequenceMatcher(None, mine, command).ratio())
+        scored.append((best, member))
+    scored.sort(key=lambda item: item[0], reverse=True)
+    if not scored or scored[0][0] < SIMILARITY_MIN:
+        return None
+    if len(scored) > 1 and scored[0][0] - scored[1][0] < SIMILARITY_MARGIN:
+        return None
+    entry, position, source, _ = scored[0][1]
+    return entry, position, source, 'similar script (%d%%)' % round(
+        scored[0][0] * 100)
 
 
 def find_link_candidates(shapes_options, index):
-    """Boutons NON liés (ou détachés) qu'on peut rattacher à la
-    librairie, reconnus par leur apparence : même texte ET même image
-    qu'UNE seule entrée (bouton simple ou membre de set). Retourne une
-    liste de (options, link, source_options)."""
-    looks = {}
+    """Boutons NON rattachés (ou détachés) qu'on peut rattacher à la
+    librairie. Retourne une liste de (options, link, source, raison) —
+    la raison est montrée dans la fenêtre de confirmation."""
+    members = []
+    seen = set()
     for entry in index.entries:
-        if 'options' in entry:
-            members = [(None, entry['options'])]
-        else:
-            members = list(enumerate(entry.get('set') or []))
-        for position, source in members:
-            look = _look(source)
-            if look == ('', ''):
-                continue  # un bouton sans texte ni image : trop ambigu
-            looks.setdefault(look, []).append((entry, position, source))
+        # même bouton dans la librairie studio ET la perso (envoyé au
+        # studio depuis la perso) : compté une fois, la studio d'abord —
+        # sinon il paraîtrait ambigu et ne serait jamais reconnu
+        key = (entry.get('category'), entry.get('name'))
+        if key in seen:
+            continue
+        seen.add(key)
+        history = [
+            _clean(old.get(key)) for old in entry.get(HISTORY_KEY) or []
+            if isinstance(old, dict) for key in COMMAND_KEYS
+            if _clean(old.get(key))]
+        for position, source in _members(entry):
+            members.append((entry, position, source, history))
     candidates = []
     for options in shapes_options:
         link = options.get(LINK_KEY)
@@ -198,19 +304,20 @@ def find_link_candidates(shapes_options, index):
                 # répare l'étiquette sans rien demander
                 options[LINK_KEY] = dict(link, action=deepcopy(current))
                 continue
-            candidates.append((options, link, source))  # détaché
+            candidates.append(
+                (options, link, source, 'modified by hand'))  # détaché
             continue
-        matches = looks.get(_look(options), [])
-        if len(matches) != 1:
+        match = _match_entry(options, members)
+        if match is None:
             continue
-        entry, position, source = matches[0]
+        entry, position, source, reason = match
         new_link = {'category': entry.get('category'),
                     'name': entry.get('name'), 'index': position}
-        candidates.append((options, new_link, source))
+        candidates.append((options, new_link, source, reason))
     return candidates
 
 
-def apply_link(options, link, source):
+def apply_link(options, link, source, reason=None):
     """Rattache un bouton à son entrée : commandes de la librairie +
     étiquette à jour."""
     fresh = action_snapshot(source)
@@ -218,3 +325,28 @@ def apply_link(options, link, source):
     link = dict(link)
     link['action'] = deepcopy(fresh)
     options[LINK_KEY] = link
+
+
+def remember_commands(entry_options, previous_options, entry):
+    """Avant de réécrire une entrée (Update), garde ses ANCIENNES
+    commandes dans son historique — un bouton pas encore rattaché qui a
+    encore l'ancien script sera reconnu."""
+    old = {key: previous_options.get(key) for key in COMMAND_KEYS}
+    new = {key: entry_options.get(key) for key in COMMAND_KEYS}
+    if old == new or not any(_clean(v) for v in old.values()):
+        return
+    history = [h for h in entry.get(HISTORY_KEY) or [] if h != old]
+    history.append(old)
+    entry[HISTORY_KEY] = history[-HISTORY_LIMIT:]
+
+
+def remember_name(entry, old_category, old_name):
+    """APRÈS un renommage / changement de catégorie : garde l'ancien
+    (catégorie, nom) — les boutons liés suivent toujours. Rien si le
+    nom n'a pas changé."""
+    alias = [old_category, old_name]
+    if alias == [entry.get('category'), entry.get('name')]:
+        return
+    aliases = [a for a in entry.get(ALIASES_KEY) or [] if a != alias]
+    aliases.append(alias)
+    entry[ALIASES_KEY] = aliases[-HISTORY_LIMIT:]

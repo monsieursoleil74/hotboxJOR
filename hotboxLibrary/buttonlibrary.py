@@ -369,9 +369,13 @@ def move_entries_to_category(path, entries, category, index=None):
         by_category[category] = []
         order.append(category)
     updated = []
+    from hotboxLibrary.librarylink import remember_name
     for entry in moved:
         entry = dict(entry)
+        old_category = entry.get('category')
         entry['category'] = category
+        # ancien nom gardé : les boutons liés le retrouvent
+        remember_name(entry, old_category, entry.get('name'))
         updated.append(entry)
     target = by_category[category]
     if index is None or index > len(target):
@@ -408,11 +412,14 @@ def rename_category_in(path, old, new):
     new = (new or '').strip()
     if not new or new == old or old not in categories_in(path):
         return False
+    from hotboxLibrary.librarylink import remember_name
     raw = load_library_raw(path)
     for entry in raw:
         if is_button_entry(entry):
             if (entry.get('category') or DEFAULT_CATEGORY) == old:
+                old_category = entry.get('category')
                 entry['category'] = new
+                remember_name(entry, old_category, entry.get('name'))
         elif entry.get(CATEGORY_KEY) == old:
             entry[CATEGORY_KEY] = new
     save_library(path, raw)
@@ -442,7 +449,10 @@ def set_entries_category_in(path, entries, category):
         if not is_button_entry(entry) or entry not in entries:
             continue
         if (entry.get('category') or DEFAULT_CATEGORY) != category:
+            from hotboxLibrary.librarylink import remember_name
+            old_category = entry.get('category')
             entry['category'] = category
+            remember_name(entry, old_category, entry.get('name'))
             changed += 1
     if changed:
         save_library(path, raw)
@@ -469,11 +479,16 @@ def update_entry_in(path, entry, options):
     updated = False
     fresh = {k: v for k, v in dict(options).items()
              if k not in UPDATE_SKIP_KEYS}
+    from hotboxLibrary.librarylink import remember_commands
     for candidate in raw:
         if 'options' in candidate and candidate == entry:
             kept = {k: candidate['options'][k]
                     for k in UPDATE_SKIP_KEYS if k in candidate['options']}
-            candidate['options'] = dict(fresh, **kept)
+            new_options = dict(fresh, **kept)
+            # l'ancien script est gardé : un bouton pas encore rattaché
+            # qui l'a toujours sera reconnu
+            remember_commands(new_options, candidate['options'], candidate)
+            candidate['options'] = new_options
             updated = True
     if updated:
         save_library(path, raw)
@@ -488,9 +503,12 @@ def rename_entry_in(path, entry, new_name):
         return False
     raw = load_library_raw(path)
     renamed = False
+    from hotboxLibrary.librarylink import remember_name
     for candidate in raw:
         if is_button_entry(candidate) and candidate == entry:
+            old_name = candidate.get('name')
             candidate['name'] = new_name
+            remember_name(candidate, candidate.get('category'), old_name)
             renamed = True
     if renamed:
         save_library(path, raw)

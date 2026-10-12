@@ -3616,6 +3616,105 @@ def test_library_link_sync():
     print('boutons liés à la librairie : synchro, détachés, anciens OK')
 
 
+def test_library_link_matching():
+    """Question studio : « pour ceux qui ont modifié l'icône du bouton,
+    tu le retrouves par le nom ou le script ? ». Un ancien bouton est
+    reconnu dès qu'UN indice désigne UNE seule entrée : même image, même
+    texte, même script, ou ANCIEN script (gardé par Update) ; sinon un
+    script très ressemblant. Indices contradictoires : rien. Un bouton
+    renommé / déplacé reste trouvable par ses boutons liés."""
+    import tempfile
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary.librarylink import (
+        LibraryIndex, find_link_candidates, linked_options, sync_options,
+        LINK_KEY, HISTORY_KEY, ALIASES_KEY)
+
+    def button(text='', image='', command=''):
+        return dict(SQUARE_BUTTON, **{
+            'text.content': text, 'image.path': image,
+            'action.left': True, 'action.left.command': command})
+
+    tmp = tempfile.mkdtemp()
+    studio = os.path.join(tmp, 'TAT.json')
+    bl.save_library(studio, [
+        {'name': 'Snap', 'category': 'ANIM', 'options': button(
+            image='R:/icons/snap.svg',
+            command='import tat.snap\ntat.snap.run(mode="world")')},
+        {'name': 'Bake', 'category': 'ANIM', 'options': button(
+            text='Bake', image='R:/icons/bake.svg',
+            command='import tat.bake\ntat.bake.selection()')},
+        {'name': 'Mirror', 'category': 'RIG', 'options': button(
+            image='R:/icons/mirror.svg',
+            command='import tat.mirror\ntat.mirror.do()')},
+        {'name': 'Euler', 'category': 'ANIM', 'options': button(
+            text='Euler', image='R:/icons/euler.svg',
+            command='import maya.mel\nmaya.mel.eval("filterCurve")')}])
+
+    # le lead met à jour Snap (Update in library) : l'ANCIEN script est
+    # gardé dans l'historique de l'entrée
+    snap = bl.load_library(studio)[0]
+    new_snap = dict(snap['options'], **{
+        'action.left.command': 'import tat_tools\ntat_tools.snap()'})
+    assert bl.update_entry_in(studio, snap, new_snap)
+    entries = bl.load_library(studio)
+    assert entries[0][HISTORY_KEY][-1]['action.left.command'] == (
+        'import tat.snap\ntat.snap.run(mode="world")')
+    # même bouton aussi dans la perso (envoyé au studio depuis la perso)
+    personal = [dict(entries[1])]
+    index = LibraryIndex([entries, personal])
+
+    shapes = [
+        # 0 icône changée, pas de texte, ANCIEN script de Snap
+        button(image='C:/me/my_snap.png',
+               command='import tat.snap\ntat.snap.run(mode="world")'),
+        # 1 icône changée, texte gardé (Bake est aussi dans la perso)
+        button(text='Bake', image='C:/me/bake2.png', command='old bake'),
+        # 2 icône changée, pas de texte, script identique (pas changé)
+        button(image='C:/me/mirror.png',
+               command='import tat.mirror\ntat.mirror.do()'),
+        # 3 icône changée, pas de texte, script RESSEMBLANT
+        button(image='C:/me/e.png',
+               command='import maya.mel\nmaya.mel.eval("filterCurve;")'),
+        # 4 indices contradictoires : image de Bake, texte de Euler
+        button(text='Euler', image='R:/icons/bake.svg', command='x = 1'),
+        # 5 icône changée, pas de texte, script réécrit : introuvable
+        button(image='C:/me/zzz.png',
+               command='from somewhere import thing\nthing.go(42)'),
+    ]
+    found = {id(c[0]): c for c in find_link_candidates(shapes, index)}
+    reasons = {i: found[id(o)][3] for i, o in enumerate(shapes)
+               if id(o) in found}
+    names = {i: found[id(o)][1]['name'] for i, o in enumerate(shapes)
+             if id(o) in found}
+    assert names == {0: 'Snap', 1: 'Bake', 2: 'Mirror', 3: 'Euler'}, names
+    assert reasons[0] == 'old script of this button', reasons
+    assert reasons[1] == 'same text', reasons
+    assert reasons[2] == 'same script', reasons
+    assert reasons[3].startswith('similar script ('), reasons
+    assert 4 not in names and 5 not in names
+
+    # --- un bouton lié suit son entrée RENOMMÉE puis DÉPLACÉE ---
+    linked = linked_options(entries[1])          # Bake
+    assert bl.rename_entry_in(studio, entries[1], 'Bake all')
+    entries = bl.load_library(studio)
+    bake = [e for e in entries if e['name'] == 'Bake all'][0]
+    assert bake[ALIASES_KEY] == [['ANIM', 'Bake']]
+    assert bl.set_entries_category_in(studio, [bake], 'TOOLS') == 1
+    entries = bl.load_library(studio)
+    bake = [e for e in entries if e['name'] == 'Bake all'][0]
+    assert ['ANIM', 'Bake all'] in bake[ALIASES_KEY]
+    raw = bl.load_library_raw(studio)
+    for entry in raw:
+        if entry.get('name') == 'Bake all':
+            entry['options']['action.left.command'] = 'tat.bake.all()'
+    bl.save_library(studio, raw)
+    index = LibraryIndex([bl.load_library(studio)])
+    assert sync_options(linked, index)
+    assert linked['action.left.command'] == 'tat.bake.all()'
+    assert linked[LINK_KEY]['name'] == 'Bake'      # retrouvé par l'alias
+    print('reconnaissance : image / texte / script / ancien / ressemblant OK')
+
+
 def test_atomic_write_retries():
     """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
     réseau, os.replace échoue par intermittence (fichier ouvert
@@ -3879,6 +3978,7 @@ if __name__ == '__main__':
     test_import_robust()
     test_lazy_hotbox_loading()
     test_library_link_sync()
+    test_library_link_matching()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

@@ -219,12 +219,21 @@ image et texte, exactement comme il apparaîtra dans la hotbox.
 - **Bouton « Update from library »** (barre d'outils de l'éditeur, à
   côté des boutons de librairie) : **un clic** met à jour toute la
   hotbox. Les boutons déjà liés prennent tout de suite les commandes
-  actuelles de la librairie ; les boutons posés avant cette version,
-  qui n'ont pas encore de lien, sont reconnus quand ils ont le même
-  texte et la même image qu'**une seule** entrée. Ceux dont la commande
-  changerait sont listés et confirmés avant. Ensuite ils suivent la
-  librairie tout seuls. Le même geste existe au clic droit (« Link
-  buttons to library… »), limité à la sélection s'il y en a une.
+  actuelles de la librairie. Les boutons posés avant cette version,
+  qui n'ont pas encore de lien, sont reconnus dès qu'**un** de ces
+  indices désigne **une seule** entrée : la même image, le même texte,
+  le même script, ou l'**ancien** script du bouton (la librairie garde
+  les anciennes versions quand le lead fait Update). Un animateur qui a
+  changé l'icône est donc retrouvé par son texte ou son script. À
+  défaut, un script **très ressemblant** (un chemin, un argument qui a
+  changé) est proposé. Si deux indices désignent des entrées
+  différentes, le bouton n'est pas rattaché. Ceux dont la commande
+  changerait sont listés **avec la raison** et confirmés avant. Ensuite
+  ils suivent la librairie tout seuls. Le même geste existe au clic
+  droit (« Link buttons to library… »), limité à la sélection.
+- **Renommer ou déplacer un bouton de la librairie** ne casse pas le
+  lien : l'entrée garde ses anciens noms, et les boutons liés la
+  retrouvent.
 - **Renommer un bouton** : clic droit sur un bouton de la shelf →
   **Rename…** (perso toujours ; studio en mode admin). Le bouton garde
   son apparence et sa commande, seul son nom change.

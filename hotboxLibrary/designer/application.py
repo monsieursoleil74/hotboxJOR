@@ -1,5 +1,6 @@
 
 import json
+import os
 from functools import partial
 from hotboxLibrary.vendor.Qt import QtWidgets, QtCore
 from hotboxLibrary.commands import OPEN_COMMAND
@@ -269,14 +270,16 @@ class HotboxEditor(QtWidgets.QWidget):
             apply_link(*candidate)
         updated = 0
         if changes:
-            lines = ['- %s  →  %s / %s' % (
-                options.get('text.content') or '(image button)',
-                link.get('category'), link.get('name'))
-                for options, link, _ in changes]
+            lines = ['- %s  →  %s / %s   [%s]' % (
+                options.get('text.content') or os.path.basename(
+                    options.get('image.path') or '') or '(button)',
+                link.get('category'), link.get('name'), reason)
+                for options, link, _, reason in changes]
             answer = QtWidgets.QMessageBox.question(
                 self, title,
                 '%d button(s) will take the CURRENT commands of their '
-                'library button (look, position and size are kept):\n\n'
+                'library button (look, position and size are kept).\n'
+                'Check the matches, especially « similar script »:\n\n'
                 '%s\n\nUpdate them?' % (len(changes), '\n'.join(lines)),
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                 QtWidgets.QMessageBox.Yes)

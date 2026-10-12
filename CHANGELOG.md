@@ -6,6 +6,22 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-10 — Boutons liés à la librairie
 
+- **Reconnaissance des anciens boutons élargie** (question studio :
+  « ceux qui ont modifié l'icône, tu les retrouves par le nom ou le
+  script ? »). Avant : texte ET image identiques exigés. Maintenant un
+  bouton est rattaché dès qu'UN indice désigne UNE seule entrée : même
+  image, même texte, même script, ou ANCIEN script de l'entrée ; à
+  défaut, un script très ressemblant (difflib ≥ 75 %, avec 10 points
+  d'avance sur le 2e). Indices contradictoires : rien. Un même bouton
+  présent en studio ET en perso compte une fois (studio d'abord). La
+  fenêtre de confirmation affiche la raison de chaque rapprochement.
+- **La librairie garde son historique** : Update conserve les anciens
+  scripts d'une entrée (`history`, 20 max) ; Rename, Move et le
+  renommage de catégorie conservent les anciens (catégorie, nom)
+  (`aliases`) — les boutons liés suivent une entrée renommée ou
+  déplacée, et les anciens boutons sont reconnus par leur ancien
+  script. Test : `test_library_link_matching`.
+
 - **Bouton « Update from library » dans la barre d'outils de
   l'éditeur** (retour studio : le rattachement des anciens boutons, au
   clic droit, était trop caché pour les animateurs). Bouton à texte,
