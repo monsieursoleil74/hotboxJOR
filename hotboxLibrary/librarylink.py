@@ -21,10 +21,12 @@ Seules les COMMANDES (clic gauche / droit, langage, fermeture) suivent la
 librairie : la place, la taille et le look choisis dans la hotbox
 restent ceux de l'animateur.
 
-Les boutons posés AVANT cette étiquette n'ont pas de lien : la commande
-« Link buttons to library… » de l'éditeur les reconnaît par leur
-apparence (même texte et même image qu'une entrée, et une seule) et
-les rattache, après confirmation.
+Les boutons posés AVANT cette étiquette n'ont pas de lien : le bouton
+« Update from library » de l'éditeur les reconnaît à leur IMAGE (la
+même qu'une entrée, et une seule) et les rattache, après confirmation.
+La librairie garde aussi l'historique de ses entrées (anciens scripts,
+anciens noms) : les noms servent déjà aux boutons liés quand une entrée
+est renommée ou déplacée ; les scripts sont conservés pour plus tard.
 """
 from copy import deepcopy
 
@@ -36,11 +38,6 @@ HISTORY_KEY = 'history'
 ALIASES_KEY = 'aliases'
 HISTORY_LIMIT = 20
 COMMAND_KEYS = ('action.left.command', 'action.right.command')
-# ressemblance minimale d'un script pour le proposer, et avance exigée
-# sur le 2e meilleur (sinon : ambigu, on ne propose rien)
-SIMILARITY_MIN = 0.75
-SIMILARITY_MARGIN = 0.1
-SIMILARITY_MIN_LENGTH = 12
 ACTION_KEYS = (
     'action.left', 'action.left.close', 'action.left.language',
     'action.left.command',
@@ -193,82 +190,31 @@ def _members(entry):
     return list(enumerate(entry.get('set') or []))
 
 
-def _commands(options):
-    """Scripts non vides d'un bouton (clic gauche, clic droit)."""
-    commands = []
-    for key in COMMAND_KEYS:
-        command = (options.get(key) or '').strip()
-        if command:
-            commands.append(command)
-    return commands
-
-
 def _clean(value):
     return (value or '').strip()
 
 
+def image_key(path):
+    """Chemin d'image comparable : barres et casse unifiées
+    (« R:\\Icons\\snap.svg » == « r:/icons/snap.svg »)."""
+    return _clean(path).replace('\\', '/').lower()
+
+
 def _match_entry(options, members):
-    """L'entrée d'un bouton NON rattaché, ou None. Indices, chacun
-    devant désigner UNE SEULE entrée : même image, même texte, même
-    script (actuel ou ANCIEN, gardé dans l'historique). S'ils désignent
-    des entrées différentes : ambigu, rien. Aucun indice sûr : le script
-    le plus RESSEMBLANT, s'il se détache nettement. Retourne
-    (entry, place, source, raison)."""
-    text = _clean(options.get('text.content'))
-    image = _clean(options.get('image.path'))
-    commands = _commands(options)
-    clues = []
-    if image:
-        clues.append(('same image', [
-            m for m in members if _clean(m[2].get('image.path')) == image]))
-    if text:
-        clues.append(('same text', [
-            m for m in members if _clean(m[2].get('text.content')) == text]))
-    if text and image:
-        clues.append(('same text and image', [
-            m for m in members
-            if _clean(m[2].get('image.path')) == image
-            and _clean(m[2].get('text.content')) == text]))
-    if commands:
-        clues.append(('same script', [
-            m for m in members
-            if set(commands) & set(_commands(m[2]))]))
-        clues.append(('old script of this button', [
-            m for m in members
-            if m[1] is None and set(commands) & set(m[3])]))
-    found = {}
-    for reason, matches in clues:
-        # identifié par MEMBRE (un set a plusieurs boutons)
-        keyed = {(id(m[0]), m[1]): m for m in matches}
-        if len(keyed) == 1:
-            key, member = list(keyed.items())[0]
-            found.setdefault(key, (member, []))[1].append(reason)
-    if len(found) == 1:
-        (entry, position, source, _), reasons = list(found.values())[0]
-        return entry, position, source, ', '.join(reasons)
-    if found:
-        return None  # indices contradictoires : on ne devine pas
-    # dernier recours : script ressemblant (un chemin, un argument qui a
-    # changé…) — proposé seulement s'il se détache nettement
-    from difflib import SequenceMatcher
-    if not commands or len(commands[0]) < SIMILARITY_MIN_LENGTH:
+    """L'entrée d'un bouton NON rattaché, ou None. Règle unique (choix
+    du studio, pour l'instant) : la MÊME IMAGE qu'UNE seule entrée. Un
+    bouton sans image, ou dont l'image est partagée par plusieurs
+    entrées, n'est pas rattaché. Retourne (entry, place, source,
+    raison)."""
+    image = image_key(options.get('image.path'))
+    if not image:
         return None
-    scored = []
-    for member in members:
-        candidates = _commands(member[2]) + list(member[3])
-        best = 0.0
-        for command in candidates:
-            for mine in commands:
-                best = max(best, SequenceMatcher(None, mine, command).ratio())
-        scored.append((best, member))
-    scored.sort(key=lambda item: item[0], reverse=True)
-    if not scored or scored[0][0] < SIMILARITY_MIN:
+    matches = {(id(m[0]), m[1]): m for m in members
+               if image_key(m[2].get('image.path')) == image}
+    if len(matches) != 1:
         return None
-    if len(scored) > 1 and scored[0][0] - scored[1][0] < SIMILARITY_MARGIN:
-        return None
-    entry, position, source, _ = scored[0][1]
-    return entry, position, source, 'similar script (%d%%)' % round(
-        scored[0][0] * 100)
+    entry, position, source, _ = list(matches.values())[0]
+    return entry, position, source, 'same image'
 
 
 def find_link_candidates(shapes_options, index):
@@ -285,12 +231,8 @@ def find_link_candidates(shapes_options, index):
         if key in seen:
             continue
         seen.add(key)
-        history = [
-            _clean(old.get(key)) for old in entry.get(HISTORY_KEY) or []
-            if isinstance(old, dict) for key in COMMAND_KEYS
-            if _clean(old.get(key))]
         for position, source in _members(entry):
-            members.append((entry, position, source, history))
+            members.append((entry, position, source, None))
     candidates = []
     for options in shapes_options:
         link = options.get(LINK_KEY)

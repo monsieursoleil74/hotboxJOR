@@ -278,8 +278,7 @@ class HotboxEditor(QtWidgets.QWidget):
             answer = QtWidgets.QMessageBox.question(
                 self, title,
                 '%d button(s) will take the CURRENT commands of their '
-                'library button (look, position and size are kept).\n'
-                'Check the matches, especially « similar script »:\n\n'
+                'library button (look, position and size are kept):\n\n'
                 '%s\n\nUpdate them?' % (len(changes), '\n'.join(lines)),
                 QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                 QtWidgets.QMessageBox.Yes)

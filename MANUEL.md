@@ -220,16 +220,13 @@ image et texte, exactement comme il apparaîtra dans la hotbox.
   côté des boutons de librairie) : **un clic** met à jour toute la
   hotbox. Les boutons déjà liés prennent tout de suite les commandes
   actuelles de la librairie. Les boutons posés avant cette version,
-  qui n'ont pas encore de lien, sont reconnus dès qu'**un** de ces
-  indices désigne **une seule** entrée : la même image, le même texte,
-  le même script, ou l'**ancien** script du bouton (la librairie garde
-  les anciennes versions quand le lead fait Update). Un animateur qui a
-  changé l'icône est donc retrouvé par son texte ou son script. À
-  défaut, un script **très ressemblant** (un chemin, un argument qui a
-  changé) est proposé. Si deux indices désignent des entrées
-  différentes, le bouton n'est pas rattaché. Ceux dont la commande
-  changerait sont listés **avec la raison** et confirmés avant. Ensuite
-  ils suivent la librairie tout seuls. Le même geste existe au clic
+  qui n'ont pas encore de lien, sont reconnus à leur **image** : la
+  même image qu'**une seule** entrée de la librairie (peu importe
+  l'écriture du chemin, `R:\Icons\snap.svg` ou `r:/icons/snap.svg`).
+  Un bouton sans image, dont l'icône a été changée, ou dont l'image sert
+  à plusieurs entrées n'est pas rattaché : il faut le re-glisser une
+  fois. Ceux dont la commande changerait sont listés et confirmés
+  avant. Ensuite ils suivent la librairie tout seuls. Le même geste existe au clic
   droit (« Link buttons to library… »), limité à la sélection.
 - **Renommer ou déplacer un bouton de la librairie** ne casse pas le
   lien : l'entrée garde ses anciens noms, et les boutons liés la

@@ -3437,7 +3437,8 @@ def test_library_link_sync():
     studio = os.path.join(tmp, 'TAT.json')
     bl.save_library(studio, [
         {'name': 'Key', 'category': 'ANIM',
-         'options': lib_button('Key', 'print("key v1")')},
+         'options': lib_button('Key', 'print("key v1")',
+                               image='R:/icons/key.svg')},
         {'name': 'Duo', 'category': 'ANIM', 'set': [
             lib_button('A', 'print("a v1")'),
             lib_button('B', 'print("b v1")')]},
@@ -3473,7 +3474,10 @@ def test_library_link_sync():
         duplicate = dict(linked)            # même dict d'étiquette
         custom = linked_options(key)
         custom['action.left.command'] = 'print("my own")'
-        legacy = lib_button('Key', 'print("key v0")')   # posé avant
+        # posé avant le lien, même IMAGE que l'entrée Key (chemin écrit
+        # autrement : barres et casse ne comptent pas)
+        legacy = lib_button('Key', 'print("key v0")',
+                            image='r:\\ICONS\\key.svg')
         ambiguous = lib_button('Twin', 'print("old twin")')
         member = linked_options(duo, 1)
         hotbox = {'general': dict(HOTBOX, name='anim_box'),
@@ -3557,8 +3561,8 @@ def test_library_link_sync():
         QtWidgets.QMessageBox.question = answer_yes
         editor.link_buttons_to_library()
         assert len(asked) == 1
-        # proposés : l'ancien « Key » (reconnu) et le bouton retouché
-        # (détaché) ; PAS « Twin » (deux entrées ont ce look)
+        # proposés : l'ancien « Key » (même image) et le bouton retouché
+        # (détaché) ; PAS « Twin » (pas d'image : règle « même image »)
         assert '2 button(s)' in asked[0] and 'Twin' not in asked[0], asked
         options = [s.options for s in area.shapes]
         assert options[3]['action.left.command'] == 'print("key v2")'
@@ -3617,12 +3621,11 @@ def test_library_link_sync():
 
 
 def test_library_link_matching():
-    """Question studio : « pour ceux qui ont modifié l'icône du bouton,
-    tu le retrouves par le nom ou le script ? ». Un ancien bouton est
-    reconnu dès qu'UN indice désigne UNE seule entrée : même image, même
-    texte, même script, ou ANCIEN script (gardé par Update) ; sinon un
-    script très ressemblant. Indices contradictoires : rien. Un bouton
-    renommé / déplacé reste trouvable par ses boutons liés."""
+    """Choix du studio : un ancien bouton n'est rattaché que par la MÊME
+    IMAGE qu'UNE seule entrée (barres et casse du chemin ignorées). Ni
+    le texte ni le script ne suffisent ; une image partagée par deux
+    entrées : rien. La librairie garde son historique (anciens scripts,
+    anciens noms) ; un bouton lié suit son entrée renommée / déplacée."""
     import tempfile
     from hotboxLibrary import buttonlibrary as bl
     from hotboxLibrary.librarylink import (
@@ -3648,7 +3651,11 @@ def test_library_link_matching():
             command='import tat.mirror\ntat.mirror.do()')},
         {'name': 'Euler', 'category': 'ANIM', 'options': button(
             text='Euler', image='R:/icons/euler.svg',
-            command='import maya.mel\nmaya.mel.eval("filterCurve")')}])
+            command='import maya.mel\nmaya.mel.eval("filterCurve")')},
+        {'name': 'Dup1', 'category': 'ANIM', 'options': button(
+            image='R:/icons/dup.svg', command='print(1)')},
+        {'name': 'Dup2', 'category': 'ANIM', 'options': button(
+            image='R:/icons/dup.svg', command='print(2)')}])
 
     # le lead met à jour Snap (Update in library) : l'ANCIEN script est
     # gardé dans l'historique de l'entrée
@@ -3680,18 +3687,22 @@ def test_library_link_matching():
         # 5 icône changée, pas de texte, script réécrit : introuvable
         button(image='C:/me/zzz.png',
                command='from somewhere import thing\nthing.go(42)'),
+        # 6 même image que Mirror, chemin écrit autrement
+        button(image='r:\\ICONS\\Mirror.svg', command='old mirror'),
+        # 7 image partagée par deux entrées : ambigu
+        button(image='R:/icons/dup.svg', command='print(0)'),
     ]
     found = {id(c[0]): c for c in find_link_candidates(shapes, index)}
     reasons = {i: found[id(o)][3] for i, o in enumerate(shapes)
                if id(o) in found}
     names = {i: found[id(o)][1]['name'] for i, o in enumerate(shapes)
              if id(o) in found}
-    assert names == {0: 'Snap', 1: 'Bake', 2: 'Mirror', 3: 'Euler'}, names
-    assert reasons[0] == 'old script of this button', reasons
-    assert reasons[1] == 'same text', reasons
-    assert reasons[2] == 'same script', reasons
-    assert reasons[3].startswith('similar script ('), reasons
-    assert 4 not in names and 5 not in names
+    # seule l'IMAGE compte : 4 (image de Bake, texte de Euler) → Bake,
+    # unique malgré la copie perso ; 6 → Mirror (barres / casse) ; le
+    # texte, le script, l'ancien script ou un script ressemblant ne
+    # rattachent rien ; une image partagée (7) non plus
+    assert names == {4: 'Bake', 6: 'Mirror'}, names
+    assert set(reasons.values()) == {'same image'}, reasons
 
     # --- un bouton lié suit son entrée RENOMMÉE puis DÉPLACÉE ---
     linked = linked_options(entries[1])          # Bake
@@ -3712,7 +3723,7 @@ def test_library_link_matching():
     assert sync_options(linked, index)
     assert linked['action.left.command'] == 'tat.bake.all()'
     assert linked[LINK_KEY]['name'] == 'Bake'      # retrouvé par l'alias
-    print('reconnaissance : image / texte / script / ancien / ressemblant OK')
+    print('reconnaissance : même image seulement (casse, barres), historique OK')
 
 
 def test_atomic_write_retries():

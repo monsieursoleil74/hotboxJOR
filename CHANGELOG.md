@@ -6,6 +6,16 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-10 — Boutons liés à la librairie
 
+- **Reconnaissance des anciens boutons : la même image, et rien
+  d'autre** (choix du studio, « pour l'instant restons là-dessus »).
+  Retirés : texte, script, ancien script, script ressemblant. Un ancien
+  bouton est rattaché seulement si son image est celle d'UNE seule
+  entrée ; les chemins sont comparés sans tenir compte des barres ni de
+  la casse (`image_key`). La librairie continue d'enregistrer son
+  historique (anciens scripts, anciens noms) : les anciens noms servent
+  aux boutons liés quand une entrée est renommée ou déplacée ; les
+  anciens scripts sont gardés pour plus tard. Tests adaptés.
+
 - **Reconnaissance des anciens boutons élargie** (question studio :
   « ceux qui ont modifié l'icône, tu les retrouves par le nom ou le
   script ? »). Avant : texte ET image identiques exigés. Maintenant un
