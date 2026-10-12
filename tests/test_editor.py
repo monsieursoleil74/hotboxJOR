@@ -3405,6 +3405,198 @@ def test_lazy_hotbox_loading():
     print('hotboxes construites à la demande + préchauffage des icônes OK')
 
 
+def test_library_link_sync():
+    """Retours studio : (1) un animateur ne doit pas voir « Update … in
+    library » pour la librairie studio ; (2) quand la commande d'un
+    bouton de la librairie change, les hotboxes des animateurs doivent
+    suivre sans supprimer / re-glisser le bouton. Un bouton glissé est
+    étiqueté avec son entrée ; au chargement, ses commandes suivent la
+    librairie — sauf s'il a été retouché à la main. Les anciens boutons
+    (sans étiquette) se rattachent par « Link buttons to library… »."""
+    import tempfile
+    from hotboxLibrary import buttonlibrary as bl
+    from hotboxLibrary import manager as mgr
+    from hotboxLibrary.librarylink import (
+        LINK_KEY, linked_options, load_library_index, sync_hotbox,
+        action_snapshot)
+    from hotboxLibrary.designer.editarea import shapes_from_drop
+
+    tmp = tempfile.mkdtemp()
+    application = Standalone()
+    application.get_data_folder = lambda: tmp
+    application.local_file = os.path.join(tmp, 'hotboxes.json')
+    application.shared_file = os.path.join(tmp, 'shared.json')
+    saved_env = os.environ.pop(bl.STUDIO_ENV_VARIABLE, None)
+
+    def lib_button(text, command, image=''):
+        return dict(SQUARE_BUTTON, **{
+            'text.content': text, 'image.path': image,
+            'action.left': True, 'action.left.command': command,
+            'shape.left': 0.0, 'shape.top': 0.0})
+
+    studio = os.path.join(tmp, 'TAT.json')
+    bl.save_library(studio, [
+        {'name': 'Key', 'category': 'ANIM',
+         'options': lib_button('Key', 'print("key v1")')},
+        {'name': 'Duo', 'category': 'ANIM', 'set': [
+            lib_button('A', 'print("a v1")'),
+            lib_button('B', 'print("b v1")')]},
+        {'name': 'Twin1', 'category': 'ANIM',
+         'options': lib_button('Twin', 'print("t1")')},
+        {'name': 'Twin2', 'category': 'ANIM',
+         'options': lib_button('Twin', 'print("t2")')}])
+    bl.set_studio_location(studio)
+    bl.set_studio_admin(False)
+    real_question = QtWidgets.QMessageBox.question
+    real_information = QtWidgets.QMessageBox.information
+    infos = []
+    QtWidgets.QMessageBox.information = (
+        lambda *a, **k: infos.append(a[2]))
+    saved_boxes = dict(mgr.hotboxes)
+    saved_app = mgr._application
+    try:
+        studio_entries = bl.load_library(studio)
+        key, duo = studio_entries[0], studio_entries[1]
+
+        # --- le drag étiquette chaque bouton (sets compris) ---
+        payload = bl.buttons_payload([key, duo])
+        assert payload[0][LINK_KEY]['name'] == 'Key'
+        assert payload[0][LINK_KEY]['index'] is None
+        assert [o[LINK_KEY]['index'] for o in payload[1]] == [0, 1]
+        dropped = shapes_from_drop(payload, QtCore.QPointF(100, 100))
+        assert len(dropped) == 3
+        assert all(LINK_KEY in s.options for s in dropped)
+
+        # --- hotbox d'animateur : bouton lié, copie (dupliqué), bouton
+        # retouché à la main, set, et un ANCIEN bouton sans étiquette
+        linked = linked_options(key)
+        duplicate = dict(linked)            # même dict d'étiquette
+        custom = linked_options(key)
+        custom['action.left.command'] = 'print("my own")'
+        legacy = lib_button('Key', 'print("key v0")')   # posé avant
+        ambiguous = lib_button('Twin', 'print("old twin")')
+        member = linked_options(duo, 1)
+        hotbox = {'general': dict(HOTBOX, name='anim_box'),
+                  'shapes': [linked, duplicate, custom, legacy, ambiguous,
+                             member]}
+        json.dump([hotbox], open(application.local_file, 'w'))
+        json.dump([], open(application.shared_file, 'w'))
+
+        # --- le lead change les commandes dans la librairie ---
+        raw = bl.load_library_raw(studio)
+        raw[0]['options']['action.left.command'] = 'print("key v2")'
+        raw[1]['set'][1]['action.left.command'] = 'print("b v2")'
+        bl.save_library(studio, raw)
+
+        # --- au chargement (raccourci) : les boutons liés suivent ---
+        mgr.clear_loaded_hotboxes()
+        mgr.initialize(application)
+        mgr.show('anim_box')
+        reader = mgr.hotboxes['anim_box']
+        commands = [s.options['action.left.command'] for s in reader.shapes]
+        assert commands == [
+            'print("key v2")', 'print("key v2")',   # lié + dupliqué
+            'print("my own")',                      # retouché : intact
+            'print("key v0")',                      # ancien : pas lié
+            'print("old twin")',
+            'print("b v2")'], commands              # membre de set
+        mgr.hide('anim_box')
+        # le fichier de l'animateur n'est PAS réécrit par un simple appel
+        on_disk = json.load(open(application.local_file))[0]['shapes']
+        assert on_disk[0]['action.left.command'] == 'print("key v1")'
+        # rien n'est retouché quand la librairie ne bouge plus
+        index = load_library_index(application)
+        assert sync_hotbox({'shapes': [dict(s.options)
+                                       for s in reader.shapes]}, index) == 0
+
+        # --- l'éditeur, ouvert depuis le manager, enregistre la mise à
+        # jour dans le fichier ---
+        manager = mgr.HotboxManager(application)
+        manager.personnal_view.selectRow(0)
+        manager._call_edit()
+        editor = manager.editors[-1].editor
+        on_disk = json.load(open(application.local_file))[0]['shapes']
+        assert on_disk[0]['action.left.command'] == 'print("key v2")'
+        assert on_disk[0][LINK_KEY]['action'] == action_snapshot(on_disk[0])
+
+        # --- (1) menu clic droit : pas d'« Update » pour un animateur
+        # sur la librairie studio ---
+        shelf = editor.library_shelf
+        shelf.tabs.setCurrentIndex(0)
+        assert shelf.tabs.currentWidget().readonly
+        shelf.tabs.currentWidget().item(0).setSelected(True)
+        area = editor.shape_editor
+        area.selection.set([area.shapes[0]])
+        area.update_selection()
+        real_exec = QtWidgets.QMenu.exec_
+        menus = []
+        QtWidgets.QMenu.exec_ = lambda menu, *a, **k: menus.append(menu)
+        try:
+            editor.show_context_menu(QtCore.QPoint(0, 0))
+            labels = [a.text() for a in menus[-1].actions()]
+            assert not any(l.startswith('Update') for l in labels), labels
+            assert any(l.startswith('Replace') for l in labels)
+            assert 'Link selected buttons to library...' in labels
+            # en admin, l'action revient
+            bl.set_studio_admin(True)
+            editor.show_context_menu(QtCore.QPoint(0, 0))
+            labels = [a.text() for a in menus[-1].actions()]
+            assert 'Update "Key" in library with this button' in labels
+            bl.set_studio_admin(False)
+        finally:
+            QtWidgets.QMenu.exec_ = real_exec
+
+        # --- (2) ancien bouton : « Link buttons to library… » ---
+        area.selection.clear()
+        area.update_selection()
+        asked = []
+
+        def answer_yes(*args, **kwargs):
+            asked.append(args[2])
+            return QtWidgets.QMessageBox.Yes
+        QtWidgets.QMessageBox.question = answer_yes
+        editor.link_buttons_to_library()
+        assert len(asked) == 1
+        # proposés : l'ancien « Key » (reconnu) et le bouton retouché
+        # (détaché) ; PAS « Twin » (deux entrées ont ce look)
+        assert '2 button(s)' in asked[0] and 'Twin' not in asked[0], asked
+        options = [s.options for s in area.shapes]
+        assert options[3]['action.left.command'] == 'print("key v2")'
+        assert options[3][LINK_KEY]['name'] == 'Key'
+        assert options[2]['action.left.command'] == 'print("key v2")'
+        assert options[4]['action.left.command'] == 'print("old twin")'
+        assert LINK_KEY not in options[4]
+        assert infos and 'linked' in infos[-1]
+        # relancé : plus rien à faire
+        asked[:] = []
+        editor.link_buttons_to_library()
+        assert not asked and 'No button to link' in infos[-1]
+
+        # --- ce qui repart vers la librairie n'emporte pas l'étiquette
+        bl.set_studio_admin(True)
+        shelf.tabs.setCurrentIndex(0)
+        shelf.tabs.currentWidget().clearSelection()
+        shelf.tabs.currentWidget().item(0).setSelected(True)
+        area.selection.set([area.shapes[0]])
+        area.update_selection()
+        editor.update_library_entry()
+        assert LINK_KEY not in bl.load_library(studio)[0]['options']
+        bl.set_studio_admin(False)
+        editor.close()
+        manager.close()
+    finally:
+        QtWidgets.QMessageBox.question = real_question
+        QtWidgets.QMessageBox.information = real_information
+        bl.set_studio_admin(False)
+        bl.set_studio_location(None)
+        mgr.clear_loaded_hotboxes()
+        mgr.hotboxes.update(saved_boxes)
+        mgr._application = saved_app
+        if saved_env is not None:
+            os.environ[bl.STUDIO_ENV_VARIABLE] = saved_env
+    print('boutons liés à la librairie : synchro, détachés, anciens OK')
+
+
 def test_atomic_write_retries():
     """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
     réseau, os.replace échoue par intermittence (fichier ouvert
@@ -3667,6 +3859,7 @@ if __name__ == '__main__':
     test_import_follows_tab()
     test_import_robust()
     test_lazy_hotbox_loading()
+    test_library_link_sync()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

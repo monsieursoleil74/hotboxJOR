@@ -204,7 +204,24 @@ image et texte, exactement comme il apparaîtra dans la hotbox.
   simple (pas un set). Perso toujours ; studio en mode admin. Le
   chemin inverse existe aussi : clic droit sur le canvas → « Update
   “nom” in library with this button » (entrée sélectionnée dans la
-  shelf). Plus besoin de supprimer puis re-sauver.
+  shelf). Plus besoin de supprimer puis re-sauver. Ce chemin n'apparaît
+  que si l'onglet courant est modifiable : un animateur ne le voit pas
+  sur la librairie studio.
+- **Les boutons suivent la librairie** : un bouton glissé (ou posé par
+  Replace) depuis la shelf garde le lien avec son entrée. Quand le lead
+  change la commande de ce bouton dans la librairie, les hotboxes des
+  animateurs la reprennent toutes seules au prochain appel — plus besoin
+  de supprimer puis re-glisser. Seules les **commandes** suivent : la
+  place, la taille et le look restent ceux de la hotbox. Un animateur
+  qui a **modifié la commande** de son bouton garde la sienne. Si
+  l'entrée est renommée ou supprimée, le bouton garde sa dernière
+  commande.
+- **Rattacher les anciens boutons** : les boutons posés avant cette
+  version n'ont pas ce lien. Clic droit dans l'éditeur → **« Link
+  buttons to library… »** (sélection, sinon toute la hotbox) : chaque
+  bouton qui a le même texte et la même image qu'**une seule** entrée
+  est rattaché. Ceux dont la commande changerait sont listés et
+  confirmés avant. Ensuite ils suivent la librairie comme les autres.
 - **Renommer un bouton** : clic droit sur un bouton de la shelf →
   **Rename…** (perso toujours ; studio en mode admin). Le bouton garde
   son apparence et sa commande, seul son nom change.

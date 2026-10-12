@@ -4,6 +4,32 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-10 — Boutons liés à la librairie
+
+- **Les boutons d'une hotbox suivent la librairie** (retour studio :
+  quand la commande d'un bouton de la librairie changeait, chaque
+  animateur devait supprimer son bouton et le re-glisser). Un bouton
+  glissé ou posé par Replace depuis la shelf porte maintenant une
+  étiquette `library.link` : catégorie + nom de l'entrée (+ place dans
+  un set) et une copie de ses commandes au moment du dépôt. Au
+  chargement des hotboxes (en mémoire, le fichier de l'animateur n'est
+  pas réécrit) et à l'ouverture de l'éditeur (là, enregistré), chaque
+  bouton lié reprend les commandes actuelles de son entrée — SAUF s'il
+  a été retouché à la main (ses commandes ne sont plus celles de la
+  copie). Seules les commandes suivent ; place, taille et look restent
+  ceux de la hotbox. La librairie studio est consultée avant la perso.
+  Ce qui repart vers la librairie (Save, Update) n'emporte pas
+  l'étiquette. Module `librarylink.py`.
+- **« Link buttons to library… »** (clic droit de l'éditeur) : rattache
+  les boutons posés avant cette version, reconnus par leur texte + image
+  quand une SEULE entrée correspond ; ceux dont la commande changerait
+  sont listés et confirmés. Permet aussi de recoller un bouton détaché.
+- **« Update … in library » retiré du clic droit pour un animateur sur
+  la librairie studio** (retour studio : il le voyait, et ne recevait
+  « read-only » qu'après coup). Il reste sur la librairie perso et en
+  mode admin ; absent sur les résultats de recherche (sources
+  mélangées). Test : `test_library_link_sync`.
+
 ## 2026-10 — Import fiabilisé, 1er appel sans freeze
 
 - **Plus de freeze au premier appel de la session** (bug remonté :

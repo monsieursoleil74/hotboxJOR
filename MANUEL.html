@@ -1023,7 +1023,24 @@ hotboxLibrary.launch_manager('maya', studio_admin=True)</code></pre>
       bouton simple (pas un set). Perso toujours&nbsp;; studio en mode admin.
       Le chemin inverse existe aussi&nbsp;: clic droit sur le canvas →
       «&nbsp;Update “nom” in library with this button&nbsp;» (entrée
-      sélectionnée dans la shelf). Plus besoin de supprimer puis re-sauver.</li>
+      sélectionnée dans la shelf). Plus besoin de supprimer puis re-sauver.
+      Ce chemin n’apparaît que si l’onglet courant est modifiable&nbsp;: un
+      animateur ne le voit pas sur la librairie studio.</li>
+    <li><strong>Les boutons suivent la librairie</strong>&nbsp;: un bouton glissé
+      (ou posé par Replace) depuis la shelf garde le lien avec son entrée.
+      Quand le lead change la commande de ce bouton dans la librairie, les
+      hotboxes des animateurs la reprennent toutes seules au prochain
+      appel — plus besoin de supprimer puis re-glisser. Seules les
+      <strong>commandes</strong> suivent&nbsp;: la place, la taille et le look
+      restent ceux de la hotbox. Un animateur qui a <strong>modifié la
+      commande</strong> de son bouton garde la sienne. Si l’entrée est renommée
+      ou supprimée, le bouton garde sa dernière commande.</li>
+    <li><strong>Rattacher les anciens boutons</strong>&nbsp;: les boutons posés
+      avant cette version n’ont pas ce lien. Clic droit dans l’éditeur →
+      <strong>«&nbsp;Link buttons to library…&nbsp;»</strong> (sélection, sinon toute
+      la hotbox)&nbsp;: chaque bouton qui a le même texte et la même image
+      qu’<strong>une seule</strong> entrée est rattaché. Ceux dont la commande
+      changerait sont listés et confirmés avant.</li>
     <li><strong>Renommer un bouton</strong>&nbsp;: clic droit → <strong>Rename…</strong>
       (perso toujours&nbsp;; studio en mode admin). Le bouton garde son apparence
       et sa commande, seul son nom change.</li>

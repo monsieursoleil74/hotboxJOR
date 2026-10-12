@@ -93,9 +93,28 @@ def load_hotboxes(application):
             continue
         hotboxes_datas.append(shared)
 
+    # les boutons venus de la librairie reprennent ses commandes
+    # actuelles (en mémoire : le fichier de l'animateur n'est pas
+    # réécrit au simple appel d'une hotbox)
+    _sync_with_library(hotboxes_datas, application)
+
     for hotboxes_data in hotboxes_datas:
         name = hotboxes_data['general']['name']
         _pending[name] = hotboxes_data
+
+
+def _sync_with_library(hotboxes_datas, application):
+    """Met à jour les commandes des boutons liés à la librairie. Ne
+    lève jamais : au pire, les boutons gardent leurs commandes."""
+    from hotboxLibrary.librarylink import load_library_index, sync_hotbox
+    try:
+        index = load_library_index(application)
+    except Exception:
+        return 0
+    changed = 0
+    for data in hotboxes_datas:
+        changed += sync_hotbox(data, index)
+    return changed
 
 
 def _build(name):
@@ -384,6 +403,11 @@ class HotboxManager(QtWidgets.QWidget):
                 link.editor.raise_()
                 link.editor.activateWindow()
                 return
+
+        # boutons de la librairie : l'éditeur montre les commandes à
+        # jour, et c'est ici qu'on les enregistre dans le fichier
+        if _sync_with_library([hotbox_data], self.application):
+            self.save_hotboxes()
 
         editor = HotboxEditor(
             hotbox_data,

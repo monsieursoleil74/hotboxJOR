@@ -196,21 +196,99 @@ class HotboxEditor(QtWidgets.QWidget):
 
         # le chemin inverse : renvoyer le bouton édité SUR son entrée de
         # librairie (même nom, même catégorie) — avant il fallait
-        # supprimer puis re-sauver
-        if single:
-            update_label = 'Update "%s" in library with this button' % (
-                entries[0].get('name') or 'button')
-        else:
-            update_label = 'Update library button with this button'
-        update = menu.addAction(
-            icon('save.png'), update_label, self.update_library_entry)
-        one_shape = len(self.shape_editor.selection.shapes) == 1
-        update.setEnabled(one_shape and single)
-        if not one_shape:
-            update.setToolTip('Select exactly one button in the hotbox')
-        elif not single:
-            update.setToolTip('Select the library button to update below')
+        # supprimer puis re-sauver. ABSENT quand l'onglet courant n'est
+        # pas modifiable : un animateur ne réécrit pas la librairie
+        # studio, même pour se voir répondre « read-only »
+        if self.library_shelf.can_update_current():
+            if single:
+                update_label = 'Update "%s" in library with this button' % (
+                    entries[0].get('name') or 'button')
+            else:
+                update_label = 'Update library button with this button'
+            update = menu.addAction(
+                icon('save.png'), update_label, self.update_library_entry)
+            one_shape = len(self.shape_editor.selection.shapes) == 1
+            update.setEnabled(one_shape and single)
+            if not one_shape:
+                update.setToolTip('Select exactly one button in the hotbox')
+            elif not single:
+                update.setToolTip(
+                    'Select the library button to update below')
+
+        # boutons posés AVANT le lien automatique : on les rattache à la
+        # librairie (reconnus par leur texte + image) pour qu'ils
+        # suivent ses mises à jour
+        menu.addSeparator()
+        scope = 'selected' if has_selection else 'all'
+        menu.addAction(
+            'Link %s buttons to library...' % scope,
+            self.link_buttons_to_library)
         menu.exec_(global_pos)
+
+    def link_buttons_to_library(self):
+        """Rattache à la librairie les boutons qui en viennent mais ne le
+        savent pas (posés avant le lien automatique), et ceux dont la
+        commande a été retouchée : ils reprennent les commandes de leur
+        entrée et suivront ses mises à jour. Les boutons reconnus dont
+        les commandes CHANGERAIENT sont listés et confirmés d'abord.
+        Porte sur la sélection, sinon sur toute la hotbox."""
+        import json
+        from hotboxLibrary.librarylink import (
+            load_library_index, find_link_candidates, apply_link,
+            action_snapshot)
+        title = 'Link buttons to library'
+        index = load_library_index(self.application)
+        if not index:
+            return QtWidgets.QMessageBox.information(
+                self, title, 'No library button found.')
+        shapes = (list(self.shape_editor.selection)
+                  or list(self.shape_editor.shapes))
+        before = json.dumps([s.options for s in shapes], sort_keys=True,
+                            default=str)
+        candidates = find_link_candidates(
+            [shape.options for shape in shapes], index)
+        same = [c for c in candidates
+                if action_snapshot(c[0]) == action_snapshot(c[2])]
+        changes = [c for c in candidates
+                   if action_snapshot(c[0]) != action_snapshot(c[2])]
+        for candidate in same:
+            apply_link(*candidate)
+        updated = 0
+        if changes:
+            lines = ['- %s  →  %s / %s' % (
+                options.get('text.content') or '(image button)',
+                link.get('category'), link.get('name'))
+                for options, link, _ in changes]
+            answer = QtWidgets.QMessageBox.question(
+                self, title,
+                '%d button(s) will take the CURRENT commands of their '
+                'library button (look, position and size are kept):\n\n'
+                '%s\n\nUpdate them?' % (len(changes), '\n'.join(lines)),
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.Yes)
+            if answer == QtWidgets.QMessageBox.Yes:
+                for candidate in changes:
+                    apply_link(*candidate)
+                updated = len(changes)
+        after = json.dumps([s.options for s in shapes], sort_keys=True,
+                           default=str)
+        if after != before:
+            self.selection_changed()
+            self.shape_editor.repaint()
+            self.set_data_modified()
+        if same or updated:
+            message = '%d button(s) linked to the library' % (
+                len(same) + updated)
+            if updated:
+                message += ', %d updated with its current commands' % updated
+            message += '.\nFrom now on they follow its updates.'
+        elif not changes:
+            message = ('No button to link: none matches a library button '
+                       '(same text and same image), or they are already '
+                       'linked.')
+        else:
+            message = 'Nothing changed.'
+        QtWidgets.QMessageBox.information(self, title, message)
 
     def update_library_entry(self):
         """Ré-enregistre le bouton de la shelf sélectionné avec le look
@@ -251,13 +329,14 @@ class HotboxEditor(QtWidgets.QWidget):
             return
         name = dialog.name.text() or 'button'
         category = dialog.category.currentText() or 'General'
+        from hotboxLibrary.librarylink import unlinked
         if dialog.save_as_set():
             # UN SET : un seul élément de librairie qui garde la
             # disposition relative des boutons et se dépose d'un coup
             entries = [{
                 'name': name,
                 'category': category,
-                'set': [dict(shape.options) for shape in shapes]}]
+                'set': [unlinked(shape.options) for shape in shapes]}]
         else:
             entries = []
             for index, shape in enumerate(shapes):
@@ -266,7 +345,7 @@ class HotboxEditor(QtWidgets.QWidget):
                 entries.append({
                     'name': entry_name,
                     'category': category,
-                    'options': dict(shape.options)})
+                    'options': unlinked(shape.options)})
         self.library_shelf.save_entries(entries, studio=dialog.is_studio())
         self.library_shelf.show()
 
@@ -288,7 +367,9 @@ class HotboxEditor(QtWidgets.QWidget):
                 'Select exactly one button (not a set) in the shelf below')
         if not shapes:
             return warning('Replace button', 'No shape selected')
-        source = entries[0]['options']
+        from hotboxLibrary.librarylink import linked_options
+        # étiqueté : le bouton suivra les mises à jour de son entrée
+        source = linked_options(entries[0])
         for shape in shapes:
             replace_shape_content(shape, source)
         self.selection_changed()

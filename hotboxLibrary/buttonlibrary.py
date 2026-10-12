@@ -271,10 +271,11 @@ def entry_shapes(entry):
 def buttons_payload(entries):
     """Payload BUTTONS_MIME d'un drag : un dict d'options par bouton
     simple, une LISTE d'options pour un set (le drop la reconnaît et
-    préserve la disposition relative du groupe)."""
-    return [
-        entry['options'] if 'options' in entry else list(entry['set'])
-        for entry in entries]
+    préserve la disposition relative du groupe). Chaque bouton est
+    ÉTIQUETÉ avec son entrée (voir librarylink) : ses commandes suivront
+    les mises à jour de la librairie."""
+    from hotboxLibrary.librarylink import entry_payload
+    return [entry_payload(entry) for entry in entries]
 
 
 def load_library_raw(path):
@@ -453,7 +454,10 @@ def set_entries_category_in(path, entries, category):
 # géométrie (position/taille dans la hotbox de travail n'ont rien à
 # faire dans la librairie), ni son nom ni sa catégorie
 UPDATE_SKIP_KEYS = (
-    'shape.left', 'shape.top', 'shape.width', 'shape.height')
+    'shape.left', 'shape.top', 'shape.width', 'shape.height',
+    # l'étiquette « vient de la librairie » d'un bouton de hotbox ne
+    # doit pas entrer dans la librairie elle-même
+    'library.link')
 
 
 def update_entry_in(path, entry, options):
@@ -1725,6 +1729,16 @@ class LibraryShelf(QtWidgets.QWidget):
         if done:
             refresh_shelves()
         return done
+
+    def can_update_current(self):
+        """Peut-on réécrire une entrée de l'onglet courant ? Perso :
+        oui ; studio : en mode admin seulement ; résultats de recherche
+        (sources mélangées) : non. C'est ce qui retire « Update … in
+        library » du clic droit de l'éditeur pour un animateur."""
+        widget = self.tabs.currentWidget()
+        if widget is None or not getattr(widget, 'reorderable', True):
+            return False
+        return self._can_edit(getattr(widget, 'readonly', False))
 
     def current_selected_entries(self):
         """Boutons sélectionnés dans l'onglet courant de la shelf (pour
