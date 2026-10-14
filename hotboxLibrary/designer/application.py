@@ -220,17 +220,17 @@ class HotboxEditor(QtWidgets.QWidget):
 
         # mise à jour depuis la librairie, au plus près du geste de
         # l'animateur : clic droit sur SON bouton → « Update selected
-        # from library » (demande studio : mettre à jour UN bouton) ;
-        # sans sélection, toute la hotbox
+        # from library » (demande studio : mettre à jour UN bouton).
+        # Toute la hotbox : bouton « Update from library » de la barre
+        # d'outils, PAS ici (choix studio). Grisé sans sélection, comme
+        # « Save selection to library… »
         menu.addSeparator()
-        if has_selection:
-            menu.addAction(
-                icon('sync_library.png'), 'Update selected from library',
-                lambda: self.link_buttons_to_library(selected_only=True))
-        else:
-            menu.addAction(
-                icon('sync_library.png'), 'Update all from library',
-                lambda: self.link_buttons_to_library(whole_hotbox=True))
+        update_selected = menu.addAction(
+            icon('sync_library.png'), 'Update selected from library',
+            lambda: self.link_buttons_to_library(selected_only=True))
+        update_selected.setEnabled(has_selection)
+        if not has_selection:
+            update_selected.setToolTip('Select the buttons to update first')
         menu.exec_(global_pos)
 
     def link_buttons_to_library(self, whole_hotbox=False,

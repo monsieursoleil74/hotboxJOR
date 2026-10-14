@@ -8,11 +8,12 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 - **« Update selected » passe au clic droit** (retour studio : plus
   naturel pour l'animateur, qui fait déjà clic droit sur son bouton).
-  Clic droit avec une sélection → « Update selected from library » ;
-  sans sélection → « Update all from library ». Le bouton de la barre
-  d'outils est retiré et l'autre retrouve son nom « Update from
-  library » (il n'avait été raccourci que pour faire de la place). Le
-  libellé « Link … buttons to library… » disparaît (même geste).
+  Clic droit → « Update selected from library » (grisé sans
+  sélection). La mise à jour de TOUTE la hotbox reste HORS du clic
+  droit (choix studio) : bouton « Update from library » de la barre
+  d'outils, qui retrouve ce nom (il n'avait été raccourci en « Update
+  all » que pour faire de la place). Le bouton « Update selected » de
+  la barre et l'entrée « Link … buttons to library… » disparaissent.
 
 - **Bouton « Update selected »** dans la barre d'outils de l'éditeur
   (demande studio : des animateurs veulent mettre à jour UN bouton, pas

@@ -218,8 +218,7 @@ image et texte, exactement comme il apparaîtra dans la hotbox.
   commande.
 - **Mettre à jour depuis la librairie** : deux gestes.
   - **Un seul bouton (ou quelques-uns)** : sélectionne-le, puis **clic
-    droit → « Update selected from library »**. Sans sélection, le clic
-    droit propose « Update all from library ».
+    droit → « Update selected from library »** (grisé sans sélection).
   - **Toute la hotbox** : bouton **« Update from library »** de la barre
     d'outils, à côté des boutons de librairie.
 
@@ -539,7 +538,8 @@ Refondu façon Photoshop :
 Réduit à l'essentiel — la librairie : **Save selection to library…**,
 **Replace with library button**, **Update … in library with this
 button** (perso, ou studio en mode admin) et **Update selected from
-library** (ou **Update all from library** sans sélection). (La
+library** (grisé sans sélection ; toute la hotbox se met à jour par le
+bouton « Update from library » de la barre d'outils). (La
 recherche reste sur Ctrl+H, le recadrage sur F ; lock et magnet ont été
 retirés.)
 

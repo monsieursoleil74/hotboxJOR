@@ -3599,8 +3599,9 @@ def test_library_link_sync():
         assert not asked
 
         # --- clic droit « Update selected from library » : SEULEMENT
-        # les boutons sélectionnés ; sans sélection, le clic droit
-        # propose toute la hotbox. Plus de bouton dans la barre ---
+        # les boutons sélectionnés, grisé sans sélection ; la mise à
+        # jour de TOUTE la hotbox n'est PAS au clic droit (bouton de la
+        # barre d'outils seulement) ---
         assert not hasattr(editor.menu, 'updateselected_button')
         real_exec = QtWidgets.QMenu.exec_
         menus = []
@@ -3609,9 +3610,10 @@ def test_library_link_sync():
             area.selection.clear()
             area.update_selection()
             editor.show_context_menu(QtCore.QPoint(0, 0))
-            labels = [a.text() for a in menus[-1].actions()]
-            assert 'Update all from library' in labels, labels
-            assert 'Update selected from library' not in labels
+            actions = {a.text(): a for a in menus[-1].actions()}
+            assert not any('all' in l.lower() and 'library' in l.lower()
+                           for l in actions), list(actions)
+            assert not actions['Update selected from library'].isEnabled()
             editor.link_buttons_to_library(selected_only=True)  # garde-fou
             assert 'Select the buttons to update first' in infos[-1]
             raw = bl.load_library_raw(studio)
@@ -3621,6 +3623,7 @@ def test_library_link_sync():
             area.update_selection()
             editor.show_context_menu(QtCore.QPoint(0, 0))
             actions = {a.text(): a for a in menus[-1].actions()}
+            assert actions['Update selected from library'].isEnabled()
             actions['Update selected from library'].trigger()
         finally:
             QtWidgets.QMenu.exec_ = real_exec
