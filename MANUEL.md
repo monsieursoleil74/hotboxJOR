@@ -216,9 +216,12 @@ image et texte, exactement comme il apparaîtra dans la hotbox.
   qui a **modifié la commande** de son bouton garde la sienne. Si
   l'entrée est renommée ou supprimée, le bouton garde sa dernière
   commande.
-- **Bouton « Update from library »** (barre d'outils de l'éditeur, à
-  côté des boutons de librairie) : **un clic** met à jour toute la
-  hotbox. Les boutons déjà liés prennent tout de suite les commandes
+- **Boutons « Update all » et « Update selected »** (barre d'outils de
+  l'éditeur, à côté des boutons de librairie) : **un clic** met à jour
+  depuis la librairie toute la hotbox (« Update all ») ou **seulement
+  les boutons sélectionnés** (« Update selected », grisé tant que rien
+  n'est sélectionné — pour l'animateur qui ne veut mettre à jour qu'un
+  bouton). Les boutons déjà liés prennent tout de suite les commandes
   actuelles de la librairie. Les boutons posés avant cette version,
   qui n'ont pas encore de lien, sont reconnus à leur **image** : la
   même image qu'**une seule** entrée de la librairie (peu importe
@@ -571,7 +574,7 @@ hotbox d'origine ne le change pas.
 Supprimer • copier • coller • copier style • coller style — undo /
 redo — grille (aimant rouge) + pas x/y — champs **size** + **fit
 zone** — édition du **centre** + coordonnées — ajout : bouton / texte /
-background — **cadenas** lock background — **librairie** / **enregistrer dans la librairie** / **Update from library** — ordre :
+background — **cadenas** lock background — **librairie** / **enregistrer dans la librairie** / **Update all** / **Update selected** — ordre :
 tout au fond / tout devant — alignements (6) — distributions
 (2).
 

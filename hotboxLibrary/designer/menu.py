@@ -13,6 +13,7 @@ class MenuWidget(QtWidgets.QWidget):
     libraryRequested = QtCore.Signal()
     saveToLibraryRequested = QtCore.Signal()
     updateFromLibraryRequested = QtCore.Signal()
+    updateSelectedRequested = QtCore.Signal()
     undoRequested = QtCore.Signal()
     redoRequested = QtCore.Signal()
     sizeChanged = QtCore.Signal()
@@ -115,17 +116,34 @@ class MenuWidget(QtWidgets.QWidget):
         self.savetolibrary.triggered.connect(self.saveToLibraryRequested.emit)
         # bouton À TEXTE (pas une icône seule) : c'est LE geste demandé
         # aux animateurs quand la librairie a changé — il doit se voir
+        # « Update all » / « Update selected » : libellés courts, la
+        # barre d'outils est déjà longue ; l'infobulle dit « library »
         self.updatefromlibrary = QtWidgets.QAction(
-            icon('sync_library.png'), 'Update from library', self)
+            icon('sync_library.png'), 'Update all', self)
         self.updatefromlibrary.setToolTip(
-            'Update this hotbox\'s buttons with the current commands of '
-            'the library\n(look, position and size are kept)')
+            'Update ALL buttons of this hotbox from the library\n'
+            '(current commands; look, position and size are kept)')
         self.updatefromlibrary.triggered.connect(
             self.updateFromLibraryRequested.emit)
         self.updatefromlibrary_button = QtWidgets.QToolButton()
         self.updatefromlibrary_button.setDefaultAction(
             self.updatefromlibrary)
         self.updatefromlibrary_button.setToolButtonStyle(
+            QtCore.Qt.ToolButtonTextBesideIcon)
+        # même geste, limité aux boutons SÉLECTIONNÉS (demande studio :
+        # certains animateurs veulent mettre à jour UN bouton, pas tous)
+        # — grisé tant que rien n'est sélectionné
+        self.updateselected = QtWidgets.QAction(
+            icon('sync_library.png'), 'Update selected', self)
+        self.updateselected.setToolTip(
+            'Update only the SELECTED buttons from the library\n'
+            '(current commands; look, position and size are kept)')
+        self.updateselected.triggered.connect(
+            self.updateSelectedRequested.emit)
+        self.updateselected.setEnabled(False)
+        self.updateselected_button = QtWidgets.QToolButton()
+        self.updateselected_button.setDefaultAction(self.updateselected)
+        self.updateselected_button.setToolButtonStyle(
             QtCore.Qt.ToolButtonTextBesideIcon)
 
         icon_ = icon('addbutton.png')
@@ -215,6 +233,7 @@ class MenuWidget(QtWidgets.QWidget):
         self.toolbar.addAction(self.library)
         self.toolbar.addAction(self.savetolibrary)
         self.toolbar.addWidget(self.updatefromlibrary_button)
+        self.toolbar.addWidget(self.updateselected_button)
         self.toolbar.addSeparator()
         self.toolbar.addAction(self.onbottom)
         self.toolbar.addAction(self.ontop)

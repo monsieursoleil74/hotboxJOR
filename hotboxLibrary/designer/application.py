@@ -82,6 +82,8 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.libraryRequested.connect(self.open_button_library)
         self.menu.updateFromLibraryRequested.connect(
             lambda: self.link_buttons_to_library(whole_hotbox=True))
+        self.menu.updateSelectedRequested.connect(
+            lambda: self.link_buttons_to_library(selected_only=True))
         self.menu.saveToLibraryRequested.connect(
             self.save_selection_to_library)
         self.menu.deleteRequested.connect(self.delete_selection)
@@ -228,26 +230,32 @@ class HotboxEditor(QtWidgets.QWidget):
             self.link_buttons_to_library)
         menu.exec_(global_pos)
 
-    def link_buttons_to_library(self, whole_hotbox=False):
+    def link_buttons_to_library(self, whole_hotbox=False,
+                                selected_only=False):
         """Rattache à la librairie les boutons qui en viennent mais ne le
         savent pas (posés avant le lien automatique), et ceux dont la
         commande a été retouchée : ils reprennent les commandes de leur
         entrée et suivront ses mises à jour. Les boutons reconnus dont
         les commandes CHANGERAIENT sont listés et confirmés d'abord.
-        Porte sur la sélection, sinon sur toute la hotbox ; le bouton
-        « Update from library » de la barre d'outils porte TOUJOURS sur
-        toute la hotbox (un clic, sans rien sélectionner)."""
+        Porte sur la sélection, sinon sur toute la hotbox. Barre
+        d'outils : « Update all » porte TOUJOURS sur toute la
+        hotbox, « Update selected » UNIQUEMENT sur la sélection."""
         import json
         from hotboxLibrary.librarylink import (
             load_library_index, find_link_candidates, apply_link,
             action_snapshot)
         title = 'Link buttons to library'
+        if selected_only and not self.shape_editor.selection.shapes:
+            return QtWidgets.QMessageBox.information(
+                self, title, 'Select the buttons to update first.')
         index = load_library_index(self.application)
         if not index:
             return QtWidgets.QMessageBox.information(
                 self, title, 'No library button found.')
         if whole_hotbox:
             shapes = list(self.shape_editor.shapes)
+        elif selected_only:
+            shapes = list(self.shape_editor.selection)
         else:
             shapes = (list(self.shape_editor.selection)
                       or list(self.shape_editor.shapes))
@@ -638,6 +646,7 @@ class HotboxEditor(QtWidgets.QWidget):
         shapes = self.shape_editor.selection
         options = [shape.options for shape in shapes]
         self.attribute_editor.set_options(options)
+        self.menu.updateselected.setEnabled(bool(options))
 
     def create_shape(self, template, before=False):
         options = template.copy()

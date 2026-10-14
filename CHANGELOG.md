@@ -4,6 +4,17 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-10 — « Update selected »
+
+- **Bouton « Update selected »** dans la barre d'outils de l'éditeur
+  (demande studio : des animateurs veulent mettre à jour UN bouton, pas
+  toute la hotbox). Même logique que la mise à jour depuis la
+  librairie, limitée aux boutons sélectionnés ; grisé tant que rien
+  n'est sélectionné. Le bouton « Update from library » devient
+  « Update all » (libellés courts : la barre d'outils déborde sinon sur
+  un écran de 1500 px ; la flèche » de Qt donne accès aux outils qui
+  dépassent). Test : `test_library_link_sync` étendu.
+
 ## 2026-10 — Version de Qt alignée sur Maya
 
 - **« applications.py line 226: You need a shiboken-based type »**
