@@ -3538,9 +3538,12 @@ def test_library_link_sync():
         try:
             editor.show_context_menu(QtCore.QPoint(0, 0))
             labels = [a.text() for a in menus[-1].actions()]
-            assert not any(l.startswith('Update') for l in labels), labels
+            # pas de « Update … in library with this button » (réécrire
+            # la librairie studio) ; « Update selected from library »
+            # (mettre à jour SA hotbox) est bien là
+            assert not any('in library' in l for l in labels), labels
             assert any(l.startswith('Replace') for l in labels)
-            assert 'Link selected buttons to library...' in labels
+            assert 'Update selected from library' in labels
             # en admin, l'action revient
             bl.set_studio_admin(True)
             editor.show_context_menu(QtCore.QPoint(0, 0))
@@ -3581,7 +3584,7 @@ def test_library_link_sync():
         # sélection ; met à jour les boutons liés si la librairie change
         # pendant que l'éditeur est ouvert ---
         button = editor.menu.updatefromlibrary_button
-        assert button.text() == 'Update all'
+        assert button.text() == 'Update from library'
         assert (button.toolButtonStyle()
                 == QtCore.Qt.ToolButtonTextBesideIcon)
         raw = bl.load_library_raw(studio)
@@ -3595,24 +3598,32 @@ def test_library_link_sync():
         assert '4 button(s) updated from the library' in infos[-1], infos
         assert not asked
 
-        # --- « Update selected » : SEULEMENT les boutons sélectionnés ;
-        # grisé sans sélection ---
-        selected_button = editor.menu.updateselected_button
-        assert selected_button.text() == 'Update selected'
-        assert (selected_button.toolButtonStyle()
-                == QtCore.Qt.ToolButtonTextBesideIcon)
-        area.selection.clear()
-        area.update_selection()
-        assert not editor.menu.updateselected.isEnabled()
-        editor.link_buttons_to_library(selected_only=True)  # garde-fou
-        assert 'Select the buttons to update first' in infos[-1]
-        raw = bl.load_library_raw(studio)
-        raw[0]['options']['action.left.command'] = 'print("key v4")'
-        bl.save_library(studio, raw)
-        area.selection.set([area.shapes[1]])
-        area.update_selection()
-        assert editor.menu.updateselected.isEnabled()
-        editor.menu.updateselected.trigger()
+        # --- clic droit « Update selected from library » : SEULEMENT
+        # les boutons sélectionnés ; sans sélection, le clic droit
+        # propose toute la hotbox. Plus de bouton dans la barre ---
+        assert not hasattr(editor.menu, 'updateselected_button')
+        real_exec = QtWidgets.QMenu.exec_
+        menus = []
+        QtWidgets.QMenu.exec_ = lambda menu, *a, **k: menus.append(menu)
+        try:
+            area.selection.clear()
+            area.update_selection()
+            editor.show_context_menu(QtCore.QPoint(0, 0))
+            labels = [a.text() for a in menus[-1].actions()]
+            assert 'Update all from library' in labels, labels
+            assert 'Update selected from library' not in labels
+            editor.link_buttons_to_library(selected_only=True)  # garde-fou
+            assert 'Select the buttons to update first' in infos[-1]
+            raw = bl.load_library_raw(studio)
+            raw[0]['options']['action.left.command'] = 'print("key v4")'
+            bl.save_library(studio, raw)
+            area.selection.set([area.shapes[1]])
+            area.update_selection()
+            editor.show_context_menu(QtCore.QPoint(0, 0))
+            actions = {a.text(): a for a in menus[-1].actions()}
+            actions['Update selected from library'].trigger()
+        finally:
+            QtWidgets.QMenu.exec_ = real_exec
         commands = [s.options['action.left.command'] for s in area.shapes]
         assert commands[:4] == [
             'print("key v3")', 'print("key v4")',

@@ -22,7 +22,8 @@ librairie : la place, la taille et le look choisis dans la hotbox
 restent ceux de l'animateur.
 
 Les boutons posés AVANT cette étiquette n'ont pas de lien : le bouton
-« Update all » / « Update selected » de l'éditeur les reconnaît à leur IMAGE (la
+« Update from library » (barre d'outils de l'éditeur, ou clic droit
+« Update selected from library ») les reconnaît à leur IMAGE (la
 même qu'une entrée, et une seule) et les rattache, après confirmation.
 La librairie garde aussi l'historique de ses entrées (anciens scripts,
 anciens noms) : les noms servent déjà aux boutons liés quand une entrée

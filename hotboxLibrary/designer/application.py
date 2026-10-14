@@ -82,8 +82,6 @@ class HotboxEditor(QtWidgets.QWidget):
         self.menu.libraryRequested.connect(self.open_button_library)
         self.menu.updateFromLibraryRequested.connect(
             lambda: self.link_buttons_to_library(whole_hotbox=True))
-        self.menu.updateSelectedRequested.connect(
-            lambda: self.link_buttons_to_library(selected_only=True))
         self.menu.saveToLibraryRequested.connect(
             self.save_selection_to_library)
         self.menu.deleteRequested.connect(self.delete_selection)
@@ -220,14 +218,19 @@ class HotboxEditor(QtWidgets.QWidget):
                 update.setToolTip(
                     'Select the library button to update below')
 
-        # boutons posés AVANT le lien automatique : on les rattache à la
-        # librairie (reconnus par leur texte + image) pour qu'ils
-        # suivent ses mises à jour
+        # mise à jour depuis la librairie, au plus près du geste de
+        # l'animateur : clic droit sur SON bouton → « Update selected
+        # from library » (demande studio : mettre à jour UN bouton) ;
+        # sans sélection, toute la hotbox
         menu.addSeparator()
-        scope = 'selected' if has_selection else 'all'
-        menu.addAction(
-            'Link %s buttons to library...' % scope,
-            self.link_buttons_to_library)
+        if has_selection:
+            menu.addAction(
+                icon('sync_library.png'), 'Update selected from library',
+                lambda: self.link_buttons_to_library(selected_only=True))
+        else:
+            menu.addAction(
+                icon('sync_library.png'), 'Update all from library',
+                lambda: self.link_buttons_to_library(whole_hotbox=True))
         menu.exec_(global_pos)
 
     def link_buttons_to_library(self, whole_hotbox=False,
@@ -237,9 +240,10 @@ class HotboxEditor(QtWidgets.QWidget):
         commande a été retouchée : ils reprennent les commandes de leur
         entrée et suivront ses mises à jour. Les boutons reconnus dont
         les commandes CHANGERAIENT sont listés et confirmés d'abord.
-        Porte sur la sélection, sinon sur toute la hotbox. Barre
-        d'outils : « Update all » porte TOUJOURS sur toute la
-        hotbox, « Update selected » UNIQUEMENT sur la sélection."""
+        Porte sur la sélection, sinon sur toute la hotbox. Le bouton
+        « Update from library » de la barre d'outils porte TOUJOURS sur
+        toute la hotbox ; le clic droit « Update selected from library »
+        UNIQUEMENT sur la sélection."""
         import json
         from hotboxLibrary.librarylink import (
             load_library_index, find_link_candidates, apply_link,
@@ -646,7 +650,6 @@ class HotboxEditor(QtWidgets.QWidget):
         shapes = self.shape_editor.selection
         options = [shape.options for shape in shapes]
         self.attribute_editor.set_options(options)
-        self.menu.updateselected.setEnabled(bool(options))
 
     def create_shape(self, template, before=False):
         options = template.copy()
