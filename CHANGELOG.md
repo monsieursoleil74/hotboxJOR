@@ -6,6 +6,19 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-11 — Hotbox nette et vivante
 
+- **Images « dans » le bouton** (retour studio : une image importée
+  prenait toute la place, n'était pas centrée et mangeait le contour).
+  « Fit to shape » (True/False) devient **Placement** à trois modes :
+  *Inside* (nouveau : centrée, proportions gardées, à l'intérieur du
+  contour, marge réglable en % du petit côté, carré inscrit sur un
+  bouton rond), *Fill* (l'ancien fit, image étirée) et *Free*
+  (placement libre). Clés `image.contain` / `image.margin` ; absentes
+  des anciens fichiers → Fill, rendu inchangé. Inside est choisi tout
+  seul quand on pose une image sur un bouton qui n'en avait pas ; une
+  image remplacée garde le placement de son bouton. Les nouvelles clés
+  suivent le copier-coller de style et les vignettes de la shelf.
+  Test : `test_image_inside_button`.
+
 - **Hotbox floue ou crénelée dans le viewport** (retour studio). Trois
   causes dans le dessin des boutons (`painting.draw_shape`) :
   - pas de lissage des images (`SmoothPixmapTransform`) : une icône

@@ -296,15 +296,37 @@ class ImageSettings(QtWidgets.QWidget):
     placeImageToggled = QtCore.Signal(bool)
     centerImageRequested = QtCore.Signal()
 
+    INSIDE, FILL, FREE = 'inside', 'fill', 'free'
+    MODES = (('Inside (margin)', 'inside'), ('Fill (stretch)', 'fill'),
+             ('Free (place by hand)', 'free'))
+
     def __init__(self, parent=None):
         super(ImageSettings, self).__init__(parent)
         self._single = False
         self.path = BrowseEdit()
         self.path.valueSet.connect(partial(self.optionSet.emit, 'image.path'))
 
-        self.fit = BoolCombo(True)
-        self.fit.valueSet.connect(partial(self.optionSet.emit, 'image.fit'))
-        self.fit.valueSet.connect(self._update_placement_enabled)
+        # trois façons de placer l'image (avant : « Fit to shape »
+        # True/False, et True ÉTIRAIT l'image sur tout le bouton) :
+        # Inside = dans le bouton, centrée, proportions gardées, sans
+        # toucher le contour ; Fill = l'ancien étirement ; Free =
+        # placement libre (Place Image / Center)
+        self.mode = QtWidgets.QComboBox()
+        for label, mode in self.MODES:
+            self.mode.addItem(label, mode)
+        self.mode.setToolTip(
+            'Inside: centered in the button, proportions kept, inside the '
+            'border\nFill: stretched over the whole button (old "fit")\n'
+            'Free: placed and sized by hand (Place Image)')
+        self.mode.currentIndexChanged.connect(self._mode_changed)
+        # marge autour de l'image en mode Inside, % du petit côté
+        self.margin = ValueSlider(minimum=0.0, maximum=40.0, suffix=' %')
+        self.margin.setToolTip(
+            'Space between the image and the button border '
+            '(% of the button\'s smaller side)')
+        self.margin.valueSet.connect(
+            lambda value: self.optionSet.emit(
+                'image.margin', int(round(value))))
 
         # placement libre de l'image dans le bouton — c'est LÀ que la
         # taille se règle (molette) : pas de champs Width/Height
@@ -338,20 +360,39 @@ class ImageSettings(QtWidgets.QWidget):
         self.layout.setContentsMargins(8, 6, 8, 10)
         self.layout.setHorizontalSpacing(5)
         self.layout.addRow('Path', self.path)
-        self.layout.addRow('Fit to shape', self.fit)
+        self.layout.addRow('Placement', self.mode)
+        self.layout.addRow('Margin', self.margin)
         self.layout.addRow(self.placement_row)
         for label in self.findChildren(QtWidgets.QLabel):
             if not isinstance(label, Title):
                 label.setFixedWidth(LEFT_CELL_WIDTH)
 
+    @classmethod
+    def mode_of(cls, option):
+        if not option.get('image.fit'):
+            return cls.FREE
+        return cls.INSIDE if option.get('image.contain') else cls.FILL
+
+    def current_mode(self):
+        return self.mode.currentData()
+
+    def _mode_changed(self, *_):
+        mode = self.current_mode()
+        if mode is None:
+            return
+        self.optionSet.emit('image.fit', mode != self.FREE)
+        self.optionSet.emit('image.contain', mode == self.INSIDE)
+        self._update_placement_enabled()
+
     def _update_placement_enabled(self, *_):
-        # le placement libre n'a de sens qu'avec « fit to shape » = False
-        # et une seule shape sélectionnée
-        fit = self.fit.currentText() == 'True'
-        enabled = self._single and not fit
+        # placement libre : mode Free et une seule shape sélectionnée ;
+        # la marge ne sert qu'en mode Inside
+        mode = self.current_mode()
+        enabled = self._single and mode == self.FREE
         self.placement_row.setEnabled(enabled)
         if not enabled and self.place.isChecked():
             self.place.setChecked(False)
+        self.margin.setEnabled(mode == self.INSIDE)
 
     def set_options(self, options):
         self._single = len(options) == 1
@@ -359,9 +400,16 @@ class ImageSettings(QtWidgets.QWidget):
         value = str(values[0]) if len(values) == 1 else None
         self.path.set_value(value)
 
-        values = list({option['image.fit'] for option in options})
-        value = str(values[0]) if len(values) == 1 else None
-        self.fit.setCurrentText(value)
+        modes = list({self.mode_of(option) for option in options})
+        self.mode.blockSignals(True)
+        if len(modes) == 1:
+            self.mode.setCurrentIndex(self.mode.findData(modes[0]))
+        else:
+            self.mode.setCurrentIndex(-1)   # sélection mixte : vide
+        self.mode.blockSignals(False)
+
+        margins = list({option.get('image.margin', 12) for option in options})
+        self.margin.set_value(margins[0] if len(margins) == 1 else None)
         self._update_placement_enabled()
 
 

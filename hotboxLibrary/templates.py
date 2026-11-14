@@ -36,6 +36,10 @@ SQUARE_BUTTON = {
     'action.right.command': '',
     'image.path': '',
     'image.fit': True,
+    # image DANS le bouton : centrée, proportions gardées, à
+    # l'intérieur du contour avec une marge (% du petit côté)
+    'image.contain': True,
+    'image.margin': 12,
     'image.height': 32,
     'image.width': 32,
     'image.offsetx': 0,
@@ -80,6 +84,10 @@ TEXT = {
     'action.right.command': '',
     'image.path': '',
     'image.fit': False,
+    # image DANS le bouton : centrée, proportions gardées, à
+    # l'intérieur du contour avec une marge (% du petit côté)
+    'image.contain': False,
+    'image.margin': 12,
     'image.height': 32,
     'image.width': 32,
     'image.offsetx': 0,
@@ -124,6 +132,10 @@ BACKGROUND = {
     'action.right.command': '',
     'image.path': '',
     'image.fit': False,
+    # image DANS le bouton : centrée, proportions gardées, à
+    # l'intérieur du contour avec une marge (% du petit côté)
+    'image.contain': False,
+    'image.margin': 12,
     'image.height': 32,
     'image.width': 32,
     'image.offsetx': 0,

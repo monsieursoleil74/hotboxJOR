@@ -149,6 +149,43 @@ def draw_glow(painter, shape, rect):
     painter.restore()
 
 
+def contained_image_rect(options, rect, image_size):
+    """Zone de l'image en mode « Inside » : DANS le bouton, centrée,
+    proportions gardées, à l'intérieur du contour avec une marge de
+    `image.margin` % du petit côté. Avant, « fit » étirait l'image sur
+    tout le bouton : décentrée si elle n'était pas au format du bouton,
+    et le contour était mangé."""
+    rect = QtCore.QRectF(rect)
+    if options.get('shape') == 'round':
+        # disque : le carré inscrit (≈ 70 %), comme pour le texte
+        side = min(rect.width(), rect.height()) * 0.7071
+        base = QtCore.QRectF(0, 0, side, side)
+        base.moveCenter(rect.center())
+    else:
+        base = rect
+    border = 0.0
+    if options.get('border') and options.get(
+            'bordercolor.transparency', 0) < 255:
+        border = float(options.get('borderwidth.normal', 0) or 0)
+    margin = max(float(options.get('image.margin', 12) or 0), 0.0)
+    inset = border + min(base.width(), base.height()) * margin / 100.0
+    inner = base.adjusted(inset, inset, -inset, -inset)
+    if inner.width() <= 1 or inner.height() <= 1:
+        inner = base
+    width = float(image_size.width()) if image_size else 0.0
+    height = float(image_size.height()) if image_size else 0.0
+    if width <= 0 or height <= 0:
+        target = QtCore.QRectF(inner)
+    else:
+        scale = min(inner.width() / width, inner.height() / height)
+        target = QtCore.QRectF(0, 0, width * scale, height * scale)
+        target.moveCenter(inner.center())
+    target.translate(
+        float(options.get('image.offsetx', 0) or 0),
+        float(options.get('image.offsety', 0) or 0))
+    return target
+
+
 def draw_shape(painter, shape):
     options = shape.options
     content_rect = shape.content_rect()
@@ -199,7 +236,11 @@ def draw_shape(painter, shape):
         painter.drawRect(rect)
 
     if shape.pixmap is not None and not shape.pixmap.isNull():
-        image_rect = shape.image_rect or content_rect
+        if options.get('image.fit') and options.get('image.contain'):
+            image_rect = contained_image_rect(
+                options, rect, shape.pixmap.size())
+        else:
+            image_rect = shape.image_rect or content_rect
         drawn = False
         if pixel_exact:
             from hotboxLibrary.images import sharp_pixmap
@@ -213,7 +254,9 @@ def draw_shape(painter, shape):
                 painter.drawPixmap(target, sharp, QtCore.QRectF(sharp.rect()))
                 drawn = True
         if not drawn:
-            painter.drawPixmap(image_rect, shape.pixmap)
+            painter.drawPixmap(
+                QtCore.QRectF(image_rect), shape.pixmap,
+                QtCore.QRectF(shape.pixmap.rect()))
 
     painter.setPen(QtGui.QPen(textcolor))
     painter.setBrush(QtGui.QBrush(textcolor))

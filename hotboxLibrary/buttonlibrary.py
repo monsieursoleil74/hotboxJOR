@@ -544,7 +544,7 @@ _THUMB_KEYS = (
     'borderwidth.normal', 'bordercolor.normal', 'bordercolor.transparency',
     'bgcolor.normal', 'bgcolor.transparency', 'text.content', 'text.size',
     'text.bold', 'text.italic', 'text.color', 'text.valign', 'text.halign',
-    'image.path', 'image.fit')
+    'image.path', 'image.fit', 'image.contain', 'image.margin')
 
 
 def _thumb_cache_key(options, size):

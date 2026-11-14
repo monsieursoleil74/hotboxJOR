@@ -189,6 +189,10 @@ def ensure_old_data_compatible(data):
         shape.setdefault('image.offsety', 0)
         # fond verrouillable (« lock background », façon dwpicker)
         shape.setdefault('background', False)
+        # placement « dans le bouton » : absent des anciens fichiers →
+        # comportement d'avant (image étirée), rien ne bouge
+        shape.setdefault('image.contain', False)
+        shape.setdefault('image.margin', 12)
         # boutons de sous-menu écrits par l'ancien outil : ils
         # appellent `hotbox_designer.show(...)` — depuis le renommage,
         # ce module est l'outil du pipe (ou n'existe plus). On les

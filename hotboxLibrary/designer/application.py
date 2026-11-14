@@ -40,7 +40,8 @@ STYLE_GROUPS = [
         'text.size', 'text.bold', 'text.italic', 'text.color',
         'text.valign', 'text.halign'], True),
     ('Text content', ['text.content'], False),
-    ('Image', ['image.path', 'image.fit', 'image.width', 'image.height'],
+    ('Image', ['image.path', 'image.fit', 'image.contain', 'image.margin',
+               'image.width', 'image.height'],
      False),
     ('Commands (actions)', [
         'action.left', 'action.left.close', 'action.left.language',
@@ -572,8 +573,23 @@ class HotboxEditor(QtWidgets.QWidget):
         self.shape_editor.repaint()
 
     def option_set(self, option, value):
+        switched = False
         for shape in self.shape_editor.selection:
+            # une image posée sur un bouton qui n'en avait PAS se place
+            # « dans » le bouton (centrée, proportions gardées, contour
+            # visible) — sauf placement libre déjà choisi. Une image
+            # REMPLACÉE garde le placement de son bouton.
+            if (option == 'image.path' and value
+                    and not shape.options.get('image.path')
+                    and shape.options.get('image.fit', True)
+                    and not shape.options.get('image.contain')):
+                shape.options['image.fit'] = True
+                shape.options['image.contain'] = True
+                shape.options.setdefault('image.margin', 12)
+                switched = True
             shape.options[option] = value
+        if switched:
+            self.selection_changed()   # le panneau montre « Inside »
         self.shape_editor.repaint()
         self.set_data_modified()
 

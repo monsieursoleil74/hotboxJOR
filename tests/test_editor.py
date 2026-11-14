@@ -3937,6 +3937,120 @@ def test_reader_sharp_and_alive():
     print('hotbox nette (pixels, SVG, lissage) et vivante (fondu, halo) OK')
 
 
+def test_image_inside_button():
+    """Retour studio : une image importée prenait toute la place du
+    bouton, n'était pas centrée (étirée au format du bouton) et mangeait
+    le contour. Mode « Inside » : centrée, proportions gardées, à
+    l'intérieur du contour avec une marge réglable. Défaut pour une
+    image posée sur un bouton qui n'en avait pas ; les anciens boutons
+    gardent leur rendu tant qu'on ne change pas leur placement."""
+    import tempfile
+    from hotboxLibrary import images
+    from hotboxLibrary.painting import contained_image_rect, draw_shape
+    from hotboxLibrary.interactive import Shape
+    from hotboxLibrary.designer.attributes import ImageSettings
+
+    # --- calcul : bouton 60x40, contour 1, marge 10 %, image carrée ---
+    options = dict(SQUARE_BUTTON, **{
+        'border': True, 'borderwidth.normal': 1.0,
+        'bordercolor.transparency': 0, 'image.margin': 10})
+    target = contained_image_rect(
+        options, QtCore.QRectF(0, 0, 60, 40), QtCore.QSize(24, 24))
+    assert target == QtCore.QRectF(15, 5, 30, 30), target  # centrée, carrée
+    wide = contained_image_rect(
+        options, QtCore.QRectF(0, 0, 60, 40), QtCore.QSize(100, 20))
+    assert abs(wide.width() / wide.height() - 5.0) < 1e-6  # ratio gardé
+    assert wide.center() == QtCore.QPointF(30, 20)
+    # disque : dans le carré inscrit
+    disc = contained_image_rect(
+        dict(options, shape='round', **{'image.margin': 0}),
+        QtCore.QRectF(0, 0, 40, 40), QtCore.QSize(10, 10))
+    assert disc.width() < 40 * 0.72 and disc.center() == QtCore.QPointF(20, 20)
+
+    # --- rendu : l'image ne touche plus le contour ---
+    tmp = tempfile.mkdtemp()
+    svg = os.path.join(tmp, 'logo.svg')
+    with open(svg, 'w') as f:
+        f.write('<svg xmlns="http://www.w3.org/2000/svg" width="10" '
+                'height="10"><rect width="10" height="10" '
+                'fill="#ff0000"/></svg>')
+
+    def render(extra):
+        opts = dict(SQUARE_BUTTON, **{
+            'shape.left': 10.0, 'shape.top': 10.0, 'shape.width': 60.0,
+            'shape.height': 40.0, 'image.path': svg, 'text.content': '',
+            'bgcolor.normal': '#202020', 'bordercolor.normal': '#ffffff',
+            'border': True, 'borderwidth.normal': 1.0})
+        opts.update(extra)
+        img = QtGui.QImage(80, 60, QtGui.QImage.Format_ARGB32)
+        img.fill(QtCore.Qt.black)
+        painter = QtGui.QPainter(img)
+        draw_shape(painter, Shape(opts))
+        painter.end()
+        return lambda x, y: QtGui.QColor(img.pixel(x, y))
+
+    images.clear_image_cache()
+    inside = render({'image.fit': True, 'image.contain': True,
+                     'image.margin': 12})
+    fill = render({'image.fit': True, 'image.contain': False})
+    # centre : rouge dans les deux cas
+    assert inside(40, 30).red() > 200 and fill(40, 30).red() > 200
+    # au ras du contour gauche (x = 12) : Fill est rouge, Inside non
+    assert fill(12, 30).red() > 200
+    assert inside(12, 30).red() < 100
+    # le contour blanc reste entier en Inside
+    assert inside(10, 30).green() > 150
+
+    # --- panneau : trois modes, marge active seulement en Inside ---
+    panel = ImageSettings()
+    emitted = []
+    panel.optionSet.connect(lambda key, value: emitted.append((key, value)))
+    panel.set_options([dict(SQUARE_BUTTON, **{'image.contain': False})])
+    assert panel.current_mode() == 'fill'
+    assert not panel.margin.isEnabled()
+    panel.mode.setCurrentIndex(panel.mode.findData('inside'))
+    assert ('image.fit', True) in emitted
+    assert ('image.contain', True) in emitted
+    assert panel.margin.isEnabled() and not panel.placement_row.isEnabled()
+    panel.mode.setCurrentIndex(panel.mode.findData('free'))
+    assert ('image.fit', False) in emitted
+    assert panel.placement_row.isEnabled()      # 1 bouton sélectionné
+    # sélection mixte : mode vide, rien n'est émis
+    count = len(emitted)
+    panel.set_options([dict(SQUARE_BUTTON, **{'image.contain': True}),
+                       dict(SQUARE_BUTTON, **{'image.fit': False})])
+    assert panel.current_mode() is None and len(emitted) == count
+    panel.close()
+
+    # --- éditeur : importer une image sur un bouton vide → Inside ---
+    editor = make_editor([(100, 100, 'a'), (300, 100, 'b')])
+    area = editor.shape_editor
+    first, second = area.shapes
+    first.options.update({'image.contain': False, 'image.fit': True})
+    second.options.update({'image.path': svg, 'image.contain': False,
+                           'image.fit': True})
+    area.selection.set([first])
+    area.update_selection()
+    editor.option_set('image.path', svg)
+    assert first.options['image.contain'] is True
+    assert editor.attribute_editor.image.current_mode() == 'inside'
+    # une image REMPLACÉE garde le placement du bouton (Fill ici)
+    area.selection.set([second])
+    area.update_selection()
+    editor.option_set('image.path', svg + '?v2')
+    assert second.options['image.contain'] is False
+    editor.close()
+
+    # --- anciens fichiers : rendu inchangé (Fill) ---
+    legacy = ensure_old_data_compatible({
+        'general': dict(HOTBOX), 'shapes': [{
+            k: v for k, v in SQUARE_BUTTON.items()
+            if k not in ('image.contain', 'image.margin')}]})
+    assert legacy['shapes'][0]['image.contain'] is False
+    images.clear_image_cache()
+    print('image dans le bouton (centrée, ratio, marge, contour) OK')
+
+
 def test_atomic_write_retries():
     """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
     réseau, os.replace échoue par intermittence (fichier ouvert
@@ -4203,6 +4317,7 @@ if __name__ == '__main__':
     test_library_link_matching()
     test_qt_binding_follows_maya()
     test_reader_sharp_and_alive()
+    test_image_inside_button()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

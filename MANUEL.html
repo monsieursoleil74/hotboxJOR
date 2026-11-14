@@ -914,8 +914,22 @@ hotboxLibrary.launch_manager('maya', studio_admin=True)</code></pre>
   <h2>Images des boutons</h2>
 
   <h3>Placer une image dans un bouton</h3>
-  <p>Quand un bouton a une image et que «&nbsp;Fit to shape&nbsp;» est sur
-  <strong>False</strong>, la section Image affiche deux boutons&nbsp;:</p>
+  <p>Section <strong>Image</strong> du panneau, réglage <strong>Placement</strong>
+  — trois modes&nbsp;:</p>
+  <ul>
+    <li><strong>Inside (margin)</strong>&nbsp;: l’image est <strong>dans</strong> le
+      bouton, centrée, <strong>proportions gardées</strong>, à l’intérieur du
+      contour qui reste visible. Le curseur <strong>Margin</strong> règle
+      l’espace autour (% du petit côté, 12&nbsp;% par défaut). <strong>Mode choisi
+      automatiquement quand on pose une image sur un bouton qui n’en avait
+      pas.</strong></li>
+    <li><strong>Fill (stretch)</strong>&nbsp;: l’ancien «&nbsp;Fit to shape&nbsp;»,
+      image étirée sur tout le bouton. Les boutons existants gardent ce mode,
+      donc leur rendu&nbsp;; pour les passer en Inside, sélectionne-les et
+      choisis Inside.</li>
+    <li><strong>Free (place by hand)</strong>&nbsp;: placement libre, avec les
+      deux boutons ci-dessous.</li>
+  </ul>
   <ul>
     <li><strong>◈ Place Image</strong>&nbsp;: active le mode placement (le bouton
       passe en vert tant qu’il est actif). On <strong>glisse l’image</strong> dans le

@@ -454,15 +454,27 @@ Le JSON n'est jamais réécrit — seule la résolution d'affichage change.
 
 ## Placer une image dans un bouton
 
-Quand un bouton a une image et que **« Fit to shape » est sur False**,
-la section Image affiche deux boutons :
+Section **Image** du panneau, réglage **Placement** — trois modes :
 
-- **◈ Place in button** : active le mode placement. On **glisse
-  l'image** dans le bouton pour la positionner, la **molette** la
-  redimensionne, et les **flèches** la décalent d'1 unité (**Maj** = 10)
-  pour un réglage au pixel près. **Échap** (ou re-cliquer le bouton)
-  termine. Un contour vert en pointillés montre la position de l'image.
-- **Center** : recentre l'image dans le bouton.
+- **Inside (margin)** : l'image est **dans** le bouton, centrée, avec
+  ses **proportions gardées**, à l'intérieur du contour (qui reste
+  visible). Le curseur **Margin** règle l'espace autour (en % du petit
+  côté du bouton, 12 % par défaut). Sur un bouton rond, l'image tient
+  dans le carré inscrit. **C'est le mode choisi automatiquement quand on
+  pose une image sur un bouton qui n'en avait pas.**
+- **Fill (stretch)** : l'ancien « Fit to shape » : l'image est étirée
+  sur tout le bouton. C'est le mode des boutons existants, qui gardent
+  donc exactement leur rendu. Pour les passer en Inside : sélectionne
+  les boutons, choisis Inside.
+- **Free (place by hand)** : placement libre, avec deux boutons :
+
+  - **◈ Place in button** : active le mode placement. On **glisse
+    l'image** dans le bouton pour la positionner, la **molette** la
+    redimensionne, et les **flèches** la décalent d'1 unité (**Maj** =
+    10) pour un réglage au pixel près. **Échap** (ou re-cliquer le
+    bouton) termine. Un contour vert en pointillés montre la position
+    de l'image.
+  - **Center** : recentre l'image dans le bouton.
 
 Tout est annulable (Ctrl+Z). Le placement n'est possible que sur un
 seul bouton à la fois.
