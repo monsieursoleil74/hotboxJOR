@@ -75,12 +75,11 @@ class HotboxWidget(QtWidgets.QWidget):
         painter.end()
 
 
-# animations de la hotbox en production. À 0 : désactivées.
-# Le fondu part de FADE_IN_START et non de 0 : une fenêtre totalement
-# transparente laisse passer les clics sous Windows — un clic très
-# rapide après l'appel tomberait dans le viewport.
-FADE_IN_MS = 90
-FADE_IN_START = 0.25
+# halo de survol de la hotbox en production. GLOW_MS à 0 : désactivé.
+# (Pas de fondu à l'apparition : essayé, il saccadait dans Maya — la
+# fenêtre translucide est recomposée à chaque image pendant que le
+# viewport occupe la boucle Qt — et donnait une impression de latence.
+# La hotbox apparaît et disparaît instantanément.)
 GLOW_MS = 110         # montée / descente du halo de survol
 GLOW_FRAME_MS = 16
 
@@ -109,12 +108,6 @@ class HotboxReader(QtWidgets.QWidget):
         self.left_clicked = False
         self.right_clicked = False
 
-        # apparition en fondu (la DISPARITION reste instantanée : les
-        # commandes s'exécutent juste après, un popup ne doit jamais
-        # s'ouvrir sous une hotbox encore visible)
-        self._fade = QtCore.QPropertyAnimation(self, b'windowOpacity', self)
-        self._fade.setEasingCurve(QtCore.QEasingCurve.OutCubic)
-        self._fade.setEndValue(1.0)
         # halo : quelques images par survol, la minuterie s'arrête seule
         self._glow_timer = QtCore.QTimer(self)
         self._glow_timer.setInterval(GLOW_FRAME_MS)
@@ -233,15 +226,7 @@ class HotboxReader(QtWidgets.QWidget):
 
     def show(self):
         self.move(QtGui.QCursor.pos() - self.center)
-        fade = FADE_IN_MS > 0
-        if fade:
-            self._fade.stop()
-            self._fade.setDuration(FADE_IN_MS)
-            self._fade.setStartValue(FADE_IN_START)
-            self.setWindowOpacity(FADE_IN_START)
         super(HotboxReader, self).show()
-        if fade:
-            self._fade.start()
         self.set_hovered_shapes()
         self.setFocus()
 
@@ -265,11 +250,9 @@ class HotboxReader(QtWidgets.QWidget):
             shape.clicked = False
             shape.glow = 0.0
         self._glow_timer.stop()
-        self._fade.stop()
         # clean the aiming shape before close
         self.clear_aiming()
         super(HotboxReader, self).hide()
-        self.setWindowOpacity(1.0)
         if pending is not None:
             QtWidgets.QApplication.processEvents()  # qu'elle disparaisse
             pending.execute(left=True)

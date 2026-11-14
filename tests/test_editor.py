@@ -3820,8 +3820,9 @@ def test_reader_sharp_and_alive():
     l'apparition, halo au survol, sans ralentir le geste.
     (1) contours calés sur les pixels réels de l'écran, icônes SVG
     redessinées à leur taille d'affichage (écran à 150 % / 200 %
-    compris), lissage des images ; (2) fondu court qui démarre déjà
-    visible (clics jamais perdus), halo animé, disparition instantanée."""
+    compris), lissage des images ; (2) halo animé au survol. Pas de
+    fondu (retiré : saccadé et latent dans Maya) : apparition et
+    disparition instantanées."""
     import tempfile
     import time
     from hotboxLibrary import images
@@ -3888,7 +3889,7 @@ def test_reader_sharp_and_alive():
     assert alpha_outside(0.0) == 0
     assert alpha_outside(1.0) > 0
 
-    # --- (2b) hotbox : fondu à l'apparition, halo animé ---
+    # --- (2b) hotbox : apparition instantanée, halo animé ---
     button = dict(SQUARE_BUTTON, **{
         'shape.left': 100.0, 'shape.top': 100.0,
         'action.left': True, 'action.left.command': 'pass'})
@@ -3897,10 +3898,9 @@ def test_reader_sharp_and_alive():
         'shapes': [button]})
     reader = HotboxReader(data, parent=None)
     reader.show()
-    fade = reader._fade
-    assert fade.state() == QtCore.QAbstractAnimation.Running
-    assert fade.startValue() == reader_mod.FADE_IN_START > 0
-    assert fade.duration() == reader_mod.FADE_IN_MS
+    assert reader.isVisible()
+    assert not hasattr(reader, '_fade')       # pas de fondu
+    assert not hasattr(reader_mod, 'FADE_IN_MS')
     shape = reader.interactive_shapes[0]
     shape.hovered = True
     reader._update_glow()
@@ -3922,19 +3922,9 @@ def test_reader_sharp_and_alive():
     reader.hide()
     assert not reader.isVisible() and shape.glow == 0.0
     assert not reader._glow_timer.isActive()
-    assert fade.state() != QtCore.QAbstractAnimation.Running
-    # désactivable
-    saved = reader_mod.FADE_IN_MS
-    reader_mod.FADE_IN_MS = 0
-    try:
-        reader.show()
-        assert fade.state() != QtCore.QAbstractAnimation.Running
-        reader.hide()
-    finally:
-        reader_mod.FADE_IN_MS = saved
     reader.close()
     images.clear_image_cache()
-    print('hotbox nette (pixels, SVG, lissage) et vivante (fondu, halo) OK')
+    print('hotbox nette (pixels, SVG, lissage) et halo de survol OK')
 
 
 def test_image_inside_button():

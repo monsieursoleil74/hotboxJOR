@@ -6,6 +6,14 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-11 — Hotbox nette et vivante
 
+- **Fondu d'apparition retiré** (retour d'usage : légère latence, pas
+  fluide). Une fenêtre translucide en fondu est recomposée à chaque
+  image ; dans Maya, la boucle Qt est partagée avec le viewport, les
+  images tombent irrégulièrement et le geste paraît plus lent, pour un
+  gain purement décoratif. La hotbox apparaît de nouveau
+  instantanément ; plus aucun appel à `setWindowOpacity`. Le halo de
+  survol, dessiné dans la hotbox, est conservé.
+
 - **Avertissements « Qt.py [warning]: ImportError(QtPositioning) / (QtSensors):
   DLL load failed … Une stratégie de contrôle d'application a bloqué ce
   fichier »** au lancement (poste Windows 11 avec le Contrôle intelligent
