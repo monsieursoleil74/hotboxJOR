@@ -4,6 +4,30 @@ Historique des évolutions du fork, de la plus récente à la plus
 ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 `main`. Détails d'usage : `MANUEL.md`.
 
+## 2026-11 — Hotbox nette et vivante
+
+- **Hotbox floue ou crénelée dans le viewport** (retour studio). Trois
+  causes dans le dessin des boutons (`painting.draw_shape`) :
+  - pas de lissage des images (`SmoothPixmapTransform`) : une icône
+    agrandie ou réduite pour remplir son bouton était crénelée ;
+  - icônes SVG décodées à leur taille d'origine puis étirées à la taille
+    du bouton et à l'échelle de l'écran : floues. `images.sharp_pixmap`
+    les redessine en vectoriel à la taille d'affichage, en pixels réels
+    (devicePixelRatio), zone calée sur les pixels : copie 1:1 ; les
+    images bitmap sont mises à l'échelle avec lissage, une fois par
+    taille (cache) ;
+  - contours à des positions fractionnaires (54,97 px) étalés sur deux
+    pixels : `crisp_rect` cale le bouton sur la grille physique (+ ½ px
+    pour un trait impair).
+  Appliqué quand le dessin est à l'échelle 1 (hotbox, aperçus, éditeur à
+  100 %) ; éditeur zoomé : dessin habituel, lissé.
+- **Hotbox plus vivante** : fondu d'apparition de 90 ms qui part de 25 %
+  d'opacité (une fenêtre totalement transparente laisse passer les clics
+  sous Windows), halo de survol animé (~110 ms, couleur du contour ou du
+  fond au survol). Disparition instantanée, volontairement. Réglages en
+  tête de `reader.py` (`FADE_IN_MS`, `GLOW_MS` ; 0 = désactivé).
+  Test : `test_reader_sharp_and_alive`.
+
 ## 2026-10 — « Update selected »
 
 - **« Update selected » passe au clic droit** (retour studio : plus

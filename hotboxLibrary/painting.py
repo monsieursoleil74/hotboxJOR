@@ -61,9 +61,101 @@ def get_center_path(point):
     return path
 
 
+# halo de survol (hotbox en production) : traits concentriques de plus
+# en plus larges et transparents autour du bouton ; GLOW_ALPHA = opacité
+# du trait intérieur à intensité pleine
+GLOW_LAYERS = 10
+GLOW_SPREAD = 1.2     # pixels gagnés par trait (halo de ~12 px)
+GLOW_ALPHA = 46
+
+
+def _painter_scale(painter):
+    """Échelle du painter (1.0 = pixels logiques), ou None si la
+    transformation tourne / cisaille (pas de calage possible)."""
+    transform = painter.worldTransform()
+    if transform.m12() or transform.m21():
+        return None
+    return abs(transform.m11()), abs(transform.m22())
+
+
+def device_ratio(painter):
+    device = painter.device()
+    try:
+        return float(device.devicePixelRatioF())
+    except AttributeError:
+        try:
+            return float(device.devicePixelRatio())
+        except AttributeError:
+            return 1.0
+
+
+def crisp_rect(rect, pen_width, ratio=1.0):
+    """`rect` calé sur la grille des pixels RÉELS de l'écran. Un contour
+    de 1 px posé à x = 54.97 s'étalait sur deux pixels à moitié colorés :
+    bord flou. On arrondit les bords au pixel physique, puis on décale
+    d'un demi-pixel quand l'épaisseur du trait (en pixels physiques) est
+    impaire, pour qu'il tombe pile sur une rangée de pixels."""
+    ratio = ratio or 1.0
+    left = round(rect.left() * ratio)
+    top = round(rect.top() * ratio)
+    right = round(rect.right() * ratio)
+    bottom = round(rect.bottom() * ratio)
+    offset = 0.5 if int(round(pen_width * ratio)) % 2 == 1 else 0.0
+    return QtCore.QRectF(
+        (left + offset) / ratio, (top + offset) / ratio,
+        max(right - left, 1) / ratio, max(bottom - top, 1) / ratio)
+
+
+def _shape_path(options, rect):
+    path = QtGui.QPainterPath()
+    if options['shape'] == 'round':
+        path.addEllipse(rect)
+    elif options['shape'] == 'rounded_rect':
+        path.addRoundedRect(
+            rect, options.get('shape.cornersx', 8),
+            options.get('shape.cornersy', 8))
+    else:
+        path.addRect(rect)
+    return path
+
+
+def draw_glow(painter, shape, rect):
+    """Halo doux autour d'un bouton survolé ; son intensité `shape.glow`
+    (0 → 1) est animée par la hotbox. Couleur : celle du contour au
+    survol, sinon le fond au survol — OPAQUE, quelle que soit la
+    transparence du bouton (un bouton image sans fond a aussi son
+    halo)."""
+    glow = getattr(shape, 'glow', 0.0)
+    if glow <= 0.0:
+        return
+    options = shape.options
+    visible_border = (
+        options['border'] and options['bordercolor.transparency'] < 255)
+    color = QtGui.QColor(
+        options['bordercolor.hovered'] if visible_border
+        else options['bgcolor.hovered'])
+    path = _shape_path(options, rect)
+    painter.save()
+    painter.setBrush(QtCore.Qt.NoBrush)
+    for layer in range(GLOW_LAYERS, 0, -1):
+        layer_color = QtGui.QColor(color)
+        fade = 1.0 - float(layer - 1) / GLOW_LAYERS
+        layer_color.setAlpha(int(GLOW_ALPHA * glow * fade * fade))
+        pen = QtGui.QPen(layer_color)
+        pen.setWidthF(layer * GLOW_SPREAD * 2)
+        pen.setJoinStyle(QtCore.Qt.RoundJoin)
+        painter.setPen(pen)
+        painter.drawPath(path)
+    painter.restore()
+
+
 def draw_shape(painter, shape):
     options = shape.options
     content_rect = shape.content_rect()
+    # lissage des images : sans lui, une icône agrandie / réduite pour
+    # remplir son bouton était CRÉNELÉE (pixels répétés)
+    painter.setRenderHint(QtGui.QPainter.Antialiasing)
+    painter.setRenderHint(QtGui.QPainter.SmoothPixmapTransform)
     if shape.clicked:
         bordercolor = QtGui.QColor(options['bordercolor.clicked'])
         backgroundcolor = QtGui.QColor(options['bgcolor.clicked'])
@@ -81,23 +173,47 @@ def draw_shape(painter, shape):
     bordercolor.setAlpha(255 - alpha)
     backgroundcolor.setAlpha(255 - options['bgcolor.transparency'])
 
+    # pixels réels : dessin à l'échelle 1 (hotbox, aperçus, éditeur à
+    # 100 %) → contours calés sur la grille de l'écran et icônes rendues
+    # à leur taille d'affichage. Éditeur zoomé : dessin habituel, lissé.
+    scale = _painter_scale(painter)
+    ratio = device_ratio(painter)
+    pixel_exact = scale is not None and scale == (1.0, 1.0)
+    rect = (crisp_rect(shape.rect, bordersize, ratio) if pixel_exact
+            else shape.rect)
+
+    draw_glow(painter, shape, rect)
+
     pen = QtGui.QPen(bordercolor)
     pen.setStyle(QtCore.Qt.SolidLine)
     pen.setWidthF(bordersize)
     painter.setPen(pen)
     painter.setBrush(QtGui.QBrush(backgroundcolor))
     if options['shape'] == 'round':
-        painter.drawEllipse(shape.rect)
+        painter.drawEllipse(rect)
     elif options['shape'] == 'rounded_rect':
         radius_x = options.get('shape.cornersx', 8)
         radius_y = options.get('shape.cornersy', 8)
-        painter.drawRoundedRect(shape.rect, radius_x, radius_y)
+        painter.drawRoundedRect(rect, radius_x, radius_y)
     else:  # square (défaut)
-        painter.drawRect(shape.rect)
+        painter.drawRect(rect)
 
-    if shape.pixmap is not None:
-        rect = shape.image_rect or content_rect
-        painter.drawPixmap(rect, shape.pixmap)
+    if shape.pixmap is not None and not shape.pixmap.isNull():
+        image_rect = shape.image_rect or content_rect
+        drawn = False
+        if pixel_exact:
+            from hotboxLibrary.images import sharp_pixmap
+            # zone calée sur les pixels physiques + image rendue à cette
+            # taille exacte : copie 1:1, aucun ré-échantillonnage
+            target = crisp_rect(QtCore.QRectF(image_rect), 0, ratio)
+            sharp = sharp_pixmap(
+                options.get('image.path'), target.width(), target.height(),
+                ratio)
+            if not sharp.isNull():
+                painter.drawPixmap(target, sharp, QtCore.QRectF(sharp.rect()))
+                drawn = True
+        if not drawn:
+            painter.drawPixmap(image_rect, shape.pixmap)
 
     painter.setPen(QtGui.QPen(textcolor))
     painter.setBrush(QtGui.QBrush(textcolor))

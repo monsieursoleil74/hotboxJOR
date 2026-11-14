@@ -75,6 +75,16 @@ class HotboxWidget(QtWidgets.QWidget):
         painter.end()
 
 
+# animations de la hotbox en production. À 0 : désactivées.
+# Le fondu part de FADE_IN_START et non de 0 : une fenêtre totalement
+# transparente laisse passer les clics sous Windows — un clic très
+# rapide après l'appel tomberait dans le viewport.
+FADE_IN_MS = 90
+FADE_IN_START = 0.25
+GLOW_MS = 110         # montée / descente du halo de survol
+GLOW_FRAME_MS = 16
+
+
 class HotboxReader(QtWidgets.QWidget):
     hideSubmenusRequested = QtCore.Signal()
 
@@ -99,6 +109,42 @@ class HotboxReader(QtWidgets.QWidget):
         self.left_clicked = False
         self.right_clicked = False
 
+        # apparition en fondu (la DISPARITION reste instantanée : les
+        # commandes s'exécutent juste après, un popup ne doit jamais
+        # s'ouvrir sous une hotbox encore visible)
+        self._fade = QtCore.QPropertyAnimation(self, b'windowOpacity', self)
+        self._fade.setEasingCurve(QtCore.QEasingCurve.OutCubic)
+        self._fade.setEndValue(1.0)
+        # halo : quelques images par survol, la minuterie s'arrête seule
+        self._glow_timer = QtCore.QTimer(self)
+        self._glow_timer.setInterval(GLOW_FRAME_MS)
+        self._glow_timer.timeout.connect(self._step_glow)
+
+    def _update_glow(self):
+        """Lance l'animation du halo si un bouton doit s'allumer ou
+        s'éteindre."""
+        if GLOW_MS <= 0:
+            return
+        for shape in self.interactive_shapes:
+            if shape.glow != (1.0 if shape.hovered else 0.0):
+                if not self._glow_timer.isActive():
+                    self._glow_timer.start()
+                return
+
+    def _step_glow(self):
+        step = float(GLOW_FRAME_MS) / GLOW_MS
+        moving = False
+        for shape in self.interactive_shapes:
+            target = 1.0 if shape.hovered else 0.0
+            if shape.glow < target:
+                shape.glow = min(target, shape.glow + step)
+            elif shape.glow > target:
+                shape.glow = max(target, shape.glow - step)
+            moving = moving or shape.glow != target
+        if not moving:
+            self._glow_timer.stop()
+        self.update()
+
     def mouseMoveEvent(self, _):
         self.set_hovered_shapes()
 
@@ -111,6 +157,7 @@ class HotboxReader(QtWidgets.QWidget):
             set_shapes_hovered(shapes, get_cursor(self), self.clicked)
         if self.close_on_leave is True:
             self.hide()
+        self._update_glow()
         self.repaint()
 
     @property
@@ -186,7 +233,15 @@ class HotboxReader(QtWidgets.QWidget):
 
     def show(self):
         self.move(QtGui.QCursor.pos() - self.center)
+        fade = FADE_IN_MS > 0
+        if fade:
+            self._fade.stop()
+            self._fade.setDuration(FADE_IN_MS)
+            self._fade.setStartValue(FADE_IN_START)
+            self.setWindowOpacity(FADE_IN_START)
         super(HotboxReader, self).show()
+        if fade:
+            self._fade.start()
         self.set_hovered_shapes()
         self.setFocus()
 
@@ -208,9 +263,13 @@ class HotboxReader(QtWidgets.QWidget):
         for shape in self.interactive_shapes:
             shape.hovered = False
             shape.clicked = False
+            shape.glow = 0.0
+        self._glow_timer.stop()
+        self._fade.stop()
         # clean the aiming shape before close
         self.clear_aiming()
         super(HotboxReader, self).hide()
+        self.setWindowOpacity(1.0)
         if pending is not None:
             QtWidgets.QApplication.processEvents()  # qu'elle disparaisse
             pending.execute(left=True)
@@ -228,6 +287,7 @@ class HotboxReader(QtWidgets.QWidget):
                 self.center, get_cursor(self), shapes, get_cursor(self))
         else:
             set_shapes_hovered(shapes, get_cursor(self), self.clicked)
+        self._update_glow()
         self.repaint()
 
     def clear_aiming(self):

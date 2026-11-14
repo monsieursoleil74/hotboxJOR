@@ -3814,6 +3814,129 @@ def test_qt_binding_follows_maya():
     print('Qt.py suit la version de Qt de Maya (PySide2 / PySide6) OK')
 
 
+def test_reader_sharp_and_alive():
+    """Retours studio : (1) « les hotbox peuvent paraître floues ou
+    crénelées sur le viewport » ; (2) une hotbox plus vivante : fondu à
+    l'apparition, halo au survol, sans ralentir le geste.
+    (1) contours calés sur les pixels réels de l'écran, icônes SVG
+    redessinées à leur taille d'affichage (écran à 150 % / 200 %
+    compris), lissage des images ; (2) fondu court qui démarre déjà
+    visible (clics jamais perdus), halo animé, disparition instantanée."""
+    import tempfile
+    import time
+    from hotboxLibrary import images
+    from hotboxLibrary import reader as reader_mod
+    from hotboxLibrary.painting import crisp_rect, draw_shape
+    from hotboxLibrary.interactive import Shape
+    from hotboxLibrary.templates import HOTBOX as HOTBOX_T
+
+    # --- (1a) calage des contours sur la grille de pixels ---
+    rect = QtCore.QRectF(54.97, 10.2, 30.47, 31.21)
+    crisp = crisp_rect(rect, 1.0, 1.0)
+    assert (crisp.left(), crisp.top()) == (55.5, 10.5), crisp
+    assert (crisp.width(), crisp.height()) == (30.0, 31.0), crisp
+    assert crisp_rect(rect, 2.0, 1.0).left() == 55.0   # trait pair
+    crisp = crisp_rect(rect, 1.0, 1.5)                  # écran à 150 %
+    assert abs(crisp.left() * 1.5 - round(crisp.left() * 1.5)) < 1e-9
+
+    # --- (1b) icône SVG rendue à SA taille d'affichage ---
+    tmp = tempfile.mkdtemp()
+    svg = os.path.join(tmp, 'icon.svg')
+    with open(svg, 'w') as f:
+        f.write('<svg xmlns="http://www.w3.org/2000/svg" width="8" '
+                'height="8" viewBox="0 0 8 8"><rect x="0" y="0" width="4" '
+                'height="8" fill="#ff0000"/></svg>')
+    images.clear_image_cache()
+    assert images.image_pixmap(svg).width() == 8      # taille d'origine
+    sharp = images.sharp_pixmap(svg, 30, 30, 2.0)
+    assert (sharp.width(), sharp.height()) == (60, 60)
+    assert abs(sharp.devicePixelRatio() - 2.0) < 1e-9
+    # bord net : la colonne juste à droite de la moitié rouge est vide
+    image = sharp.toImage()
+    assert QtGui.QColor(image.pixel(29, 30)).red() > 200
+    assert QtGui.QColor.fromRgba(image.pixel(31, 30)).alpha() == 0
+    # dessiné dans un bouton sur un écran à 200 % : copie 1:1
+    options = dict(SQUARE_BUTTON, **{
+        'shape.left': 10.3, 'shape.top': 10.3, 'shape.width': 30.0,
+        'shape.height': 30.0, 'image.path': svg, 'image.fit': True,
+        'border': False, 'bgcolor.transparency': 255, 'text.content': ''})
+    canvas = QtGui.QImage(120, 120, QtGui.QImage.Format_ARGB32_Premultiplied)
+    canvas.setDevicePixelRatio(2.0)
+    canvas.fill(QtCore.Qt.transparent)
+    painter = QtGui.QPainter(canvas)
+    draw_shape(painter, Shape(dict(options)))
+    painter.end()
+    row = [QtGui.QColor.fromRgba(canvas.pixel(x, 50)) for x in range(10, 90)]
+    # bord rouge → transparent sans pixel intermédiaire (pas de flou)
+    partial = [c for c in row if 0 < c.alpha() < 255]
+    assert not partial, [c.alpha() for c in row]
+    assert any(c.alpha() == 255 and c.red() > 200 for c in row), (
+        'l icône doit bien être dessinée sur cette ligne')
+
+    # --- (2a) halo au survol ---
+    def alpha_outside(glow):
+        shape = Shape(dict(SQUARE_BUTTON, **{
+            'shape.left': 40.0, 'shape.top': 40.0, 'shape.width': 40.0,
+            'shape.height': 20.0}))
+        shape.glow = glow
+        img = QtGui.QImage(120, 100, QtGui.QImage.Format_ARGB32)
+        img.fill(QtCore.Qt.transparent)
+        p = QtGui.QPainter(img)
+        draw_shape(p, shape)
+        p.end()
+        return QtGui.QColor.fromRgba(img.pixel(36, 50)).alpha()
+    assert alpha_outside(0.0) == 0
+    assert alpha_outside(1.0) > 0
+
+    # --- (2b) hotbox : fondu à l'apparition, halo animé ---
+    button = dict(SQUARE_BUTTON, **{
+        'shape.left': 100.0, 'shape.top': 100.0,
+        'action.left': True, 'action.left.command': 'pass'})
+    data = ensure_old_data_compatible({
+        'general': dict(HOTBOX_T, name='alive', width=400, height=300),
+        'shapes': [button]})
+    reader = HotboxReader(data, parent=None)
+    reader.show()
+    fade = reader._fade
+    assert fade.state() == QtCore.QAbstractAnimation.Running
+    assert fade.startValue() == reader_mod.FADE_IN_START > 0
+    assert fade.duration() == reader_mod.FADE_IN_MS
+    shape = reader.interactive_shapes[0]
+    shape.hovered = True
+    reader._update_glow()
+    end = time.time() + 1.0
+    while time.time() < end and shape.glow < 1.0:
+        APP.processEvents()
+        time.sleep(0.005)
+    assert shape.glow == 1.0 and not reader._glow_timer.isActive()
+    shape.hovered = False
+    reader._update_glow()
+    end = time.time() + 1.0
+    while time.time() < end and shape.glow > 0.0:
+        APP.processEvents()
+        time.sleep(0.005)
+    assert shape.glow == 0.0
+    # disparition instantanée, rien ne reste en cours
+    shape.hovered = True
+    shape.glow = 0.5
+    reader.hide()
+    assert not reader.isVisible() and shape.glow == 0.0
+    assert not reader._glow_timer.isActive()
+    assert fade.state() != QtCore.QAbstractAnimation.Running
+    # désactivable
+    saved = reader_mod.FADE_IN_MS
+    reader_mod.FADE_IN_MS = 0
+    try:
+        reader.show()
+        assert fade.state() != QtCore.QAbstractAnimation.Running
+        reader.hide()
+    finally:
+        reader_mod.FADE_IN_MS = saved
+    reader.close()
+    images.clear_image_cache()
+    print('hotbox nette (pixels, SVG, lissage) et vivante (fondu, halo) OK')
+
+
 def test_atomic_write_retries():
     """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
     réseau, os.replace échoue par intermittence (fichier ouvert
@@ -4079,6 +4202,7 @@ if __name__ == '__main__':
     test_library_link_sync()
     test_library_link_matching()
     test_qt_binding_follows_maya()
+    test_reader_sharp_and_alive()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

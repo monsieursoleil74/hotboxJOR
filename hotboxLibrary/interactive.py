@@ -138,6 +138,9 @@ class Shape():
     def __init__(self, options):
         self.hovered = False
         self.clicked = False
+        # intensité du halo de survol (0 → 1), animée par la hotbox en
+        # production ; reste à 0 ailleurs (éditeur, aperçus)
+        self.glow = 0.0
         self.options = options
         self.rect = get_shape_rect_from_options(options)
         self.pixmap = None
