@@ -1383,7 +1383,10 @@ hotboxLibrary.launch_manager('maya', studio_admin=True)</code></pre>
       l’erreur «&nbsp;applications.py line 226: You need a shiboken-based
       type&nbsp;». Le choix ne concerne que la copie de Qt.py embarquée
       (<code>vendor/__init__.py</code>)&nbsp;: les autres outils du studio ne
-      sont pas touchés.</li>
+      sont pas touchés. Cette copie ne charge aussi que les <strong>quatre
+      modules Qt</strong> utiles (QtCore, QtGui, QtWidgets, QtSvg)&nbsp;: lancement
+      plus rapide, et plus d’avertissement «&nbsp;ImportError(QtPositioning)…
+      DLL load failed&nbsp;» quand Windows bloque certaines DLL Qt.</li>
     <li><strong>Coordonnées</strong>&nbsp;: les shapes vivent dans l’espace de la
       hotbox («&nbsp;unités&nbsp;») — le JSON est identique à l’original. Le
       viewport applique zoom + translation au rendu (<code>ViewportMapper</code>

@@ -6,6 +6,19 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-11 — Hotbox nette et vivante
 
+- **Avertissements « Qt.py [warning]: ImportError(QtPositioning) / (QtSensors):
+  DLL load failed … Une stratégie de contrôle d'application a bloqué ce
+  fichier »** au lancement (poste Windows 11 avec le Contrôle intelligent
+  des applications). Qt.py essayait de charger une trentaine de modules
+  Qt ; l'outil n'en utilise que quatre. `vendor/__init__.py` installe le
+  temps de NOTRE import un `QtSiteConfig` (point d'entrée prévu par
+  Qt.py) qui limite la liste à QtCore, QtGui, QtWidgets, QtSvg et retire
+  les modules annexes (QtUiTools, QtSvgWidgets…) ; un QtSiteConfig du
+  studio est appliqué d'abord puis laissé en place, les autres outils ne
+  voient aucune différence. Bonus : import de la couche Qt ~2× plus
+  rapide (333 → 156 ms mesurés). Test :
+  `test_qt_loads_only_needed_modules`.
+
 - **Images « dans » le bouton** (retour studio : une image importée
   prenait toute la place, n'était pas centrée et mangeait le contour).
   « Fit to shape » (True/False) devient **Placement** à trois modes :

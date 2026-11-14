@@ -4051,6 +4051,70 @@ def test_image_inside_button():
     print('image dans le bouton (centrée, ratio, marge, contour) OK')
 
 
+def test_qt_loads_only_needed_modules():
+    """Bug remonté (Windows, Contrôle intelligent des applications) :
+    « Qt.py [warning]: ImportError(QtPositioning): DLL load failed… ».
+    Qt.py chargeait une trentaine de modules Qt ; l'outil n'en utilise
+    que quatre. Vérifié dans un processus neuf : seuls les modules utiles
+    sont chargés, QtSiteConfig n'est pas laissé derrière, et un
+    QtSiteConfig du studio est appliqué puis rétabli."""
+    import subprocess
+    import tempfile
+    from hotboxLibrary.vendor import site_config, KEEP_MODULES
+
+    # le QtSiteConfig du studio passe d'abord, puis on taille
+    calls = []
+    studio = type(sys)('QtSiteConfig')
+    studio.update_members = lambda members: calls.append('members')
+    config = site_config(studio)
+    members = {'QtCore': [], 'QtGui': [], 'QtWidgets': [], 'QtSvg': [],
+               'QtPositioning': [], 'QtSensors': []}
+    config.update_members(members)
+    assert calls == ['members']
+    assert sorted(members) == sorted(KEEP_MODULES)
+    misplaced = {'PySide2': {'__extras__': ['QtOpenGLFunctions', 'QtUiTools'],
+                             'QtCore.Property': 'QtCore.Property'},
+                 'PyQt5': {'__extras__': ['sip', 'uic']}}
+    config.update_misplaced_members(misplaced)
+    assert misplaced['PySide2']['__extras__'] == []
+    assert misplaced['PyQt5']['__extras__'] == ['sip']
+    assert misplaced['PySide2']['QtCore.Property'] == 'QtCore.Property'
+
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    fake = tempfile.mkdtemp()
+    with open(os.path.join(fake, 'QtSiteConfig.py'), 'w') as f:
+        f.write('SEEN = []\n'
+                'def update_members(members):\n'
+                '    SEEN.append(sorted(members)[:1])\n')
+    script = (
+        'import sys\n'
+        'from hotboxLibrary.vendor import Qt\n'
+        'from hotboxLibrary.vendor.Qt import QtCore, QtGui, QtWidgets, QtSvg\n'
+        'from hotboxLibrary.vendor.Qt import QtCompat\n'
+        'loaded = sorted(n.split(".")[1] for n in sys.modules\n'
+        '                if n.startswith(Qt.__binding__ + ".Qt"))\n'
+        'print("LOADED", loaded)\n'
+        'import QtSiteConfig\n'
+        'print("STUDIO", QtSiteConfig.SEEN, hasattr(QtSiteConfig, "update_misplaced_members"))\n'
+        'print("WRAP", hasattr(QtCompat, "wrapInstance"))\n')
+    env = dict(os.environ, QT_QPA_PLATFORM='offscreen',
+               PYTHONPATH=os.pathsep.join([fake, root]))
+    result = subprocess.run(
+        [sys.executable, '-c', script], env=env, cwd=fake,
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+        universal_newlines=True, timeout=120)
+    out = result.stdout
+    assert result.returncode == 0, out
+    assert 'Qt.py [warning]' not in out, out
+    loaded = eval(out.split('LOADED ', 1)[1].splitlines()[0])
+    assert set(loaded) <= {'QtCore', 'QtGui', 'QtWidgets', 'QtSvg'}, loaded
+    assert 'QtPositioning' not in loaded and 'QtSensors' not in loaded
+    # le QtSiteConfig du studio a été appliqué ET est rétabli intact
+    assert "STUDIO [['QtCore']] False" in out, out
+    assert 'WRAP True' in out, out
+    print('Qt.py : seulement les modules utiles (QtCore/Gui/Widgets/Svg) OK')
+
+
 def test_atomic_write_retries():
     """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
     réseau, os.replace échoue par intermittence (fichier ouvert
@@ -4318,6 +4382,7 @@ if __name__ == '__main__':
     test_qt_binding_follows_maya()
     test_reader_sharp_and_alive()
     test_image_inside_button()
+    test_qt_loads_only_needed_modules()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

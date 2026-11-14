@@ -633,7 +633,11 @@ s'ouvre pour le changer.
   « applications.py line 226: You need a shiboken-based type ». Le
   choix ne concerne que la copie de Qt.py embarquée
   (`vendor/__init__.py`) : les autres outils du studio ne sont pas
-  touchés.
+  touchés. Cette copie ne charge aussi que les **quatre modules Qt**
+  dont l'outil se sert (QtCore, QtGui, QtWidgets, QtSvg) : lancement
+  plus rapide, et plus d'avertissement « Qt.py [warning]:
+  ImportError(QtPositioning)… DLL load failed » sur un poste où Windows
+  bloque certaines DLL Qt (Contrôle intelligent des applications).
 - **Coordonnées** : les shapes vivent dans l'espace de la hotbox
   (« unités ») — le JSON est donc identique à l'original. Le viewport
   applique zoom + translation au rendu (`ViewportMapper` dans

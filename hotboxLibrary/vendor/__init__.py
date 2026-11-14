@@ -16,9 +16,56 @@ outils du studio qui utilisent leur propre Qt.py ne sont pas touchés.
 import json
 import os
 import sys
+import types
 
 QT_MODULE = __name__ + '.Qt'
 BINDINGS = ('PySide6', 'PySide2')
+
+# Qt.py charge par défaut une trentaine de modules Qt (QtPositioning,
+# QtSensors, QtWebSockets…). L'outil n'en utilise que quatre. Les autres
+# coûtaient du temps au premier lancement et, sur les postes où une
+# stratégie de sécurité Windows bloque certaines DLL Qt, affichaient
+# « Qt.py [warning]: ImportError(QtPositioning): DLL load failed… ».
+KEEP_MODULES = ('QtCore', 'QtGui', 'QtWidgets', 'QtSvg')
+# modules annexes déclarés par binding (QtUiTools, QtSvgWidgets…) :
+# aucun ne sert ; « sip » est gardé pour un repli PyQt éventuel.
+# (shiboken2 / shiboken6 sont chargés à part, ils restent.)
+KEEP_EXTRAS = ('sip',)
+
+
+def site_config(previous=None):
+    """Module « QtSiteConfig » (point d'entrée prévu par Qt.py) qui
+    limite NOTRE Qt.py aux modules utiles. Un QtSiteConfig du studio,
+    s'il existe, est appliqué d'abord : on ne retire rien de ce qu'il
+    configure pour les modules gardés."""
+    module = types.ModuleType('QtSiteConfig')
+
+    def update_members(members):
+        if previous is not None and hasattr(previous, 'update_members'):
+            previous.update_members(members)
+        for name in list(members):
+            if name not in KEEP_MODULES:
+                del members[name]
+
+    def update_misplaced_members(members):
+        if (previous is not None
+                and hasattr(previous, 'update_misplaced_members')):
+            previous.update_misplaced_members(members=members)
+        for entries in members.values():
+            extras = entries.get('__extras__')
+            if extras is not None:
+                entries['__extras__'] = [
+                    name for name in extras if name in KEEP_EXTRAS]
+
+    def update_compatibility_members(members):
+        if (previous is not None
+                and hasattr(previous, 'update_compatibility_members')):
+            previous.update_compatibility_members(members=members)
+
+    module.update_members = update_members
+    module.update_misplaced_members = update_misplaced_members
+    module.update_compatibility_members = update_compatibility_members
+    return module
 
 
 def host_binding():
@@ -53,24 +100,46 @@ def preferred_bindings_json(binding, current=None):
     return json.dumps(preferences)
 
 
+def _studio_site_config():
+    """Le QtSiteConfig du studio s'il y en a un, sinon None."""
+    if 'QtSiteConfig' in sys.modules:
+        return sys.modules['QtSiteConfig']
+    try:
+        import QtSiteConfig
+    except Exception:
+        return None
+    return QtSiteConfig
+
+
 def _import_qt():
     from importlib import import_module
     if QT_MODULE in sys.modules:
         return
+    # liaison : celle de l'hôte, pour notre Qt.py seulement
     binding = host_binding()
-    if binding is None:
-        import_module(QT_MODULE)
-        return
     key = 'QT_PREFERRED_BINDING_JSON'
-    previous = os.environ.get(key)
-    os.environ[key] = preferred_bindings_json(binding, previous)
+    previous_env = os.environ.get(key)
+    if binding is not None:
+        os.environ[key] = preferred_bindings_json(binding, previous_env)
+    # modules : seulement ceux qu'on utilise. QtSiteConfig n'est remplacé
+    # que le temps de NOTRE import, puis rétabli (les autres outils du
+    # studio voient le leur, ou aucun)
+    studio_site = _studio_site_config()
+    sys.modules['QtSiteConfig'] = site_config(studio_site)
     try:
         import_module(QT_MODULE)
     finally:
-        if previous is None:
-            os.environ.pop(key, None)
+        # le module du studio (même s'il vient d'être importé ici) reste
+        # en place tel quel ; sans module studio, rien ne reste
+        if studio_site is not None:
+            sys.modules['QtSiteConfig'] = studio_site
         else:
-            os.environ[key] = previous
+            sys.modules.pop('QtSiteConfig', None)
+        if binding is not None:
+            if previous_env is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = previous_env
 
 
 _import_qt()
