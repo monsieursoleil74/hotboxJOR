@@ -15,6 +15,7 @@ pointer la variable d'environnement sur son dossier) pour que les
 images survivent aux déménagements.
 """
 import os
+from collections import OrderedDict
 
 ICONS_ENV_VARIABLE = 'HOTBOX_DESIGNER_ICONS'
 _image_roots = []
@@ -26,9 +27,28 @@ _image_roots = []
 # icônes vivent sur un disque RÉSEAU devient poussive — c'est la
 # lourdeur constatée au studio. On garde donc en mémoire le chemin
 # résolu et le pixmap décodé, par chemin d'origine.
-_resolved_paths = {}
-_pixmaps = {}
-CACHE_LIMIT = 512
+# Caches « LRU » : quand ils sont pleins, on oublie l'entrée la MOINS
+# récemment utilisée — avant, tout était vidé d'un coup au-delà de 512
+# entrées, et avec beaucoup de hotboxes, chaque changement de hotbox
+# pouvait redessiner toutes ses icônes (freeze remonté au studio).
+_resolved_paths = OrderedDict()
+_pixmaps = OrderedDict()
+CACHE_LIMIT = 1024            # chemins résolus et images décodées
+SHARP_CACHE_LIMIT = 2048      # icônes rendues à leur taille d'affichage
+
+
+def _cache_get(cache, key):
+    value = cache.get(key)
+    if value is not None:
+        cache.move_to_end(key)
+    return value
+
+
+def _cache_put(cache, key, value, limit):
+    cache[key] = value
+    cache.move_to_end(key)
+    while len(cache) > limit:
+        cache.popitem(last=False)
 
 
 def clear_image_cache():
@@ -67,13 +87,11 @@ def resolve_image_path(path):
     """
     if not path:
         return path
-    resolved = _resolved_paths.get(path)
+    resolved = _cache_get(_resolved_paths, path)
     if resolved is not None:
         return resolved
     resolved = _resolve_image_path(path)
-    if len(_resolved_paths) > CACHE_LIMIT:
-        _resolved_paths.clear()
-    _resolved_paths[path] = resolved
+    _cache_put(_resolved_paths, path, resolved, CACHE_LIMIT * 4)
     return resolved
 
 
@@ -102,13 +120,11 @@ def image_pixmap(path):
     from hotboxLibrary.vendor.Qt import QtGui
     if not path:
         return QtGui.QPixmap()
-    pixmap = _pixmaps.get(path)
+    pixmap = _cache_get(_pixmaps, path)
     if pixmap is not None:
         return pixmap
     pixmap = QtGui.QPixmap(resolve_image_path(path))
-    if len(_pixmaps) > CACHE_LIMIT:
-        _pixmaps.clear()
-    _pixmaps[path] = pixmap
+    _cache_put(_pixmaps, path, pixmap, CACHE_LIMIT)
     return pixmap
 
 
@@ -119,7 +135,7 @@ def image_pixmap(path):
 # produit l'image directement à la taille où elle sera vue, en pixels
 # RÉELS de l'écran : un SVG est redessiné en vectoriel, une image
 # bitmap est réduite / agrandie avec lissage. Une fois par taille.
-_sharp = {}
+_sharp = OrderedDict()
 
 
 def sharp_pixmap(path, width, height, ratio=1.0):
@@ -136,7 +152,7 @@ def sharp_pixmap(path, width, height, ratio=1.0):
     device_w = max(int(round(width * ratio)), 1)
     device_h = max(int(round(height * ratio)), 1)
     key = (path, device_w, device_h)
-    pixmap = _sharp.get(key)
+    pixmap = _cache_get(_sharp, key)
     if pixmap is not None:
         return pixmap
     pixmap = QtGui.QPixmap()
@@ -151,9 +167,7 @@ def sharp_pixmap(path, width, height, ratio=1.0):
                 QtCore.Qt.SmoothTransformation)
     if not pixmap.isNull():
         pixmap.setDevicePixelRatio(ratio)
-    if len(_sharp) > CACHE_LIMIT:
-        _sharp.clear()
-    _sharp[key] = pixmap
+    _cache_put(_sharp, key, pixmap, SHARP_CACHE_LIMIT)
     return pixmap
 
 

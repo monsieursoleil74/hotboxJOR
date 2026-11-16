@@ -4105,6 +4105,106 @@ def test_qt_loads_only_needed_modules():
     print('Qt.py : seulement les modules utiles (QtCore/Gui/Widgets/Svg) OK')
 
 
+def test_switch_hotbox_no_rerender():
+    """Bug remonté : « ça freeze quand je change de hotbox ». Le 1er
+    passage sur une hotbox redessinait toutes ses icônes nettes d'un coup
+    (le préchauffage ne chargeait que les images d'origine), et les
+    caches se vidaient ENTIÈREMENT au-delà de 512 entrées. Désormais le
+    préchauffage prépare les icônes telles qu'elles seront dessinées (à
+    l'échelle de l'écran), et les caches oublient la plus ancienne
+    entrée seulement."""
+    import tempfile
+    import time
+    from hotboxLibrary import manager as mgr
+    from hotboxLibrary import images
+
+    # --- caches LRU : plein → seule la plus ancienne entrée part ---
+    cache = images.OrderedDict()
+    for i in range(5):
+        images._cache_put(cache, i, 'v%d' % i, 3)
+    assert list(cache) == [2, 3, 4]
+    assert images._cache_get(cache, 2) == 'v2'      # rafraîchie
+    images._cache_put(cache, 5, 'v5', 3)
+    assert list(cache) == [4, 2, 5]
+
+    tmp = tempfile.mkdtemp()
+    icons = []
+    for i in range(6):
+        path = os.path.join(tmp, 'i%d.svg' % i)
+        with open(path, 'w') as f:
+            f.write('<svg xmlns="http://www.w3.org/2000/svg" width="16" '
+                    'height="16"><circle cx="8" cy="8" r="%d" '
+                    'fill="#6D8C5E"/></svg>' % (3 + i))
+        icons.append(path)
+
+    def box(name, paths):
+        return {'general': dict(HOTBOX, name=name), 'shapes': [
+            dict(SQUARE_BUTTON, **{
+                'image.path': path, 'action.left.command': 'pass',
+                'shape.left': 10.37 + 50 * k, 'shape.top': 20.61,
+                'shape.width': 41.3, 'shape.height': 37.9,
+                'image.contain': bool(k % 2)})
+            for k, path in enumerate(paths)]}
+
+    application = Standalone()
+    application.local_file = os.path.join(tmp, 'hotboxes.json')
+    application.shared_file = os.path.join(tmp, 'shared.json')
+    json.dump([box('a', icons[:2]), box('b', icons[2:4]),
+               box('c', icons[4:])], open(application.local_file, 'w'))
+    json.dump([], open(application.shared_file, 'w'))
+
+    renders = []
+    real_render = images._render_svg
+
+    def counting_render(path, width, height):
+        renders.append((os.path.basename(path), width, height))
+        return real_render(path, width, height)
+
+    saved = dict(mgr.hotboxes)
+    saved_app = mgr._application
+    delays = mgr.WARM_UP_DELAY_MS, mgr.WARM_UP_STEP_MS
+    mgr.WARM_UP_DELAY_MS, mgr.WARM_UP_STEP_MS = 10, 1
+    images._render_svg = counting_render
+    try:
+        for ratio in (1.0, 1.5):           # écran à 100 % puis 150 %
+            images.clear_image_cache()
+            mgr.clear_loaded_hotboxes()
+            mgr.initialize(application)
+            mgr.show('a')
+            mgr.hide('a')
+            # préchauffage à l'échelle de l'écran (forcée ici)
+            mgr._warm_up_scheduled[0] = False
+            mgr._schedule_warm_up(ratio)
+            end = time.time() + 2.0
+            while time.time() < end and len({r[0] for r in renders}) < 6:
+                APP.processEvents()
+                time.sleep(0.005)
+            prepared = len(renders)
+            # dessin de 'b' (jamais ouverte) à la même échelle : AUCUNE
+            # icône à redessiner, tout vient du cache
+            reader = mgr._reader('b')
+            canvas = QtGui.QImage(
+                int(reader.width() * ratio), int(reader.height() * ratio),
+                QtGui.QImage.Format_ARGB32_Premultiplied)
+            canvas.setDevicePixelRatio(ratio)
+            canvas.fill(QtCore.Qt.transparent)
+            painter = QtGui.QPainter(canvas)
+            for shape in reader.shapes:
+                shape.draw(painter)
+            painter.end()
+            assert len(renders) == prepared, (ratio, renders[prepared:])
+            for reader in mgr.hotboxes.values():
+                reader.close()
+    finally:
+        images._render_svg = real_render
+        mgr.WARM_UP_DELAY_MS, mgr.WARM_UP_STEP_MS = delays
+        mgr.clear_loaded_hotboxes()
+        mgr.hotboxes.update(saved)
+        mgr._application = saved_app
+        images.clear_image_cache()
+    print('changement de hotbox : icônes prêtes (100 / 150 %), caches LRU OK')
+
+
 def test_atomic_write_retries():
     """Bug studio : « je dois sauver plusieurs fois ». Sur un partage
     réseau, os.replace échoue par intermittence (fichier ouvert
@@ -4373,6 +4473,7 @@ if __name__ == '__main__':
     test_reader_sharp_and_alive()
     test_image_inside_button()
     test_qt_loads_only_needed_modules()
+    test_switch_hotbox_no_rerender()
     test_atomic_write_retries()
     test_update_library_entry()
     print('TOUT EST VERT')

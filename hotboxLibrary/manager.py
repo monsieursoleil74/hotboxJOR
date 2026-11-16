@@ -26,12 +26,15 @@ hotboxes = {}          # hotboxes CONSTRUITES (fenêtres prêtes)
 # TOUTES les hotboxes avec TOUTES leurs icônes : le freeze du 1er appel.
 _pending = {}
 _application = None   # celle du dernier chargement (pour recharger)
-# préchauffage : après le 1er affichage, les ICÔNES des autres hotboxes
-# sont chargées en tâche de fond, UNE par passage de la boucle Qt (une
-# icône réseau = quelques ms, imperceptible) ; construire la fenêtre au
-# moment de l'appel ne coûte alors presque rien
+# préchauffage : après le 1er affichage, les icônes des autres hotboxes
+# sont préparées en tâche de fond TELLES QU'ELLES SERONT DESSINÉES (taille
+# d'affichage, échelle de l'écran) — avant, seule l'image d'origine était
+# chargée, et le 1er passage sur une autre hotbox redessinait toutes ses
+# icônes d'un coup : freeze au changement de hotbox. Chaque passage de la
+# boucle Qt travaille au plus WARM_UP_BUDGET_MS puis rend la main à Maya.
 WARM_UP_DELAY_MS = 400
 WARM_UP_STEP_MS = 15
+WARM_UP_BUDGET_MS = 8
 _load_generation = [0]
 _warm_up_scheduled = [False]
 hotbox_manager = None
@@ -128,42 +131,68 @@ def _build(name):
     return reader
 
 
-def _pending_image_paths():
-    """Icônes des hotboxes en attente, sans doublon, dans l'ordre."""
-    paths = []
-    for data in _pending.values():
-        for shape in data.get('shapes', []):
-            path = shape.get('image.path')
-            if path and path not in paths:
-                paths.append(path)
-    return paths
+def _pending_image_shapes():
+    """Options des boutons à image des hotboxes en attente, dans
+    l'ordre."""
+    return [options for data in _pending.values()
+            for options in data.get('shapes', [])
+            if options.get('image.path')]
 
 
-def _schedule_warm_up():
+def _schedule_warm_up(ratio=1.0):
     if _warm_up_scheduled[0] or not _pending:
         return
     _warm_up_scheduled[0] = True
     generation = _load_generation[0]
-    queue = _pending_image_paths()
+    queue = _pending_image_shapes()
     QtCore.QTimer.singleShot(
-        WARM_UP_DELAY_MS, lambda: _warm_up_step(generation, queue))
+        WARM_UP_DELAY_MS, lambda: _warm_up_step(generation, queue, ratio))
 
 
-def _warm_up_step(generation, queue):
-    """Charge UNE icône en cache puis rend la main à Maya ; se relance
-    tant qu'il en reste. Abandonné si les hotboxes ont été rechargées
-    entre-temps (édition dans le manager)."""
-    from hotboxLibrary.images import image_pixmap
+def prerender_shape(options, ratio=1.0):
+    """Dessine UN bouton hors écran, avec le même code et à la même
+    échelle que la hotbox : son icône nette entre en cache, et la
+    hotbox n'aura plus qu'à la copier."""
+    import math
+    from hotboxLibrary.interactive import Shape
+    from hotboxLibrary.painting import draw_shape
+    shape = Shape(options)
+    rect = shape.rect
+    width = int(math.ceil((rect.width() + 4) * ratio))
+    height = int(math.ceil((rect.height() + 4) * ratio))
+    if width <= 0 or height <= 0:
+        return
+    image = QtGui.QImage(
+        width, height, QtGui.QImage.Format_ARGB32_Premultiplied)
+    image.setDevicePixelRatio(ratio)
+    image.fill(QtCore.Qt.transparent)
+    painter = QtGui.QPainter(image)
+    # translation seulement : le calage sur les pixels et la taille de
+    # l'icône sont calculés exactement comme dans la hotbox
+    painter.translate(-math.floor(rect.left()) + 2, -math.floor(rect.top()) + 2)
+    try:
+        draw_shape(painter, shape)
+    finally:
+        painter.end()
+
+
+def _warm_up_step(generation, queue, ratio):
+    """Prépare des icônes pendant au plus WARM_UP_BUDGET_MS, puis rend la
+    main à Maya ; se relance tant qu'il en reste. Abandonné si les
+    hotboxes ont été rechargées entre-temps (édition dans le manager)."""
+    import time
     if generation != _load_generation[0] or not queue:
         return
-    try:
-        image_pixmap(queue.pop(0))
-    except Exception:
-        # une icône abîmée ne doit pas casser le préchauffage
-        pass
+    deadline = time.time() + WARM_UP_BUDGET_MS / 1000.0
+    while queue and time.time() < deadline:
+        try:
+            prerender_shape(queue.pop(0), ratio)
+        except Exception:
+            # une icône abîmée ne doit pas casser le préchauffage
+            pass
     if queue:
         QtCore.QTimer.singleShot(
-            WARM_UP_STEP_MS, lambda: _warm_up_step(generation, queue))
+            WARM_UP_STEP_MS, lambda: _warm_up_step(generation, queue, ratio))
 
 
 def warm_up_now():
@@ -203,7 +232,12 @@ def show(name):
     reader = _reader(name)
     if reader is not None:
         reader.show()
-        _schedule_warm_up()
+        # l'échelle de l'écran où la hotbox s'affiche (125 / 150 %…)
+        try:
+            ratio = float(reader.devicePixelRatioF())
+        except AttributeError:
+            ratio = 1.0
+        _schedule_warm_up(ratio)
 
 
 def hide(name):

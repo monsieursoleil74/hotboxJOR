@@ -6,6 +6,24 @@ ancienne. Chaque entrée correspond à un ou plusieurs commits sur
 
 ## 2026-11 — Hotbox nette et vivante
 
+- **Freeze au changement de hotbox** (retour d'usage). Régression du
+  rendu net : le 1er passage sur une hotbox redessinait toutes ses
+  icônes nettes d'un coup, car le préchauffage ne chargeait que les
+  images d'origine ; et les caches d'images se vidaient ENTIÈREMENT
+  au-delà de 512 entrées (avec beaucoup de hotboxes : icônes redessinées
+  à chaque changement). Désormais :
+  - le préchauffage dessine chaque bouton hors écran avec le même code
+    et à l'échelle de l'écran de la hotbox (`prerender_shape`) : l'icône
+    nette est en cache avant le 1er appel ;
+  - il travaille par tranches de 8 ms max (`WARM_UP_BUDGET_MS`) au lieu
+    d'une icône toutes les 15 ms : fini plus vite, sans bloquer ;
+  - caches LRU (on oublie la moins récemment utilisée) : 4096 chemins,
+    1024 images, 2048 icônes nettes.
+  Mesure (8 hotboxes × 40 icônes SVG détaillées, disque lent) : 1er
+  passage sur une hotbox 188 → 13 ms ; plus long blocage du
+  préchauffage 13 ms. Test : `test_switch_hotbox_no_rerender` (échoue
+  avec l'ancien préchauffage).
+
 - **Fondu d'apparition retiré** (retour d'usage : légère latence, pas
   fluide). Une fenêtre translucide en fondu est recomposée à chaque
   image ; dans Maya, la boucle Qt est partagée avec le viewport, les
